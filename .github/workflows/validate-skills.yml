@@ -1,0 +1,63 @@
+# Validate SKILL.md frontmatter against agentskills.io (skills-ref).
+# See docs/decisions/001-skill-validation-and-tooling.md
+name: Validate skills
+
+on:
+  pull_request:
+    paths:
+      - "skills/**"
+      - ".github/workflows/validate-skills.yml"
+  push:
+    branches: [main]
+    paths:
+      - "skills/**"
+      - ".github/workflows/validate-skills.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-skills-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+
+      - name: Install skills-ref (pinned)
+        run: npm install -g skills-ref@0.1.5
+
+      - name: Skills CLI lists skills from this repository (smoke)
+        run: npx --yes skills@1.5.6 add "${{ github.server_url }}/${{ github.repository }}" --list -y
+
+      - name: Validate each skill directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          failed_dirs=()
+          while IFS= read -r -d '' skill_md; do
+            dir=$(dirname "$skill_md")
+            echo "::group::Validate $dir"
+            if ! skills-ref validate "$dir"; then
+              failed=1
+              failed_dirs+=("$dir")
+              echo "::error title=Skill validation failed::$dir"
+            fi
+            echo "::endgroup::"
+          done < <(find skills -name 'SKILL.md' -print0)
+          if [[ "$failed" -ne 0 ]]; then
+            echo "One or more skills failed validation."
+            echo "Failed skill directories:"
+            printf '%s\n' "${failed_dirs[@]}"
+            exit 1
+          fi
