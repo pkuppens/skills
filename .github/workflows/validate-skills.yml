@@ -33,11 +33,11 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Install skills-ref (pinned)
-        run: npm install -g skills-ref@0.1.5
+      - name: Install skills-ref
+        run: npm install -g skills-ref
 
       - name: Skills CLI lists skills from this repository (smoke)
-        run: npx --yes skills@1.5.6 add "${{ github.server_url }}/${{ github.repository }}" --list -y
+        run: npx --yes skills add "${{ github.server_url }}/${{ github.repository }}" --list -y
 
       - name: Validate each skill directory
         shell: bash

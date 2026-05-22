@@ -23,13 +23,15 @@ This repository maintains a unified library of Agent Skills under `skills/`. Eac
 ## Decision
 
 1. **Source of truth** for machine-checkable skill metadata remains **[agentskills.io](https://agentskills.io/specification)**.
-2. **CI** runs **`skills-ref`** (global npm install, **version pinned** in [.github/workflows/validate-skills.yml](../../.github/workflows/validate-skills.yml)) against **each** directory under `skills/` that contains `SKILL.md`, and a pinned **`npx skills add <repo> --list -y`** smoke so the Skills CLI can still discover the tree (installer check, not schema validation).
+2. **CI** runs **`skills-ref`** (global npm install at latest publish, **not version-pinned** in [.github/workflows/validate-skills.yml](../../.github/workflows/validate-skills.yml)) against **each** directory under `skills/` that contains `SKILL.md`, and an **`npx skills add <repo> --list -y`** smoke (latest Skills CLI) so the installer can still discover the tree. This is an installer check, not schema validation.
 3. **Skilz** is documented here as an **optional installer** for consumers, not as the validator for this repository.
 4. **Revisit** this ADR if: `skills-ref` gains a production-ready designation, Skilz ships a first-class validate command we prefer, or we adopt a different official validator from the agentskills project.
 
 ## Skills CLI (`npx skills`)
 
-The [Skills CLI](https://github.com/vercel-labs/skills) installs spec-shaped skills from Git into agent directories. It is **not** a schema validator: **CI still uses `skills-ref`** for frontmatter. A pinned `npx skills add <this-repo> --list` smoke test in GitHub Actions only proves the repository layout stays discoverable by the installer documented in the [repository README](../../README.md). Listing on [skills.sh](https://www.skills.sh/) remains optional marketing, not a merge gate.
+The [Skills CLI](https://github.com/vercel-labs/skills) installs spec-shaped skills from Git into agent directories. It is **not** a schema validator: **CI still uses `skills-ref`** for frontmatter. An unpinned `npx skills add <this-repo> --list` smoke test in GitHub Actions proves the repository layout stays discoverable by the installer documented in the [repository README](../../README.md). Listing on [skills.sh](https://www.skills.sh/) remains optional marketing, not a merge gate.
+
+**Floating tooling (2026-05):** This repository is a **skill library**, not an application. CI and docs intentionally avoid pinning `skills-ref` or `skills` npm versions so validation tracks current spec and CLI behaviour; breakages are fixed forward on `main`/PRs rather than hidden behind stale pins.
 
 ## Consequences
 
