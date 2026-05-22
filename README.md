@@ -8,7 +8,7 @@ Canonical **Agent Skills** library for Cursor, Claude, and Codex: arc42-aligned 
 
 Skills are Markdown files (`SKILL.md`) in skill-specific directories under [`skills/`](skills/). Each skill has `name` and `description` in YAML frontmatter; IDEs discover skills when that tree is linked or installed.
 
-**Format and CI:** Metadata must follow the [Agent Skills specification](https://agentskills.io/specification). Pull requests that touch `skills/` run `skills-ref` (pinned) and a non-interactive [Skills CLI](https://github.com/vercel-labs/skills) discovery smoke (`npx skills add … --list`). Tooling rationale: [ADR 001 — Skill validation and tooling](docs/decisions/001-skill-validation-and-tooling.md).
+**Format and CI:** Metadata must follow the [Agent Skills specification](https://agentskills.io/specification). Pull requests that touch `skills/` run latest `skills-ref` and a non-interactive [Skills CLI](https://github.com/vercel-labs/skills) discovery smoke (`npx skills add … --list`). Tooling rationale: [ADR 001 — Skill validation and tooling](docs/decisions/001-skill-validation-and-tooling.md). **Transfer/install:** skill [`skills-transfer`](skills/skills-transfer/SKILL.md).
 
 ## IDE setup
 
@@ -67,23 +67,20 @@ Cursor also loads from `.claude/skills/` and `~/.claude/skills/`.
 
 **Layout contract:** Each skill is `skills/<directory>/SKILL.md`; YAML `name` must match `<directory>` ([Agent Skills](https://agentskills.io/specification), `skills-ref`).
 
-**Commands** (pin `skills@…` to match [.github/workflows/validate-skills.yml](.github/workflows/validate-skills.yml); examples use **1.5.6**):
+**Commands** (floating `npx skills` — same as CI; this library does not pin npm tool versions):
 
 ```bash
 # List skills the CLI would install from this repo (non-interactive)
-npx --yes skills@1.5.6 add https://github.com/pkuppens/skills --list -y
+npx --yes skills add https://github.com/pkuppens/skills --list -y
 
 # Install one skill by YAML name (project scope; add -g for user-wide)
-npx --yes skills@1.5.6 add pkuppens/skills --skill plan -y
+npx --yes skills add pkuppens/skills --skill skills-transfer -y
 
 # Target specific agents (repeat -a as needed)
-npx --yes skills@1.5.6 add pkuppens/skills --skill plan -y -a cursor -a claude-code
-
-# Install many by name
-npx --yes skills@1.5.6 add pkuppens/skills --skill plan --skill test -y
+npx --yes skills add pkuppens/skills --skill skills-transfer -y -a cursor -a claude-code
 ```
 
-Use `npx skills add --help` for current flags. Installs default to **symlinks**; use `--copy` when symlinks are unsupported.
+Use `npx skills add --help` for current flags. Installs default to **symlinks**; use `--copy` when symlinks are unsupported. Full transfer guidance: [`skills/skills-transfer/SKILL.md`](skills/skills-transfer/SKILL.md).
 
 **Verify an install:**
 
@@ -91,22 +88,18 @@ Use `npx skills add --help` for current flags. Installs default to **symlinks**;
 2. Confirm files under paths from [IDE expected locations](#ide-expected-locations).
 3. Run `skills-ref validate <path-to-skill-dir>` to mirror CI ([skills-ref](https://www.npmjs.com/package/skills-ref)).
 
-### Pinning / versions (reproducibility)
+### Git refs on installs (reproducibility)
 
-CLI installs are **Git-based**. The [Skills CLI](https://github.com/vercel-labs/skills) accepts `@<ref>` on `owner/repo`:
+CLI installs are **Git-based**. Pin **`owner/repo@<ref>`** in consumer project docs when you need a fixed baseline—not npm versions of `skills` or `skills-ref`:
 
 | Install style | Example | When to use |
 |---------------|---------|-------------|
-| Floating (default branch) | `pkuppens/skills` or `https://github.com/pkuppens/skills` | Latest `main`; behaviour may change. |
-| Pinned to commit | `pkuppens/skills@<commit-sha>` | Reproducible CI or team baseline. |
-| Pinned to tag | `pkuppens/skills@<tag>` | Stable human-readable ref after tags exist. |
-| Pinned to branch | `pkuppens/skills@my-branch` | Long-lived branch installs. |
+| Floating (default branch) | `pkuppens/skills` | Latest `main` |
+| Pinned to commit / tag / branch | `pkuppens/skills@<ref>` | Team or CI baseline |
 
 ```bash
-npx --yes skills@1.5.6 add pkuppens/skills@<git-ref> --list -y
+npx --yes skills add pkuppens/skills@<git-ref> --list -y
 ```
-
-Record `owner/repo@ref` in project docs (`CLAUDE.md`, `docs/skills-used.md`, etc.). After publishing migration tags, prefer pinning tags for baselines (see release notes in GitHub issues).
 
 Optional `metadata.version` on a skill does **not** control what the CLI clones—**`@ref` does**.
 
@@ -146,9 +139,11 @@ pkuppens/skills/
 │   │   └── 001-skill-validation-and-tooling.md
 │   ├── curated-skill-selection.md   # planned (#90)
 │   └── bundles/                   # planned (#90)
+├── CONTEXT.md                # Domain glossary
 ├── skills/
 │   ├── README.md             # Pointer / conventions (see migration issues)
-│   ├── repo-bootstrap/       # temporary SKILL.md until migration replaces it
+│   ├── skills-transfer/      # meta: install, sources, derivatives, catalog
+│   │   └── repo-transfer/    # nested: land skills tree via PR
 │   ├── SKILL_TREE.md         # after migration
 │   ├── CLAUDE.md
 │   └── …                     # skill directories
