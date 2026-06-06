@@ -1,14 +1,15 @@
 ---
 name: bash
 description: >-
-  bash syntax for Linux, macOS, WSL2, and Git Bash: quoting, pipelines,
-  backslash continuation, hash comments, and copy-paste-safe blocks. Use when
-  the detected shell is bash or when writing shell scripts for Unix-like environments.
+  bash syntax for live terminal execution and .sh script authoring on Linux, macOS,
+  WSL2, and Git Bash: quoting, pipelines, backslash continuation, hash comments, and
+  copy-paste-safe blocks. Use when running bash commands in a session or when writing
+  or editing .sh shell scripts for Unix-like environments.
 ---
 
 # bash
 
-bash syntax for live commands and shell scripts on Linux, macOS, WSL2, and Git Bash. Activate via [terminal/SKILL.md](../SKILL.md) after context detection.
+bash syntax for **live session commands** and **`.sh` script files** on Linux, macOS, WSL2, and Git Bash. Activate via [terminal/SKILL.md](../SKILL.md) after context detection.
 
 ## Platform notes
 

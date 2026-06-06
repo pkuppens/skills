@@ -1,14 +1,15 @@
 ---
 name: powershell
 description: >-
-  PowerShell 5.1 and 7+ command syntax: pipelines, redirection, here-strings,
-  backtick continuation, and copy-paste-safe blocks. Use when the detected shell
-  is PowerShell or when writing .ps1 scripts on Windows or cross-platform PS 7+.
+  PowerShell 5.1 and 7+ syntax for live terminal execution and .ps1 script authoring:
+  pipelines, redirection, here-strings, backtick continuation, and copy-paste-safe blocks.
+  Use when running PowerShell commands in a session or when writing or editing .ps1 scripts
+  on Windows or cross-platform PS 7+.
 ---
 
 # PowerShell
 
-PowerShell syntax for live commands and `.ps1` scripts. Activate via [terminal/SKILL.md](../SKILL.md) after context detection.
+PowerShell syntax for **live session commands** and **`.ps1` script files**. Activate via [terminal/SKILL.md](../SKILL.md) after context detection.
 
 ## Version awareness
 

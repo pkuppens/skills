@@ -1,20 +1,27 @@
 ---
 name: cmd
 description: >-
-  Windows cmd.exe and batch file (.bat/.cmd) syntax: variables, control flow,
-  pipes, redirection, multiline caret continuation, and copy-paste-safe blocks.
-  Use when writing batch files, CMD one-liners, Windows shell automation, or when
-  the detected shell is cmd.exe. Replaces the external batch-files skill.
+  Windows cmd.exe and batch file (.bat/.cmd) syntax for live CMD execution and batch
+  script authoring: variables, control flow, pipes, redirection, multiline caret
+  continuation, and copy-paste-safe blocks. Use when running cmd.exe commands, writing
+  or editing .bat/.cmd files, Windows shell automation, or when the detected shell is
+  cmd.exe. Replaces the external batch-files skill.
 ---
 
 # Windows CMD
 
-cmd.exe and batch file syntax for live commands and `.bat`/`.cmd` scripts. Activate via [terminal/SKILL.md](../SKILL.md) after context detection.
+cmd.exe and batch file syntax for **live commands** and **`.bat`/`.cmd` script files**. Activate via [terminal/SKILL.md](../SKILL.md) after context detection.
 
 ## When to use
 
+### Live execution
+
 - cmd.exe one-liners or interactive paste blocks
-- Creating or editing `.bat` / `.cmd` files
+- Agent Shell tool commands when probe or docs indicate cmd
+
+### Script authoring
+
+- Creating or editing `.bat` / `.cmd` files in the repo
 - Windows Task Scheduler scripts, PATH-based CLI tools
 - When README or probe indicates **Shell: cmd**
 

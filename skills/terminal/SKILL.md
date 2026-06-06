@@ -1,21 +1,33 @@
 ---
 name: terminal
 description: >-
-  Routes terminal work to the correct shell sub-skill and enforces copy-paste-safe
+  Routes terminal work to the correct shell sub-skill for live execution and for
+  authoring shell script files (.bat, .cmd, .ps1, .sh). Enforces copy-paste-safe
   command blocks across OS and terminal types. Detects context from project docs and
-  runtime probes. Use when running terminal commands, writing shell scripts, preparing
-  CI snippets, working with Windows CMD, PowerShell, bash, WSL2, multiline commands,
-  pipes, redirects, admin elevation, PATH issues, or copy-paste command blocks.
+  runtime probes. Use when running terminal commands, writing or editing shell scripts,
+  preparing CI snippets, working with Windows CMD, PowerShell, bash, WSL2, multiline
+  commands, pipes, redirects, admin elevation, PATH issues, or copy-paste command blocks.
 ---
 
 # Terminal
 
-Orchestrates multi-OS terminal command work by detecting shell context, loading the matching **shell sub-skill**, and enforcing copy-paste-safe output.
+Orchestrates multi-OS terminal work by detecting shell context, loading the matching **shell sub-skill**, and enforcing copy-paste-safe output. Applies equally to **live terminal execution** and **shell script files**.
+
+## Two work modes
+
+Both modes use the same leaf skill (cmd, powershell, bash). Only output shape differs.
+
+| Mode | When | Output |
+|------|------|--------|
+| **Live execution** | Agent runs a command via Shell tool, or user pastes a one-off block into an open terminal | Single fenced block, runnable as-is; copy-paste rules in [Copy-paste rules](#copy-paste-rules) |
+| **Script authoring** | Create or edit `.bat`, `.cmd`, `.ps1`, `.sh`, or other shell script files in the repo | Valid script syntax in the target file; shebang/headers, `setlocal`, `set -euo pipefail`, etc. per leaf skill |
+
+Do not treat script files as "documentation" — they follow the leaf skill's script conventions, not the multi-shell doc layout.
 
 ## When to use
 
-- Run or suggest commands in the user's shell session
-- Author `.bat`, `.cmd`, `.ps1`, or shell scripts
+- Run or suggest commands in the user's shell session (**live execution**)
+- Create or edit shell script files: `.bat`, `.cmd` (cmd), `.ps1` (PowerShell), `.sh` (bash) (**script authoring**)
 - Write README, CONTRIBUTING, or CI command snippets
 - Debug "command not found", wrong quoting, or broken multiline paste
 - Choose admin vs non-admin command variants on Windows or Unix

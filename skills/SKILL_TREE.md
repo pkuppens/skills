@@ -13,7 +13,7 @@ Discoverable index of skills in this library. Keep aligned with folders under `s
 
 | Skill | Path | Purpose |
 |-------|------|---------|
-| terminal | [terminal/SKILL.md](terminal/SKILL.md) | Multi-OS terminal orchestration, context detection, copy-paste-safe commands |
+| terminal | [terminal/SKILL.md](terminal/SKILL.md) | Multi-OS terminal orchestration: live execution and shell script authoring (.bat, .ps1, .sh), context detection, copy-paste-safe commands |
 | cmd | [terminal/cmd/SKILL.md](terminal/cmd/SKILL.md) | Windows cmd.exe and batch files (replaces external batch-files) |
 | powershell | [terminal/powershell/SKILL.md](terminal/powershell/SKILL.md) | PowerShell 5.1 and 7+ |
 | bash | [terminal/bash/SKILL.md](terminal/bash/SKILL.md) | bash on Linux, macOS, WSL2, Git Bash |
