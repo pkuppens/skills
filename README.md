@@ -78,6 +78,9 @@ npx --yes skills add pkuppens/skills --skill skills-transfer -y
 
 # Target specific agents (repeat -a as needed)
 npx --yes skills add pkuppens/skills --skill skills-transfer -y -a cursor -a claude-code
+
+# Install terminal skill from this repository
+npx --yes skills add pkuppens/skills --skill terminal -y
 ```
 
 Use `npx skills add --help` for current flags. Installs default to **symlinks**; use `--copy` when symlinks are unsupported. Full transfer guidance: [`skills/skills-transfer/SKILL.md`](skills/skills-transfer/SKILL.md).
