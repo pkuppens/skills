@@ -78,6 +78,9 @@ npx --yes skills add pkuppens/skills --skill skills-transfer -y
 
 # Target specific agents (repeat -a as needed)
 npx --yes skills add pkuppens/skills --skill skills-transfer -y -a cursor -a claude-code
+
+# Install terminal skill from this repository
+npx --yes skills add pkuppens/skills --skill terminal -y
 ```
 
 Use `npx skills add --help` for current flags. Installs default to **symlinks**; use `--copy` when symlinks are unsupported. Full transfer guidance: [`skills/skills-transfer/SKILL.md`](skills/skills-transfer/SKILL.md).
@@ -106,6 +109,8 @@ Optional `metadata.version` on a skill does **not** control what the CLI clones�
 ## External and vendor skills
 
 Symlinks here target **this** repo’s `skills/` tree. Extra packages from the ecosystem (`npx skills add …`) live beside it under IDE paths and are **not** committed here.
+
+**Superseded vendor skills:** The external `batch-files` skill is replaced by **`terminal/cmd`** in this library ([Epic #10](https://github.com/pkuppens/skills/issues/10)). After installing `terminal`, remove `batch-files` from `.agents/skills/` or your Skills CLI install to avoid duplicate CMD guidance.
 
 **Where to record extras:** `CLAUDE.md`, `CONTRIBUTING.md`, or `docs/skills-used.md` (source URL, command, owner, last reviewed).
 
