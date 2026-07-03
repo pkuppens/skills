@@ -6,7 +6,7 @@ description: >
   authentication/authorization issues, secrets in code, insecure dependencies,
   and OWASP Top 10 patterns. Do NOT route files containing actual secrets,
   PII, or proprietary business logic through this agent.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 tools:
   - Read
   - Grep

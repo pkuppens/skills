@@ -45,11 +45,11 @@ User Request
 
 | Task type | Confidential? | Agent | Model |
 |-----------|--------------|-------|-------|
-| Architecture / design | No | `cloud-architect` | claude-sonnet-4-6 |
+| Architecture / design | No | `cloud-architect` | claude-sonnet-5 |
 | Small bug fix / impl | **Yes** | `local-implementer` | ollama/qwen2.5-coder:14b |
 | Boilerplate / scaffold | **Yes** | `local-implementer` | ollama/qwen2.5-coder:14b |
-| Code review | No | `cloud-reviewer` | claude-sonnet-4-6 |
-| Security scan | No | `cloud-security-scanner` | claude-sonnet-4-6 |
+| Code review | No | `cloud-reviewer` | claude-sonnet-5 |
+| Security scan | No | `cloud-security-scanner` | claude-sonnet-5 |
 | Test execution | No | `cloud-test-runner` | claude-haiku-4-5 |
 
 **Rule of thumb:** if the file contains proprietary business logic, PII, credentials, or trade secrets → route to a local agent. Everything else can go to the cloud.

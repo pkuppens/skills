@@ -5,7 +5,7 @@ description: >
   sub-agents have made changes. Reviews diffs or specified files for: logic errors,
   code style violations, missing edge case handling, dead code, and API misuse.
   Do NOT route confidential proprietary logic through this agent.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 tools:
   - Read
   - Grep

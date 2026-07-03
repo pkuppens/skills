@@ -33,7 +33,7 @@ LITELLM_API_KEY   = os.environ.get("LITELLM_API_KEY", "sk-local-dev")
 
 # Model aliases — change these to pin different versions
 CLOUD_FAST_MODEL  = "claude-haiku-4-5"      # cheap, fast — test running etc.
-CLOUD_MAIN_MODEL  = "claude-sonnet-4-6"     # default supervisor + most cloud agents
+CLOUD_MAIN_MODEL  = "claude-sonnet-5"       # default supervisor + most cloud agents
 LOCAL_CODE_MODEL  = "ollama/qwen2.5-coder:14b"  # local Ollama via LiteLLM
 
 # ---------------------------------------------------------------------------

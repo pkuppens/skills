@@ -6,7 +6,7 @@ description: >
   architectural approaches, or produce a technical spec. Outputs a structured
   plan that other sub-agents can execute. Do NOT route confidential proprietary
   logic through this agent.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 tools:
   - Read
   - Glob
