@@ -31,6 +31,12 @@ terminal/
 
 Phase 2 (Epic #10): `terminal/zsh/`, expanded `references/terminal-emulators.md`.
 
+## Documentation skills
+
+| Skill | Path | Purpose |
+|-------|------|---------|
+| readme-authoring | [readme-authoring/SKILL.md](readme-authoring/SKILL.md) | Create, review, and rewrite READMEs — covers getting the code, prerequisites, and dev-mode run instructions as first-class sections |
+
 ## Strategy and lifecycle skills
 
 | Skill | Path | Purpose |
@@ -69,4 +75,5 @@ ml-cv-specialist — independent domain-specific skill
 ## Migration
 
 - [issue #13](https://github.com/pkuppens/skills/issues/13): Epic — Migrate all 13 personal skills from local `~/.claude/skills/` to pkuppens/skills (in progress via PR)
+- `readme-authoring` migrated from `~/.cursor/skills/readme-authoring` (local-only, not yet symlinked to a shared source), extended with explicit getting-the-code / prerequisites / dev-server-vs-deploy guidance and GFM admonition usage inspired by GitHub's `create-readme` skill
 - Additional lifecycle skills migrate from [`pkuppens/pkuppens`](https://github.com/pkuppens/pkuppens) per [issue #90](https://github.com/pkuppens/pkuppens/issues/90). See repository issues for status.
