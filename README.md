@@ -2,7 +2,7 @@
 
 Canonical **Agent Skills** library for Cursor, Claude, and Codex: arc42-aligned workflows from ideation through operations. GitHub profile narrative stays in [`pkuppens/pkuppens`](https://github.com/pkuppens/pkuppens); **this repository is the skills-only home.**
 
-**Quick links:** [skills/SKILL_TREE.md](skills/SKILL_TREE.md) (full index; populated as migration PRs land) · [skills/COOPERATION.md](skills/COOPERATION.md) · [skills/CLAUDE.md](skills/CLAUDE.md) · curated workflow (planned): [docs/curated-skill-selection.md](docs/curated-skill-selection.md)
+**Quick links:** [skills/SKILL_TREE.md](skills/SKILL_TREE.md) (full index) · `skills/COOPERATION.md`, `skills/CLAUDE.md` (planned, [#5](https://github.com/pkuppens/skills/issues/5)) · curated workflow (planned, [#7](https://github.com/pkuppens/skills/issues/7)): `docs/curated-skill-selection.md`
 
 ## Getting the code
 
@@ -40,7 +40,7 @@ Reference the **`skills/`** folder from your IDE. Do not duplicate skills. Symli
 
 ### Option A: Symlinks (recommended)
 
-Symlink targets must be the **inner** Agent Skills tree in this repository: the directory named `skills/` at the **root of the `pkuppens/skills` clone** (same level as this `README.md`). That inner folder will contain `SKILL_TREE.md`, `CLAUDE.md`, and per-skill folders after migration.
+Symlink targets must be the **inner** Agent Skills tree in this repository: the directory named `skills/` at the **root of the `pkuppens/skills` clone** (same level as this `README.md`). That inner folder already contains `SKILL_TREE.md` and per-skill folders; `CLAUDE.md` lands with migration ([#5](https://github.com/pkuppens/skills/issues/5)).
 
 **Project-level** (your app repo sits beside the `pkuppens/skills` clone):
 
@@ -141,10 +141,10 @@ Symlinks here target **this** repo’s `skills/` tree. Extra packages from the e
 **Example:**
 
 ```bash
-npx skills add https://github.com/github/awesome-copilot --skill azure-devops-cli
+npx --yes skills add https://github.com/github/awesome-copilot --skill azure-devops-cli -y
 ```
 
-Authoring guidance (“install first; author only when needed”) will live in [`skills/_meta/skill-creation/reference.md`](skills/_meta/skill-creation/reference.md) once migrated.
+Authoring guidance (“install first; author only when needed”) will live in `skills/_meta/skill-creation/reference.md` once migrated (planned, [#5](https://github.com/pkuppens/skills/issues/5)).
 
 ## Canonical plus public skills (side by side)
 
@@ -166,15 +166,15 @@ pkuppens/skills/
 ├── docs/
 │   ├── decisions/
 │   │   └── 001-skill-validation-and-tooling.md
-│   ├── curated-skill-selection.md   # planned (#90)
-│   └── bundles/                   # planned (#90)
+│   ├── curated-skill-selection.md   # planned (#7)
+│   └── bundles/                   # planned (#7)
 ├── CONTEXT.md                # Domain glossary
 ├── skills/
 │   ├── README.md             # Pointer / conventions (see migration issues)
 │   ├── skills-transfer/      # meta: install, sources, derivatives, catalog
 │   │   └── repo-transfer/    # nested: land skills tree via PR
-│   ├── SKILL_TREE.md         # after migration
-│   ├── CLAUDE.md
+│   ├── SKILL_TREE.md         # skill index
+│   ├── CLAUDE.md             # planned (#5)
 │   └── …                     # skill directories
 └── .github/workflows/
     └── validate-skills.yml
