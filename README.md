@@ -4,6 +4,30 @@ Canonical **Agent Skills** library for Cursor, Claude, and Codex: arc42-aligned 
 
 **Quick links:** [skills/SKILL_TREE.md](skills/SKILL_TREE.md) (full index; populated as migration PRs land) · [skills/COOPERATION.md](skills/COOPERATION.md) · [skills/CLAUDE.md](skills/CLAUDE.md) · curated workflow (planned): [docs/curated-skill-selection.md](docs/curated-skill-selection.md)
 
+## Getting the code
+
+```bash
+git clone https://github.com/pkuppens/skills.git
+```
+
+No forking, SSO, submodules, or LFS are required — a direct clone is enough for symlinking, CLI install, or contributing.
+
+## Prerequisites
+
+| Tool | Version | Why |
+| --- | --- | --- |
+| [Git](https://git-scm.com/) | any recent | clone the repo and symlink or install skills |
+| [Node.js](https://nodejs.org/) | 24.x (matches [`validate-skills.yml`](.github/workflows/validate-skills.yml)) | run `npx skills` (Skills CLI) and `skills-ref validate` locally, the same checks CI runs on pull requests |
+
+This repo does not pin a Node version via `.nvmrc`/`volta`/`engines` — match CI's Node 24 if you want local `skills-ref validate` runs to behave the same as the pipeline.
+
+Verify your setup:
+
+```bash
+git --version
+node --version
+```
+
 ## Usage
 
 Skills are Markdown files (`SKILL.md`) in skill-specific directories under [`skills/`](skills/). Each skill has `name` and `description` in YAML frontmatter; IDEs discover skills when that tree is linked or installed.
@@ -159,3 +183,9 @@ pkuppens/skills/
 ## Migration note
 
 Content is moving from [`pkuppens/pkuppens`](https://github.com/pkuppens/pkuppens) per [issue #90](https://github.com/pkuppens/pkuppens/issues/90). Track progress via issues in **this** repository.
+
+## Contributing
+
+Report bugs or request skills via [GitHub issues](https://github.com/pkuppens/skills/issues). Pull requests that touch `skills/` must pass [`validate-skills.yml`](.github/workflows/validate-skills.yml) (`skills-ref validate` on every changed skill directory). See [ADR 001](docs/decisions/001-skill-validation-and-tooling.md) for the tooling rationale behind that check.
+
+Licensed under the [MIT License](LICENSE).
