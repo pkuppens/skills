@@ -110,7 +110,9 @@ With agents copied to `.claude/agents/`, you can invoke them directly:
 
 **Sub-agents run in isolated context windows.** The supervisor only sees their final result — not every file they read. This keeps the main context lean and costs low.
 
-**Pre-defined agents = predictable behavior.** Each agent has a fixed system prompt, tool set, and model. The supervisor can't accidentally give a local agent internet access, or route confidential data to a cloud model.
+**Pre-defined agents = predictable behavior.** Each agent has a fixed system prompt, tool set, and model. Once a task is routed to `local-implementer`, it stays on Ollama — the agent has no internet tools and its data never leaves the machine.
+
+**Confidentiality routing is opt-in — you must flag it.** The automatic `classify_task` router is keyword-based; it cannot tell whether a file is proprietary. A prompt like *"review our billing logic"* matches `review` and goes to the **cloud** reviewer. To keep a task local you must pass `--confidential` (or route to `local-implementer` explicitly). Treat the classifier as a convenience for public tasks, not a confidentiality guarantee — when in doubt, flag it.
 
 **LiteLLM is the routing layer.** It exposes an Anthropic-compatible API endpoint. The `local-implementer` agent points its `ANTHROPIC_BASE_URL` at LiteLLM, which forwards to Ollama. Cloud agents use `ANTHROPIC_API_KEY` directly. The supervisor never changes — only the gateway config differs.
 
