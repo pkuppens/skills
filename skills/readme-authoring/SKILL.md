@@ -7,13 +7,14 @@ description: Creates, reviews, and rewrites repository README files in Markdown 
 
 **Announce at start:** "Using the readme-authoring skill."
 
-Write README files in **GitHub Flavored Markdown (GFM)**, not plain text. A good README answers three audiences ([Microsoft Learn — Create a README](https://learn.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops)):
+Write README files in **GitHub Flavored Markdown (GFM)**, not plain text. A good README answers three human audiences ([Microsoft Learn — Create a README](https://learn.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops)) — and, increasingly, a fourth reader: the AI coding agents that work in the repo:
 
 | Audience | Needs |
 | --- | --- |
 | **Users** | Run the project with minimal friction |
 | **Developers** | Get the code, install prerequisites, and run it locally in dev mode from a fresh clone |
 | **Contributors** | Report issues, follow conventions, open PRs |
+| **AI coding agents** | Parse the repo and run unambiguous, copy-pasteable commands without guessing; find conventions in `AGENTS.md` / `CONTRIBUTING.md` |
 
 ## Choose mode
 
@@ -87,7 +88,7 @@ README progress:
 - [ ] Inspect repo (remote, manifests, scripts, deps, CI, devcontainer, existing docs)
 - [ ] Draft all sections, including Getting the code / Prerequisites / Development server
 - [ ] Verify every command against the repo (and the actual git remote)
-- [ ] Check all three audiences
+- [ ] Check all four audiences (users, developers, contributors, AI coding agents)
 - [ ] Final pass: links, headings, admonitions, no stale paths
 ```
 
