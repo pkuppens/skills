@@ -1,3 +1,13 @@
+---
+name: ai-factory
+description: >
+  Set up, run, or troubleshoot a supervisor + predefined-subagent "swarm" for
+  software development, where confidential tasks stay on-premises (local Ollama
+  via LiteLLM) and public tasks run on cloud Claude. Use when a user wants to
+  orchestrate architecture, implementation, review, security, and test agents
+  while keeping proprietary code or PII off the cloud.
+---
+
 # AI Software Factory — Supervisor + Swarm
 
 **Invoke:** `/ai-factory`  
