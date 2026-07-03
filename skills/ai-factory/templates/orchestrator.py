@@ -170,8 +170,14 @@ async def run_agent(agent_name: str, prompt: str) -> str:
         async for msg in query(
             prompt=prompt,
             options=ClaudeAgentOptions(
+                # Forward the agent's persona and model to the SDK. Without
+                # system_prompt and model here, the AgentDefinition's prompt and
+                # model are silently dropped and every agent runs generic on the
+                # default model — including the local Ollama routing, which
+                # depends on model being the ollama/* name LiteLLM maps.
+                system_prompt=agent_def.prompt,
+                model=agent_def.model,
                 allowed_tools=agent_def.tools or [],
-                # model is set on the AgentDefinition; the SDK respects it
             ),
         ):
             if hasattr(msg, "result") and msg.result:
