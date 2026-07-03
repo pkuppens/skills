@@ -1,4 +1,5 @@
 ---
+name: cloud-reviewer
 description: >
   Code review for quality, maintainability, and correctness. Use after implementation
   sub-agents have made changes. Reviews diffs or specified files for: logic errors,

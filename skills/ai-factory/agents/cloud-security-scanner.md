@@ -1,4 +1,5 @@
 ---
+name: cloud-security-scanner
 description: >
   Security-focused code analysis. Use when the supervisor needs to check for
   vulnerabilities before merging or deploying. Scans for: injection flaws,

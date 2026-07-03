@@ -1,4 +1,5 @@
 ---
+name: cloud-test-runner
 description: >
   Test execution, failure analysis, and fix suggestions. Use after implementation
   to verify correctness. Runs the project's test suite, parses failures, identifies

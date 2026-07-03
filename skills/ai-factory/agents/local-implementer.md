@@ -1,4 +1,5 @@
 ---
+name: local-implementer
 description: >
   Small bug fixes, boilerplate generation, and refactoring tasks on confidential or
   proprietary code. Routes to the local Ollama model via LiteLLM — no data leaves

@@ -1,4 +1,5 @@
 ---
+name: cloud-architect
 description: >
   High-level design, architecture planning, and task decomposition. Use when the
   supervisor needs to break a complex feature into subtasks, choose between
