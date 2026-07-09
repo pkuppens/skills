@@ -45,7 +45,7 @@ You only need a local clone to **contribute**, symlink the whole tree into an ID
 git clone https://github.com/pkuppens/skills.git
 ```
 
-No forking, SSO, submodules, or LFS are required — a direct clone is enough for symlinking, CLI install, or contributing.
+No forking, SSO, submodules, or LFS are required — a direct clone is enough for symlinking the tree or contributing. (Installing individual skills via the CLI needs no clone at all — see [Quick start](#quick-start-install-one-skill-and-use-it).)
 
 ## Prerequisites
 
