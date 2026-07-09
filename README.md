@@ -6,25 +6,25 @@ Canonical **Agent Skills** library for Cursor, Claude, and Codex. The skills spa
 
 ## Quick start: install one skill and use it
 
-The fastest way in is **not** to clone this repo. Install a single skill straight from GitHub with the [Skills CLI](https://github.com/vercel-labs/skills) and start using it in your agent. (This README itself was written by the `readme-authoring` skill installed below.)
+**This is the main audience.** You want to use a skill in your own workflow — not clone this repo or work on the skills. Install one skill from GitHub with the [Skills CLI](https://github.com/vercel-labs/skills):
 
 ```bash
-# Install the readme-authoring skill into the current project for Claude Code
+# Add the readme-authoring skill to the current project for Claude Code
 npx --yes skills add pkuppens/skills --skill readme-authoring -y -a claude-code
 ```
 
-This drops the skill under `.claude/skills/readme-authoring/`. Add `-g` for a user-wide install, or a different `-a` target (`cursor`, `codex`) — see [IDE expected locations](#ide-expected-locations).
+It lands under `.claude/skills/readme-authoring/`. Use `-g` for a user-wide install, or another `-a` target (`cursor`, `codex`). See [IDE expected locations](#ide-expected-locations).
 
-**Use it in Claude:** the skill is now discoverable by its description, so Claude loads it automatically when you ask for README work — or invoke it explicitly:
+**Use it in Claude.** Claude loads the skill by its description when you ask for README work. Or invoke it directly:
 
 ```text
 /readme-authoring review this repo's README
 ```
 
-Claude announces `Using the readme-authoring skill.` and follows the skill's workflow. Swap `readme-authoring` for any skill in [What's inside](#whats-inside) — for example `--skill terminal` for multi-OS shell guidance.
+Swap `readme-authoring` for any skill in [What's inside](#whats-inside) — for example `--skill terminal` for shell guidance.
 
 > [!TIP]
-> Want the whole library at once, or prefer symlinks over per-skill installs? See [IDE setup](#ide-setup) and [Install this library with the Skills CLI](#install-this-library-with-the-skills-cli-npx-skills).
+> Prefer symlinks, or want the whole library at once? See [IDE setup](#ide-setup) and [Install this library with the Skills CLI](#install-this-library-with-the-skills-cli-npx-skills).
 
 ## What's inside
 

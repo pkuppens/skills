@@ -14,7 +14,7 @@ Write README files in **GitHub Flavored Markdown (GFM)**, not plain text. A good
 | **Users** | Run the project with minimal friction |
 | **Developers** | Get the code, install prerequisites, and run it locally in dev mode from a fresh clone |
 | **Contributors** | Report issues, follow conventions, open PRs |
-| **AI coding agents** | Parse the repo and run unambiguous, copy-pasteable commands without guessing; find conventions in `AGENTS.md` / `CONTRIBUTING.md` |
+| **AI coding agents** | Parse the repo, run unambiguous copy-pasteable commands without guessing, and follow the conventions in `AGENTS.md` / `CONTRIBUTING.md` |
 
 ## Choose mode
 
