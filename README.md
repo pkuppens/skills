@@ -1,10 +1,45 @@
 # Unified AI coding skills
 
-Canonical **Agent Skills** library for Cursor, Claude, and Codex: arc42-aligned workflows from ideation through operations. GitHub profile narrative stays in [`pkuppens/pkuppens`](https://github.com/pkuppens/pkuppens); **this repository is the skills-only home.**
+Canonical **Agent Skills** library for Cursor, Claude, and Codex. The skills span shell and terminal work, README and documentation authoring, architecture and CTO-level strategy, code review, and ML/CV guidance — plus meta tooling for transferring and validating skills. See [What's inside](#whats-inside) for the map and [skills/SKILL_TREE.md](skills/SKILL_TREE.md) for the full index. GitHub profile narrative stays in [`pkuppens/pkuppens`](https://github.com/pkuppens/pkuppens); **this repository is the skills-only home.**
 
 **Quick links:** [skills/SKILL_TREE.md](skills/SKILL_TREE.md) (full index) · `skills/COOPERATION.md`, `skills/CLAUDE.md` (planned, [#5](https://github.com/pkuppens/skills/issues/5)) · curated workflow (planned, [#7](https://github.com/pkuppens/skills/issues/7)): `docs/curated-skill-selection.md`
 
+## Quick start: install one skill and use it
+
+The fastest way in is **not** to clone this repo. Install a single skill straight from GitHub with the [Skills CLI](https://github.com/vercel-labs/skills) and start using it in your agent. (This README itself was written by the `readme-authoring` skill installed below.)
+
+```bash
+# Install the readme-authoring skill into the current project for Claude Code
+npx --yes skills add pkuppens/skills --skill readme-authoring -y -a claude-code
+```
+
+This drops the skill under `.claude/skills/readme-authoring/`. Add `-g` for a user-wide install, or a different `-a` target (`cursor`, `codex`) — see [IDE expected locations](#ide-expected-locations).
+
+**Use it in Claude:** the skill is now discoverable by its description, so Claude loads it automatically when you ask for README work — or invoke it explicitly:
+
+```text
+/readme-authoring review this repo's README
+```
+
+Claude announces `Using the readme-authoring skill.` and follows the skill's workflow. Swap `readme-authoring` for any skill in [What's inside](#whats-inside) — for example `--skill terminal` for multi-OS shell guidance.
+
+> [!TIP]
+> Want the whole library at once, or prefer symlinks over per-skill installs? See [IDE setup](#ide-setup) and [Install this library with the Skills CLI](#install-this-library-with-the-skills-cli-npx-skills).
+
+## What's inside
+
+Every skill is one `skills/<name>/SKILL.md`. Categories below mirror [SKILL_TREE.md](skills/SKILL_TREE.md), where each skill has a full description.
+
+| Category | Skills |
+| --- | --- |
+| **Shell / terminal** ([index](skills/SKILL_TREE.md#language-and-framework-skills)) | `terminal` orchestrator routing to `cmd`, `powershell`, and `bash` leaves |
+| **Documentation** ([index](skills/SKILL_TREE.md#documentation-skills)) | `readme-authoring` |
+| **Strategy, review & ML/CV** ([index](skills/SKILL_TREE.md#strategy-and-lifecycle-skills)) | `tech-stack-recommender`, `architecture-pattern-selector`, `scalability-advisor`, `cost-estimator`, `roadmap-generator`, `delegation-prompt-crafter`, `request-analyzer`, `clarification-protocol`, `antipattern-detector`, `assumption-challenger`, `brutally-honest-code-review`, `validation-report-generator`, `ml-cv-specialist` |
+| **Meta** ([index](skills/SKILL_TREE.md#meta)) | `skills-transfer`, `repo-transfer` (install, catalog, and land skills via PR) |
+
 ## Getting the code
+
+You only need a local clone to **contribute**, symlink the whole tree into an IDE, or browse offline — most users can stop at [Quick start](#quick-start-install-one-skill-and-use-it) above.
 
 ```bash
 git clone https://github.com/pkuppens/skills.git
