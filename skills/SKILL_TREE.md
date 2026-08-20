@@ -9,6 +9,12 @@ Discoverable index of skills in this library. Keep aligned with folders under `s
 | skills-transfer | [skills-transfer/SKILL.md](skills-transfer/SKILL.md) | Install, catalog, derivative skills |
 | repo-transfer | [skills-transfer/repo-transfer/SKILL.md](skills-transfer/repo-transfer/SKILL.md) | Land skills tree via PR |
 
+## Repo maintenance
+
+| Skill | Path | Purpose |
+|-------|------|---------|
+| branch-cleanup | [branch-cleanup/SKILL.md](branch-cleanup/SKILL.md) | Fetch/prune, fast-forward, and delete merged local+remote git branches |
+
 ## Language and framework skills
 
 | Skill | Path | Purpose |
