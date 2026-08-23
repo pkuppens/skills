@@ -1,6 +1,6 @@
 ---
 name: branch-cleanup
-description: Tidy a git repo's branches - fetch/prune, fast-forward local branches from their upstreams, then delete local and remote branches fully merged into main. Use when the user wants to clean up stale/merged branches, or asks to tidy, prune, or garbage-collect a repo's branches.
+description: Clean Git branches after a merged PR or before new work. Prune stale remotes and remove safely merged branches. Use for repo cleanup, branch cleanup, tidy, or prune.
 ---
 
 # Branch Cleanup
