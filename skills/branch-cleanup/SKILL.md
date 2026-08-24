@@ -26,7 +26,10 @@ skill — this skill only touches branches.
    upstream was deleted (`[gone]`) — the latter catches squash-merge
    workflows where no ancestor relationship exists. Deletion still uses
    `git branch -d` (never `-D`), so a `[gone]` branch that git can't verify
-   as merged is reported as unresolved rather than force-deleted.
+   as merged is reported as unresolved rather than force-deleted. If the
+   currently checked-out branch is itself a deletion candidate, the script
+   switches to main first (git refuses to delete a checked-out branch), so
+   the user ends up on main instead of a dangling deleted branch.
 4. Report anything unresolved — permission errors on remote deletion,
    branches that failed to fast-forward, branches `git branch -d` refused —
    instead of retrying with force flags.
