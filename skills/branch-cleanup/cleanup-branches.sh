@@ -174,6 +174,23 @@ MERGED_LOCAL=$(git branch --merged "$MAIN_REF" | grep -v '^\*' | sed 's/^[ *]*//
 GONE_LOCAL=$(git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads/ | grep '\[gone\]' | awk '{print $1}' || true)
 CANDIDATES=$(printf '%s\n%s\n' "$MERGED_LOCAL" "$GONE_LOCAL" | sed '/^$/d' | sort -u || true)
 
+# If the checked-out branch is itself about to be deleted, git refuses to
+# delete it while checked out. Switch to main first so cleanup can finish
+# and the user ends up on main rather than a dangling deleted branch.
+if [ -n "$CURRENT_BRANCH" ] && printf '%s\n' "$CANDIDATES" | grep -qx "$CURRENT_BRANCH" && ! is_protected_branch "$CURRENT_BRANCH"; then
+  if [ "$DRY_RUN" = false ]; then
+    if git checkout "$MAIN_BRANCH" >/dev/null 2>&1; then
+      print_success "Switched to $MAIN_BRANCH (was on '$CURRENT_BRANCH', which is about to be deleted)"
+      CURRENT_BRANCH="$MAIN_BRANCH"
+    else
+      print_warning "Could not switch off '$CURRENT_BRANCH' to $MAIN_BRANCH; its deletion will likely fail"
+      UNRESOLVED+=("could not switch off current branch '$CURRENT_BRANCH' before deleting it")
+    fi
+  else
+    print_warning "Would switch to $MAIN_BRANCH (currently on '$CURRENT_BRANCH', which would be deleted)"
+  fi
+fi
+
 if [ -n "$CANDIDATES" ]; then
   while IFS= read -r branch; do
     [ -z "$branch" ] && continue
