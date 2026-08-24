@@ -1,4 +1,5 @@
-# Validate SKILL.md frontmatter against agentskills.io (skills-ref).
+# Validate SKILL.md frontmatter against agentskills.io (skills-ref),
+# and the Claude Code plugin marketplace manifest (.claude-plugin/marketplace.json).
 # See docs/decisions/001-skill-validation-and-tooling.md
 name: Validate skills
 
@@ -6,11 +7,13 @@ on:
   pull_request:
     paths:
       - "skills/**"
+      - ".claude-plugin/**"
       - ".github/workflows/validate-skills.yml"
   push:
     branches: [main]
     paths:
       - "skills/**"
+      - ".claude-plugin/**"
       - ".github/workflows/validate-skills.yml"
   workflow_dispatch: {}
 
@@ -35,6 +38,12 @@ jobs:
 
       - name: Install skills-ref
         run: npm install -g skills-ref
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validate plugin marketplace manifest
+        run: claude plugin validate . --strict
 
       - name: Skills CLI lists skills from this repository (smoke)
         run: npx --yes skills add "${{ github.server_url }}/${{ github.repository }}" --list -y

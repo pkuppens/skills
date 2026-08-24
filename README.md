@@ -26,6 +26,17 @@ Swap `readme-authoring` for any skill in [What's inside](#whats-inside) — for 
 > [!TIP]
 > Prefer symlinks, or want the whole library at once? See [IDE setup](#ide-setup) and [Install this library with the Skills CLI](#install-this-library-with-the-skills-cli-npx-skills).
 
+### Claude Code: install natively via plugin marketplace
+
+This repo is also a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces) (`.claude-plugin/marketplace.json`) — one plugin per skill, no Skills CLI or Node.js required:
+
+```text
+/plugin marketplace add pkuppens/skills
+/plugin install branch-cleanup@pkuppens-skills
+```
+
+Swap `branch-cleanup` for any skill name in [What's inside](#whats-inside). `/plugin list` shows what's installed; `/plugin uninstall <name>@pkuppens-skills` removes it.
+
 ## What's inside
 
 Every skill is one `skills/<name>/SKILL.md`. Categories below mirror [SKILL_TREE.md](skills/SKILL_TREE.md), where each skill has a full description.
@@ -198,6 +209,8 @@ If the CLI must own the skill root, symlink **one child** (e.g. `.cursor/skills/
 ```text
 pkuppens/skills/
 ├── README.md                 # This file (GitHub landing)
+├── .claude-plugin/
+│   └── marketplace.json      # Claude Code plugin marketplace (one plugin per skill)
 ├── docs/
 │   ├── decisions/
 │   │   └── 001-skill-validation-and-tooling.md

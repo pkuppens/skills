@@ -1,0 +1,172 @@
+{
+  "name": "pkuppens-skills",
+  "owner": {
+    "name": "Pieter Kuppens",
+    "url": "https://github.com/pkuppens"
+  },
+  "description": "Canonical Agent Skills library for Cursor, Claude, and Codex — shell/terminal, documentation, CTO-level strategy and review, and ML/CV skills.",
+  "plugins": [
+    {
+      "name": "ai-factory",
+      "source": "./",
+      "description": "Set up, run, or troubleshoot a supervisor + predefined-subagent \"swarm\" for software development, where confidential tasks stay on-premises (local Ollama via LiteLLM) and public tasks run on cloud Claude. Use when a user wants to orchestrate architecture, implementation, review, security, and test agents while keeping proprietary code or PII off the cloud.",
+      "skills": [
+        "./skills/ai-factory"
+      ],
+      "strict": false
+    },
+    {
+      "name": "antipattern-detector",
+      "source": "./",
+      "description": "Detect common technical and organizational anti-patterns in proposals, architectures, and plans. Use when strategic-cto-mentor needs to identify red flags before they become problems.",
+      "skills": [
+        "./skills/antipattern-detector"
+      ],
+      "strict": false
+    },
+    {
+      "name": "architecture-pattern-selector",
+      "source": "./",
+      "description": "Recommend architecture patterns (monolith, microservices, serverless, modular monolith) based on scale, team size, and constraints. Use when cto-architect needs to select the right architectural approach for a new system or migration.",
+      "skills": [
+        "./skills/architecture-pattern-selector"
+      ],
+      "strict": false
+    },
+    {
+      "name": "assumption-challenger",
+      "source": "./",
+      "description": "Identify and challenge implicit assumptions in plans, proposals, and technical decisions. Use when strategic-cto-mentor needs to surface hidden assumptions and wishful thinking before they become costly mistakes.",
+      "skills": [
+        "./skills/assumption-challenger"
+      ],
+      "strict": false
+    },
+    {
+      "name": "branch-cleanup",
+      "source": "./",
+      "description": "Clean Git branches after a merged PR or before new work. Prune stale remotes and remove safely merged branches. Use for repo cleanup, branch cleanup, tidy, or prune.",
+      "skills": [
+        "./skills/branch-cleanup"
+      ],
+      "strict": false
+    },
+    {
+      "name": "brutally-honest-code-review",
+      "source": "./",
+      "description": "Performs direct, evidence-first code reviews focused on correctness, maintainability, architecture, tests, security, and wasted complexity. Use when reviewing source code, pull requests, diffs, architecture decisions, implementation plans, test design, refactoring proposals, or software quality.",
+      "skills": [
+        "./skills/brutally-honest-code-review"
+      ],
+      "strict": false
+    },
+    {
+      "name": "clarification-protocol",
+      "source": "./",
+      "description": "Generate targeted clarifying questions (2-3 max) that challenge vague requirements and extract missing context. Use after request-analyzer identifies clarification needs, before routing to specialist agents. Helps cto-orchestrator avoid delegating unclear requirements.",
+      "skills": [
+        "./skills/clarification-protocol"
+      ],
+      "strict": false
+    },
+    {
+      "name": "cost-estimator",
+      "source": "./",
+      "description": "Infrastructure and development cost estimation for technical projects. Use when planning budgets, evaluating build vs buy decisions, or projecting TCO for architecture choices.",
+      "skills": [
+        "./skills/cost-estimator"
+      ],
+      "strict": false
+    },
+    {
+      "name": "delegation-prompt-crafter",
+      "source": "./",
+      "description": "Transform clarified user requests into structured delegation prompts optimized for specialist agents (cto-architect, strategic-cto-mentor, cv-ml-architect). Use after clarification is complete, before routing to specialist agents. Ensures agents receive complete context for effective work.",
+      "skills": [
+        "./skills/delegation-prompt-crafter"
+      ],
+      "strict": false
+    },
+    {
+      "name": "ml-cv-specialist",
+      "source": "./",
+      "description": "Deep expertise in ML/CV model selection, training pipelines, and inference architecture. Use when designing machine learning systems, computer vision pipelines, or AI-powered features.",
+      "skills": [
+        "./skills/ml-cv-specialist"
+      ],
+      "strict": false
+    },
+    {
+      "name": "readme-authoring",
+      "source": "./",
+      "description": "Creates, reviews, and rewrites repository README files in Markdown for users, developers, and contributors. Use when the user asks to write, improve, audit, or rewrite a README, add getting-started/getting-the-code docs, document prerequisites or local dev setup, or prepare a repo landing page for GitHub or Azure Repos.",
+      "skills": [
+        "./skills/readme-authoring"
+      ],
+      "strict": false
+    },
+    {
+      "name": "request-analyzer",
+      "source": "./",
+      "description": "Analyze incoming user requests to detect intent, request type (design/validate/debug/document), complexity level, and identify vague requirements or buzzwords that need clarification. Use when cto-orchestrator receives new requests that need classification before routing to specialist agents.",
+      "skills": [
+        "./skills/request-analyzer"
+      ],
+      "strict": false
+    },
+    {
+      "name": "roadmap-generator",
+      "source": "./",
+      "description": "Generate phased implementation roadmaps with Epic/Story/Task breakdown, effort estimates, and validation checkpoints. Use when cto-architect needs to create actionable technical roadmaps from architecture designs.",
+      "skills": [
+        "./skills/roadmap-generator"
+      ],
+      "strict": false
+    },
+    {
+      "name": "scalability-advisor",
+      "source": "./",
+      "description": "Guidance for scaling systems from startup to enterprise scale. Use when planning for growth, diagnosing bottlenecks, or designing systems that need to handle 10x-1000x current load.",
+      "skills": [
+        "./skills/scalability-advisor"
+      ],
+      "strict": false
+    },
+    {
+      "name": "skills-transfer",
+      "source": "./",
+      "description": "Guides intake of Agent Skills from Git repos, skills.sh, and pkuppens/pkuppens into IDE paths or this library. Covers project vs global install, derivative skills, and catalog maintenance. Use when installing, adapting, or contributing skills.",
+      "skills": [
+        "./skills/skills-transfer"
+      ],
+      "strict": false
+    },
+    {
+      "name": "tech-stack-recommender",
+      "source": "./",
+      "description": "Recommend technology stacks based on project requirements, team expertise, and constraints. Use when selecting frameworks, languages, databases, and infrastructure for new projects.",
+      "skills": [
+        "./skills/tech-stack-recommender"
+      ],
+      "strict": false
+    },
+    {
+      "name": "terminal",
+      "source": "./",
+      "description": "Routes terminal work to the correct shell sub-skill for live execution and for authoring shell script files (.bat, .cmd, .ps1, .sh). Enforces copy-paste-safe command blocks across OS and terminal types. Detects context from project docs and runtime probes. Use when running terminal commands, writing or editing shell scripts, preparing CI snippets, working with Windows CMD, PowerShell, bash, WSL2, multiline commands, pipes, redirects, admin elevation, PATH issues, or copy-paste command blocks.",
+      "skills": [
+        "./skills/terminal"
+      ],
+      "strict": false
+    },
+    {
+      "name": "validation-report-generator",
+      "source": "./",
+      "description": "Generate structured 8-section validation reports with verdict (GOOD/BAD/NEEDS MAJOR WORK), strengths, critical flaws, blindspots, and concrete path forward. Use after strategic-cto-mentor has completed validation analysis and needs to produce final deliverable.",
+      "skills": [
+        "./skills/validation-report-generator"
+      ],
+      "strict": false
+    }
+  ]
+}
