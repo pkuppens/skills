@@ -14,6 +14,7 @@ Discoverable index of skills in this library. Keep aligned with folders under `s
 | Skill | Path | Purpose |
 |-------|------|---------|
 | branch-cleanup | [branch-cleanup/SKILL.md](branch-cleanup/SKILL.md) | Fetch/prune, fast-forward, and delete merged local+remote git branches |
+| dependabot | [dependabot/SKILL.md](dependabot/SKILL.md) | Triage open Dependabot PRs: classify semver severity, verify CI, post formal reviews for CI-verified patch/minor bumps |
 
 ## Language and framework skills
 
