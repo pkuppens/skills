@@ -1,7 +1,7 @@
 ---
 name: dependabot
-description: Triage open Dependabot pull requests — identify which open PRs are actually bot-authored, classify each version bump as patch/minor/major from the diff (not just the title), verify CI is green, and post a formal GitHub review (not a plain comment) approving CI-verified patch/minor bumps. Use when the user wants to review, triage, clear out, or work through Dependabot PRs, dependency-update PRs, or version-bump PRs.
-compatibility: Requires the gh CLI authenticated with read and pull-request-review access to the target repository.
+description: Triage open Dependabot pull requests — identify which open PRs are actually bot-authored, classify each version bump as patch/minor/major from the diff (not just the title), verify CI is green, post a formal GitHub review (not a plain comment) approving CI-verified patch/minor bumps, and squash-merge those approvals. Use when the user wants to review, triage, clear out, or work through Dependabot PRs, dependency-update PRs, or version-bump PRs.
+compatibility: Requires the gh CLI authenticated with read, pull-request-review, and merge access to the target repository.
 allowed-tools: Bash(gh pr list*) Bash(gh pr view*) Bash(gh pr diff*) Bash(gh pr checks*) Bash(gh run list*) Bash(gh run view*) Bash(gh repo view*)
 ---
 
@@ -9,9 +9,10 @@ allowed-tools: Bash(gh pr list*) Bash(gh pr view*) Bash(gh pr diff*) Bash(gh pr 
 
 Reviews open Dependabot PRs and posts a **formal GitHub review** for each —
 `gh pr review`, which counts as a review contribution — never a bare `gh pr
-comment`. This skill only ever identifies and comments: never edit source,
-test, or config files to chase a green build — investigate and report the
-finding instead (Step 4).
+comment`. CI-verified patch/minor approvals are then squash-merged. This
+skill only ever identifies, reviews, and merges: never edit source, test, or
+config files to chase a green build — investigate and report the finding
+instead (Step 4).
 
 If invoked with a repo (`owner/name`) or a PR number, use it as the target.
 Otherwise default to the current directory's repo (`gh repo view --json
@@ -86,7 +87,7 @@ Never edit files to fix it — only find out why, for the comment:
 
 | Severity | CI | Verdict |
 |---|---|---|
-| patch or minor | green | **Approve** (Template A) |
+| patch or minor | green | **Approve + squash-merge** (Template A) |
 | major | any | **Comment**, hold for human (Template B) — a major bump can be breaking even with green CI |
 | unclassifiable | any | **Comment**, hold for human (Template B) |
 | patch/minor/major | red or none | **Comment** with the investigation finding (Template C) |
@@ -95,14 +96,15 @@ Templates: [references/review-templates.md](references/review-templates.md).
 
 ### 6. Show the plan, then confirm before writing anything
 
-Before any `gh pr review` call, print a table of every PR in scope with its
-package(s), severity, CI status, and proposed verdict. `gh pr review` is
-visible on GitHub and counts as a review contribution — get the user's
-go-ahead on the plan before posting any of them, exactly as you would before
-any other action that's visible to others. Only skip this pause if the
-invoking context already explicitly authorized an unattended run.
+Before any `gh pr review` or `gh pr merge` call, print a table of every PR in
+scope with its package(s), severity, CI status, and proposed verdict —
+including that Template A PRs will be squash-merged, not just approved.
+`gh pr review` and `gh pr merge` are both visible on GitHub — get the user's
+go-ahead on the plan before posting or merging any of them, exactly as you
+would before any other action that's visible to others. Only skip this pause
+if the invoking context already explicitly authorized an unattended run.
 
-### 7. Post the reviews
+### 7. Post the reviews, merge the trivial ones
 
 ```bash
 gh pr review <number> --repo <repo> --approve --body "..."   # Template A
@@ -112,14 +114,28 @@ gh pr review <number> --repo <repo> --comment  --body "..."  # Template B/C
 Never `--request-changes` — the point of Template B/C is to flag for a
 human decision, not block the PR.
 
-**Done when:** every Dependabot PR in scope has either a posted review or an
-explicit "skipped: `<reason>`" line in the final report — none silently
-dropped.
+For every PR approved under Template A (patch/minor, CI green), immediately
+follow the approval with a squash-merge:
+
+```bash
+gh pr merge <number> --repo <repo> --squash --delete-branch
+```
+
+Check `mergeable`/`mergeStateStatus` first (`gh pr view <number> --json
+mergeable,mergeStateStatus`) — if it's not `MERGEABLE`/`CLEAN` (conflicts,
+required reviews outstanding, branch protection blocking), skip the merge,
+say why, and leave the approval standing for a human to merge manually.
+Template B/C PRs are never merged, regardless of mergeability.
+
+**Done when:** every Dependabot PR in scope has either a posted review (and,
+for Template A, a merge attempt) or an explicit "skipped: `<reason>`" line in
+the final report — none silently dropped.
 
 ### 8. Report
 
-Summarize: how many approved, how many held for human judgement (and why),
-how many needed CI investigation (and the finding), linking each PR.
+Summarize: how many approved and merged, how many approved but left unmerged
+(and why), how many held for human judgement (and why), how many needed CI
+investigation (and the finding), linking each PR.
 
 ## Notes
 
