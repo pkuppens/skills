@@ -1,27 +1,39 @@
 #!/bin/bash
 # cleanup-branches.sh
 #
-# Tidies a repo's branches:
-#   1. git fetch --all --prune         (drop remote-tracking refs for deleted branches)
-#   2. Fast-forward local branches from their upstreams (never touches the working tree)
-#   3. Delete local + remote branches fully merged into the main branch
-#   4. Report anything it can't safely resolve (permissions, diverged branches,
-#      protected branches) instead of forcing past it
+# Tidies a repo's branches, in this order:
+#   0. Preflight - record current branch, working-tree changes, other worktrees
+#   1. Fetch     - git fetch --all --prune (the only network step; drops
+#                  remote-tracking refs for branches deleted upstream)
+#   2. Refresh   - fast-forward every local branch, main included, from its
+#                  upstream - without checking anything out
+#   3. Verify    - classify every branch by *content*: merged (ancestor),
+#                  squash-merged (its changes are already in main), or
+#                  unmerged (kept). Local branches with uncommitted changes or
+#                  checked out in another worktree are never deleted.
+#   4. Switch    - check out the freshly fast-forwarded main (skipped when the
+#                  working tree has changes, or with --stay)
+#   5. Delete    - verified-merged local branches, then remote branches
+#   6. Report    - actions taken (with restore commands), unresolved items,
+#                  final state
 #
 # Usage:
 #   ./cleanup-branches.sh              # Dry-run (show what would happen)
 #   ./cleanup-branches.sh --execute    # Perform the cleanup
 #   ./cleanup-branches.sh --local-only # Skip remote branch deletion
+#   ./cleanup-branches.sh --stay       # Don't switch to main at the end
 #   ./cleanup-branches.sh --help
 #
-# Requirements: git; gh CLI recommended (fallback path for remote deletion
-# when a plain `git push --delete` is rejected for auth reasons).
+# Requirements: git (2.38+ for the fast squash-merge check; older versions
+# fall back to a patch-id check); gh CLI recommended (fallback path for
+# remote deletion when a plain `git push --delete` is rejected for auth).
 # Works from Git Bash on Windows, and bash/zsh elsewhere.
 
 set -u
 
 DRY_RUN=true
 CLEAN_REMOTE=true
+SWITCH_TO_MAIN=true
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -38,8 +50,10 @@ show_help() {
   cat << EOF
 Branch Cleanup Script
 
-Fetches/prunes, fast-forwards local branches from their upstreams, then
-deletes local and remote branches fully merged into the main branch.
+Fetches/prunes, fast-forwards local branches (main included), verifies each
+branch's content against main, switches to main, then deletes local and
+remote branches whose content is fully in main. Reports actions and final
+state.
 
 Protected branches (never deleted): main, master, develop, development,
 staging, production, release/*, hotfix/*
@@ -48,6 +62,7 @@ Usage:
   $0                  Dry-run (default) - report only, no changes
   $0 --execute        Perform the cleanup
   $0 --local-only     Skip remote branch deletion
+  $0 --stay           Don't switch to main at the end
   $0 --help           Show this help
 EOF
   exit 0
@@ -57,6 +72,7 @@ for arg in "$@"; do
   case $arg in
     --execute) DRY_RUN=false ;;
     --local-only) CLEAN_REMOTE=false ;;
+    --stay) SWITCH_TO_MAIN=false ;;
     --help|-h) show_help ;;
     *) print_error "Unknown argument: $arg"; exit 1 ;;
   esac
@@ -64,12 +80,53 @@ done
 
 git rev-parse --git-dir >/dev/null 2>&1 || { print_error "Not in a git repository"; exit 1; }
 
-UNRESOLVED=()
+ACTIONS=()     # what was (or would be) changed, with restore hints
+UNRESOLVED=()  # things the script refused to force
+KEPT=()        # branches intentionally left alone, with reason
+
+# "${arr[@]}" on an empty array trips `set -u` in bash < 4.4 (macOS)
+each() { eval "printf '%s\n' \${$1[@]+\"\${$1[@]}\"}"; }
 
 if [ "$DRY_RUN" = true ]; then
-  print_warning "DRY-RUN MODE - no changes will be made (use --execute to apply)"
+  print_warning "DRY-RUN MODE - no branch changes (use --execute to apply)"
+  print_info "The fetch/prune in step 1 still runs; it only updates remote-tracking refs"
   echo ""
 fi
+
+is_protected_branch() {
+  case "$1" in
+    main|master|develop|development|staging|production) return 0 ;;
+    release/*|hotfix/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+# STEP 0: preflight
+# ---------------------------------------------------------------------------
+print_info "STEP 0: Preflight"
+START_BRANCH=$(git branch --show-current)
+DIRTY=$(git status --porcelain)
+if [ -n "$DIRTY" ]; then
+  print_warning "Working tree on '${START_BRANCH:-detached HEAD}' has uncommitted/unstaged/untracked changes ($(printf '%s\n' "$DIRTY" | wc -l | tr -d ' ') path(s)) - that branch will not be deleted or switched away from"
+else
+  print_success "Working tree on '${START_BRANCH:-detached HEAD}' is clean"
+fi
+
+# Branches checked out in *other* worktrees: git won't delete them, and their
+# uncommitted state is invisible from here, so never touch them.
+TOPLEVEL=$(git rev-parse --show-toplevel)
+OTHER_WORKTREES=""
+wt=""
+while IFS= read -r line; do
+  case "$line" in
+    "worktree "*) wt=${line#worktree } ;;
+    "branch refs/heads/"*)
+      [ "$wt" != "$TOPLEVEL" ] && OTHER_WORKTREES+="${line#branch refs/heads/}"$'\t'"$wt"$'\n' ;;
+  esac
+done < <(git worktree list --porcelain)
+other_worktree_of() { printf '%s' "$OTHER_WORKTREES" | awk -F'\t' -v b="$1" '$1==b {print $2}'; }
+echo ""
 
 # ---------------------------------------------------------------------------
 # STEP 1: fetch --all --prune
@@ -77,18 +134,13 @@ fi
 print_info "STEP 1: git fetch --all --prune"
 if ! git fetch --all --prune 2>&1 | sed 's/^/  /'; then
   print_warning "fetch --all --prune reported errors (see above)"
-  UNRESOLVED+=("git fetch --all --prune failed or was incomplete")
+  UNRESOLVED+=("git fetch --all --prune failed or was incomplete - results below may be stale")
 fi
 echo ""
 
-# Determine main branch
-if git show-ref --verify --quiet refs/heads/main; then
+if git show-ref --verify --quiet refs/heads/main || git show-ref --verify --quiet refs/remotes/origin/main; then
   MAIN_BRANCH="main"
-elif git show-ref --verify --quiet refs/heads/master; then
-  MAIN_BRANCH="master"
-elif git show-ref --verify --quiet refs/remotes/origin/main; then
-  MAIN_BRANCH="main"
-elif git show-ref --verify --quiet refs/remotes/origin/master; then
+elif git show-ref --verify --quiet refs/heads/master || git show-ref --verify --quiet refs/remotes/origin/master; then
   MAIN_BRANCH="master"
 else
   print_error "Could not find a main or master branch"
@@ -99,193 +151,316 @@ if git show-ref --verify --quiet "refs/remotes/origin/$MAIN_BRANCH"; then
 else
   MAIN_REF="$MAIN_BRANCH"
 fi
-print_info "Main branch: $MAIN_BRANCH (comparing against $MAIN_REF)"
+MAIN_TREE=$(git rev-parse "$MAIN_REF^{tree}")
+print_info "Main branch: $MAIN_BRANCH (verifying content against $MAIN_REF)"
 echo ""
 
-is_protected_branch() {
-  case "$1" in
-    main|master|develop|development|staging|production) return 0 ;;
-    release/*|hotfix/*) return 0 ;;
-    *) return 1 ;;
-  esac
-}
-
-CURRENT_BRANCH=$(git branch --show-current)
-
 # ---------------------------------------------------------------------------
-# STEP 2: fast-forward local branches from their upstream
+# STEP 2: fast-forward local branches (main included) from their upstream
 # ---------------------------------------------------------------------------
 print_info "STEP 2: Fast-forwarding local branches from their upstreams..."
 FF_COUNT=0
-while IFS= read -r branch; do
-  [ -z "$branch" ] && continue
-  upstream=$(git for-each-ref --format='%(upstream:short)' "refs/heads/$branch")
+while IFS=' ' read -r branch upstream track; do
   [ -z "$upstream" ] && continue
+  [ "$track" = "[gone]" ] && continue
 
-  remote=${upstream%%/*}
-  remote_branch=${upstream#*/}
+  counts=$(git rev-list --left-right --count "refs/heads/$branch...$upstream" 2>/dev/null) || continue
+  ahead=${counts%%[[:space:]]*}
+  behind=${counts##*[[:space:]]}
+  [ "$behind" = "0" ] && continue
 
-  if [ "$branch" = "$CURRENT_BRANCH" ]; then
-    # Never touch the checked-out branch's worktree; merge --ff-only is safe here.
-    if [ "$DRY_RUN" = false ]; then
-      if git merge --ff-only "$upstream" >/dev/null 2>&1; then
-        FF_COUNT=$((FF_COUNT + 1))
-        print_success "Fast-forwarded (checked out): $branch -> $upstream"
-      fi
-    else
-      ahead_behind=$(git rev-list --left-right --count "$branch...$upstream" 2>/dev/null || echo "0 0")
-      behind=$(echo "$ahead_behind" | awk '{print $2}')
-      [ "$behind" != "0" ] && print_warning "Would fast-forward (checked out): $branch -> $upstream ($behind behind)"
-    fi
+  if [ "$ahead" != "0" ]; then
+    print_warning "Diverged, not fast-forwarded: $branch ($ahead ahead, $behind behind ${upstream#refs/remotes/})"
+    UNRESOLVED+=("'$branch' has diverged from ${upstream#refs/remotes/} ($ahead ahead, $behind behind) - rebase or merge it yourself")
     continue
   fi
 
-  if [ "$DRY_RUN" = false ]; then
-    if git fetch "$remote" "$remote_branch:$branch" 2>/dev/null; then
-      FF_COUNT=$((FF_COUNT + 1))
-      print_success "Fast-forwarded: $branch -> $upstream"
-    else
-      # Non-fast-forward (local commits diverged from upstream) - leave it alone.
-      :
-    fi
-  else
-    ahead_behind=$(git rev-list --left-right --count "$branch...$upstream" 2>/dev/null || echo "0 0")
-    behind=$(echo "$ahead_behind" | awk '{print $2}')
-    [ "$behind" != "0" ] && print_warning "Would fast-forward: $branch -> $upstream ($behind behind)"
+  wt_path=$(other_worktree_of "$branch")
+  if [ -n "$wt_path" ]; then
+    print_warning "Not fast-forwarded: $branch is checked out in worktree $wt_path"
+    UNRESOLVED+=("'$branch' is $behind behind but checked out in worktree $wt_path - pull it there")
+    continue
   fi
-done < <(git for-each-ref --format='%(refname:short)' refs/heads/)
 
+  old=$(git rev-parse --short "refs/heads/$branch")
+  new=$(git rev-parse --short "$upstream")
+  if [ "$DRY_RUN" = true ]; then
+    print_warning "Would fast-forward: $branch $old..$new ($behind behind)"
+    ACTIONS+=("would fast-forward $branch $old..$new")
+    continue
+  fi
+
+  if [ "$branch" = "$START_BRANCH" ]; then
+    # Checked out here: merge --ff-only updates the worktree, refuses anything else.
+    git merge --ff-only --quiet "$upstream" >/dev/null 2>&1
+  else
+    # Local fetch into the branch ref: fast-forward only, no checkout needed.
+    git fetch --quiet . "$upstream:refs/heads/$branch" 2>/dev/null
+  fi
+  if [ $? -eq 0 ]; then
+    FF_COUNT=$((FF_COUNT + 1))
+    print_success "Fast-forwarded: $branch $old..$new"
+    ACTIONS+=("fast-forwarded $branch $old..$new")
+  else
+    print_warning "Fast-forward failed: $branch"
+    UNRESOLVED+=("fast-forward of '$branch' failed (for the checked-out branch: local changes likely overlap incoming ones)")
+  fi
+done < <(git for-each-ref --format='%(refname:short) %(upstream) %(upstream:track)' refs/heads/)
 [ "$DRY_RUN" = false ] && print_success "Fast-forwarded $FF_COUNT branch(es)"
 echo ""
 
 # ---------------------------------------------------------------------------
-# STEP 3a: delete local branches merged into main
+# STEP 3: verify each branch's content against main
 #
-# Two signals, since squash-merge workflows (e.g. `gh pr merge --squash`)
-# leave no ancestor relationship for `git branch --merged` to find:
-#   - true ancestor-merged (git branch --merged)
-#   - upstream deleted ("gone") - the branch's remote counterpart no longer
-#     exists, almost always because it was merged and auto-deleted
+# content_status <ref> prints one of:
+#   merged         - ref is an ancestor of main
+#   squash-merged  - merging ref into main would change nothing: all of its
+#                    changes are already in main (squash/rebase merges)
+#   unmerged:<n>   - ref carries changes main doesn't have (<n> commits ahead)
 # ---------------------------------------------------------------------------
-print_info "STEP 3a: Local branches merged into $MAIN_BRANCH..."
-LOCAL_COUNT=0
-LOCAL_DELETED=0
-MERGED_LOCAL=$(git branch --merged "$MAIN_REF" | grep -v '^\*' | sed 's/^[ *]*//' || true)
-GONE_LOCAL=$(git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads/ | grep '\[gone\]' | awk '{print $1}' || true)
-CANDIDATES=$(printf '%s\n%s\n' "$MERGED_LOCAL" "$GONE_LOCAL" | sed '/^$/d' | sort -u || true)
+if git merge-tree --write-tree "$MAIN_REF" "$MAIN_REF" >/dev/null 2>&1; then
+  HAS_MERGE_TREE=true
+else
+  HAS_MERGE_TREE=false
+fi
 
-# If the checked-out branch is itself about to be deleted, git refuses to
-# delete it while checked out. Switch to main first so cleanup can finish
-# and the user ends up on main rather than a dangling deleted branch.
-if [ -n "$CURRENT_BRANCH" ] && printf '%s\n' "$CANDIDATES" | grep -qx "$CURRENT_BRANCH" && ! is_protected_branch "$CURRENT_BRANCH"; then
-  if [ "$DRY_RUN" = false ]; then
-    if git checkout "$MAIN_BRANCH" >/dev/null 2>&1; then
-      print_success "Switched to $MAIN_BRANCH (was on '$CURRENT_BRANCH', which is about to be deleted)"
-      CURRENT_BRANCH="$MAIN_BRANCH"
-    else
-      print_warning "Could not switch off '$CURRENT_BRANCH' to $MAIN_BRANCH; its deletion will likely fail"
-      UNRESOLVED+=("could not switch off current branch '$CURRENT_BRANCH' before deleting it")
+content_status() {
+  local ref=$1 out base synth
+  if git merge-base --is-ancestor "$ref" "$MAIN_REF" 2>/dev/null; then
+    echo merged; return
+  fi
+  if [ "$HAS_MERGE_TREE" = true ]; then
+    # Clean merge whose result is main's own tree => ref adds nothing.
+    if out=$(git merge-tree --write-tree "$MAIN_REF" "$ref" 2>/dev/null) && [ "${out%%$'\n'*}" = "$MAIN_TREE" ]; then
+      echo squash-merged; return
     fi
   else
-    print_warning "Would switch to $MAIN_BRANCH (currently on '$CURRENT_BRANCH', which would be deleted)"
-  fi
-fi
-
-if [ -n "$CANDIDATES" ]; then
-  while IFS= read -r branch; do
-    [ -z "$branch" ] && continue
-    is_protected_branch "$branch" && { print_info "Skipping protected branch: $branch"; continue; }
-    [ "$branch" = "$MAIN_BRANCH" ] && continue
-
-    reason="merged"
-    printf '%s\n' "$GONE_LOCAL" | grep -qx "$branch" && ! printf '%s\n' "$MERGED_LOCAL" | grep -qx "$branch" && reason="upstream gone (likely squash-merged)"
-
-    LOCAL_COUNT=$((LOCAL_COUNT + 1))
-    if [ "$DRY_RUN" = false ]; then
-      if git branch -d "$branch" 2>/dev/null; then
-        LOCAL_DELETED=$((LOCAL_DELETED + 1))
-        print_success "Deleted local branch: $branch ($reason)"
-      else
-        print_warning "Could not delete local branch: $branch ($reason)"
-        if [ "$reason" = "merged" ]; then
-          UNRESOLVED+=("local branch '$branch' could not be deleted (checked out elsewhere, or git refused for another reason)")
-        else
-          UNRESOLVED+=("local branch '$branch' has a deleted upstream but git can't verify it's merged (no shared ancestor - likely squash-merged); re-run with 'git branch -D $branch' after confirming its PR merged")
-        fi
-      fi
-    else
-      print_warning "Would delete local branch: $branch ($reason)"
+    # git < 2.38: squash ref into one synthetic commit, ask if main has an
+    # equivalent patch.
+    if base=$(git merge-base "$MAIN_REF" "$ref" 2>/dev/null) \
+      && synth=$(git commit-tree "$ref^{tree}" -p "$base" -m squash-check 2>/dev/null) \
+      && [[ $(git cherry "$MAIN_REF" "$synth" 2>/dev/null) == -* ]]; then
+      echo squash-merged; return
     fi
-  done <<< "$CANDIDATES"
-fi
+  fi
+  echo "unmerged:$(git rev-list --count "$MAIN_REF..$ref")"
+}
 
-if [ $LOCAL_COUNT -eq 0 ]; then
-  print_success "No local merged branches to clean"
-elif [ "$DRY_RUN" = false ]; then
-  print_success "Deleted $LOCAL_DELETED of $LOCAL_COUNT local branches"
-fi
+stash_count_for() {
+  git stash list --format='%gs' 2>/dev/null \
+    | awk -v b="$1" 'index($0, "WIP on " b ":") == 1 || index($0, "On " b ":") == 1' | wc -l | tr -d ' '
+}
+
+print_info "STEP 3a: Verifying local branches against $MAIN_REF..."
+DEL_LOCAL=()   # "branch<TAB>reason"
+while IFS=' ' read -r branch track; do
+  [ -z "$branch" ] && continue
+  if is_protected_branch "$branch"; then
+    print_info "Protected, kept: $branch"
+    continue
+  fi
+
+  status=$(content_status "refs/heads/$branch")
+  gone=""
+  [ "$track" = "[gone]" ] && gone=", upstream deleted"
+
+  case "$status" in
+    unmerged:*)
+      n=${status#unmerged:}
+      print_info "Kept: $branch - $n commit(s) with changes not in $MAIN_REF$gone"
+      KEPT+=("$branch: $n commit(s) with changes not in $MAIN_REF$gone")
+      [ -n "$gone" ] && UNRESOLVED+=("'$branch' lost its upstream but has changes not in $MAIN_REF - review it (git log -p $MAIN_REF..$branch) before deleting by hand")
+      continue ;;
+  esac
+
+  wt_path=$(other_worktree_of "$branch")
+  if [ -n "$wt_path" ]; then
+    print_warning "Kept: $branch ($status) - checked out in worktree $wt_path"
+    UNRESOLVED+=("'$branch' is $status but checked out in worktree $wt_path - remove that worktree first")
+    continue
+  fi
+  if [ "$branch" = "$START_BRANCH" ] && [ -n "$DIRTY" ]; then
+    print_warning "Kept: $branch ($status) - current branch has uncommitted/unstaged/untracked changes"
+    UNRESOLVED+=("'$branch' is $status but has uncommitted/unstaged/untracked changes - commit, stash or discard them, then re-run")
+    continue
+  fi
+
+  print_warning "Delete candidate: $branch ($status$gone)"
+  DEL_LOCAL+=("$branch"$'\t'"$status$gone")
+done < <(git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads/)
 echo ""
 
-# ---------------------------------------------------------------------------
-# STEP 3b: delete remote branches merged into main
-# ---------------------------------------------------------------------------
-REMOTE_COUNT=0
-REMOTE_DELETED=0
-if [ "$CLEAN_REMOTE" = true ]; then
-  print_info "STEP 3b: Remote branches merged into $MAIN_REF..."
-
-  MERGED_REMOTE=$(git branch -r --merged "$MAIN_REF" 2>/dev/null | grep 'origin/' | grep -v "origin/$MAIN_BRANCH$" | grep -v 'origin/HEAD' | sed 's/^[ ]*//' | sed 's|origin/||' || true)
-
-  if [ -n "$MERGED_REMOTE" ]; then
-    while IFS= read -r branch; do
-      [ -z "$branch" ] && continue
-      is_protected_branch "$branch" && { print_info "Skipping protected remote branch: $branch"; continue; }
-
-      REMOTE_COUNT=$((REMOTE_COUNT + 1))
-      if [ "$DRY_RUN" = false ]; then
-        print_info "Deleting remote branch: origin/$branch"
-        if git push origin --delete "$branch" 2>/dev/null; then
-          REMOTE_DELETED=$((REMOTE_DELETED + 1))
-          print_success "Deleted: origin/$branch"
-        elif command -v gh >/dev/null 2>&1 && REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null) && [ -n "$REPO" ] && gh api --method DELETE "/repos/$REPO/git/refs/heads/$branch" >/dev/null 2>&1; then
-          REMOTE_DELETED=$((REMOTE_DELETED + 1))
-          print_success "Deleted: origin/$branch (via gh CLI)"
-        else
-          print_warning "Could not delete remote branch: origin/$branch (likely missing permission)"
-          UNRESOLVED+=("remote branch 'origin/$branch' could not be deleted - check push/admin permissions")
-        fi
-      else
-        print_warning "Would delete remote branch: origin/$branch"
-      fi
-    done <<< "$MERGED_REMOTE"
-  fi
-
-  if [ $REMOTE_COUNT -eq 0 ]; then
-    print_success "No remote merged branches to clean"
-  elif [ "$DRY_RUN" = false ]; then
-    print_success "Deleted $REMOTE_DELETED of $REMOTE_COUNT remote branches"
-  fi
+DEL_REMOTE=()  # "branch<TAB>reason"
+if [ "$CLEAN_REMOTE" = true ] && git remote | grep -qx origin; then
+  print_info "STEP 3b: Verifying origin branches against $MAIN_REF..."
+  while IFS= read -r ref; do
+    branch=${ref#origin/}
+    [ "$branch" = "HEAD" ] || [ "$branch" = "$ref" ] || [ "$branch" = "$MAIN_BRANCH" ] && continue
+    if is_protected_branch "$branch"; then
+      print_info "Protected, kept: origin/$branch"
+      continue
+    fi
+    status=$(content_status "refs/remotes/$ref")
+    case "$status" in
+      unmerged:*) continue ;;
+    esac
+    print_warning "Delete candidate: origin/$branch ($status)"
+    DEL_REMOTE+=("$branch"$'\t'"$status")
+  done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin/)
   echo ""
 fi
 
 # ---------------------------------------------------------------------------
-# SUMMARY
+# STEP 4: switch to the (now fresh) main branch
+# ---------------------------------------------------------------------------
+print_info "STEP 4: Switch to $MAIN_BRANCH"
+start_is_candidate=false
+each DEL_LOCAL | cut -f1 | grep -qxF "${START_BRANCH:-<detached>}" && start_is_candidate=true
+
+if [ "$START_BRANCH" = "$MAIN_BRANCH" ]; then
+  print_success "Already on $MAIN_BRANCH"
+elif [ "$SWITCH_TO_MAIN" = false ] && [ "$start_is_candidate" = false ]; then
+  print_info "Staying on '${START_BRANCH:-detached HEAD}' (--stay)"
+elif [ -n "$DIRTY" ]; then
+  print_warning "Staying on '${START_BRANCH:-detached HEAD}': working tree has changes"
+elif [ "$DRY_RUN" = true ]; then
+  print_warning "Would switch: ${START_BRANCH:-detached HEAD} -> $MAIN_BRANCH"
+  ACTIONS+=("would switch ${START_BRANCH:-detached HEAD} -> $MAIN_BRANCH")
+elif git switch --quiet "$MAIN_BRANCH" 2>/dev/null; then
+  print_success "Switched: ${START_BRANCH:-detached HEAD} -> $MAIN_BRANCH"
+  ACTIONS+=("switched ${START_BRANCH:-detached HEAD} -> $MAIN_BRANCH")
+else
+  print_warning "Could not switch to $MAIN_BRANCH"
+  UNRESOLVED+=("could not switch from '${START_BRANCH:-detached HEAD}' to $MAIN_BRANCH")
+  if [ "$start_is_candidate" = true ]; then
+    # git refuses to delete the checked-out branch - drop it from the list
+    remaining=()
+    while IFS= read -r entry; do
+      [ -n "$entry" ] && [ "${entry%%$'\t'*}" != "$START_BRANCH" ] && remaining+=("$entry")
+    done < <(each DEL_LOCAL)
+    DEL_LOCAL=(${remaining[@]+"${remaining[@]}"})
+    UNRESOLVED+=("'$START_BRANCH' is merged but still checked out, so it was not deleted")
+  fi
+fi
+echo ""
+
+# ---------------------------------------------------------------------------
+# STEP 5: delete verified-merged branches
+#
+# `git branch -d` only knows about ancestor merges into HEAD/upstream, so it
+# refuses squash-merged branches. Step 3 already verified every candidate's
+# content is in main, so -D is used - with the old tip logged for restore.
+# ---------------------------------------------------------------------------
+print_info "STEP 5a: Deleting local branches..."
+LOCAL_DELETED=0
+while IFS=$'\t' read -r branch reason; do
+  [ -z "$branch" ] && continue
+  sha=$(git rev-parse --short "refs/heads/$branch")
+  stashes=$(stash_count_for "$branch")
+  [ "$stashes" != "0" ] && KEPT+=("stash: $stashes entr(y/ies) made on '$branch' remain in 'git stash list' after its deletion")
+  if [ "$DRY_RUN" = true ]; then
+    print_warning "Would delete local: $branch @ $sha ($reason)"
+    ACTIONS+=("would delete local $branch @ $sha ($reason)")
+  elif git branch -D "$branch" >/dev/null 2>&1; then
+    LOCAL_DELETED=$((LOCAL_DELETED + 1))
+    print_success "Deleted local: $branch @ $sha ($reason)"
+    ACTIONS+=("deleted local $branch @ $sha ($reason) - restore: git branch $branch $sha")
+  else
+    print_warning "Could not delete local: $branch"
+    UNRESOLVED+=("local branch '$branch' could not be deleted")
+  fi
+done < <(each DEL_LOCAL)
+[ ${#DEL_LOCAL[@]} -eq 0 ] && print_success "No local branches to delete"
+echo ""
+
+REMOTE_DELETED=0
+if [ "$CLEAN_REMOTE" = true ]; then
+  print_info "STEP 5b: Deleting origin branches..."
+  REPO=""
+  while IFS=$'\t' read -r branch reason; do
+    [ -z "$branch" ] && continue
+    sha=$(git rev-parse --short "refs/remotes/origin/$branch")
+    if [ "$DRY_RUN" = true ]; then
+      print_warning "Would delete remote: origin/$branch @ $sha ($reason)"
+      ACTIONS+=("would delete remote origin/$branch @ $sha ($reason)")
+      continue
+    fi
+    how=""
+    if git push --quiet origin --delete "$branch" 2>/dev/null; then
+      how="git push"
+    elif command -v gh >/dev/null 2>&1 \
+      && { [ -n "$REPO" ] || REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null); } \
+      && [ -n "$REPO" ] && gh api --method DELETE "/repos/$REPO/git/refs/heads/$branch" >/dev/null 2>&1; then
+      how="gh api"
+      git update-ref -d "refs/remotes/origin/$branch" 2>/dev/null
+    fi
+    if [ -n "$how" ]; then
+      REMOTE_DELETED=$((REMOTE_DELETED + 1))
+      print_success "Deleted remote: origin/$branch @ $sha ($reason, via $how)"
+      ACTIONS+=("deleted remote origin/$branch @ $sha ($reason) - restore: git push origin $sha:refs/heads/$branch")
+    else
+      print_warning "Could not delete remote: origin/$branch (likely missing permission)"
+      UNRESOLVED+=("remote branch 'origin/$branch' could not be deleted - check push/admin permissions")
+    fi
+  done < <(each DEL_REMOTE)
+  [ ${#DEL_REMOTE[@]} -eq 0 ] && print_success "No remote branches to delete"
+  echo ""
+fi
+
+# ---------------------------------------------------------------------------
+# STEP 6: report
 # ---------------------------------------------------------------------------
 echo "========================================"
-print_success "CLEANUP SUMMARY"
-echo "========================================"
 if [ "$DRY_RUN" = true ]; then
-  echo "Would delete: $LOCAL_COUNT local, $REMOTE_COUNT remote branch(es)"
-  print_info "Run with --execute to perform cleanup: $0 --execute"
+  print_success "CLEANUP PLAN (dry-run)"
 else
-  echo "Deleted: $LOCAL_DELETED of $LOCAL_COUNT local, $REMOTE_DELETED of $REMOTE_COUNT remote branch(es)"
+  print_success "CLEANUP REPORT"
+fi
+echo "========================================"
+
+echo ""
+echo "Actions:"
+if [ ${#ACTIONS[@]} -eq 0 ]; then
+  echo "  (none)"
+else
+  each ACTIONS | sed 's/^/  - /'
+fi
+
+if [ ${#KEPT[@]} -gt 0 ]; then
+  echo ""
+  echo "Kept / notes:"
+  each KEPT | sed 's/^/  - /'
 fi
 
 if [ ${#UNRESOLVED[@]} -gt 0 ]; then
   echo ""
   print_warning "Unresolved (reported, not force-fixed):"
-  for item in "${UNRESOLVED[@]}"; do
-    echo "  - $item"
-  done
+  each UNRESOLVED | sed 's/^/  - /'
+fi
+
+echo ""
+if [ "$DRY_RUN" = true ]; then
+  echo "Current state (unchanged - dry-run):"
+else
+  echo "Final state:"
+fi
+now=$(git branch --show-current)
+changes=$(git status --porcelain | wc -l | tr -d ' ')
+if [ "$changes" = "0" ]; then
+  echo "  On: ${now:-detached HEAD} (working tree clean)"
+else
+  echo "  On: ${now:-detached HEAD} ($changes changed path(s))"
+fi
+echo "  Local branches:"
+git branch -vv --no-color | sed 's/^/    /'
+if git remote | grep -qx origin; then
+  echo "  Remote branches (origin):"
+  git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -v '^origin$' | grep -v '^origin/HEAD$' | sed 's/^/    /'
+fi
+echo "  Stash entries: $(git stash list | wc -l | tr -d ' ')"
+
+if [ "$DRY_RUN" = true ]; then
+  echo ""
+  print_info "Run with --execute to apply: $0 --execute"
 fi
 echo ""
