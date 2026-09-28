@@ -4,11 +4,9 @@
 name: Validate skills
 
 on:
+  # No path filter on pull_request: branch protection requires the `validate`
+  # check, and a filtered-out PR (e.g. docs-only) would never report it.
   pull_request:
-    paths:
-      - "skills/**"
-      - ".claude-plugin/**"
-      - ".github/workflows/validate-skills.yml"
   push:
     branches: [main]
     paths:
