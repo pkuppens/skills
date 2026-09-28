@@ -36,4 +36,4 @@ Any repo with `skills/<dir>/SKILL.md` layout can be listed and installed:
 npx skills add https://github.com/<owner>/<repo> --list -y
 ```
 
-Pin installs with `@<ref>` on `owner/repo` in **consumer** docs when reproducibility matters; this library’s CI does not pin npm tooling (see ADR 001).
+Pin installs with `#<ref>` on `owner/repo` (e.g. `pkuppens/skills#v1.0.0`; the Skills CLI ignores `@<ref>`) in **consumer** docs when reproducibility matters — see the [README § Pinning a version](../../../README.md#pinning-a-version); this library’s CI does not pin npm tooling (see ADR 001).

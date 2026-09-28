@@ -20,7 +20,7 @@ _Why:_ `docs/curated-skill-selection.md` / `docs/bundles/` cross-linking was alr
 - `README.md` — GitHub landing page: usage, IDE setup, Skills CLI install.
 - `CONTEXT.md` — domain glossary only.
 - `docs/decisions/` — ADRs (hard-to-reverse, non-obvious, real-tradeoff decisions only).
-- `docs/curated-skill-selection.md`, `docs/bundles/` — planned, owned by [#7](https://github.com/pkuppens/skills/issues/7).
+- `docs/agents/` — issue tracker, triage labels, and domain-doc rules the engineering skills read.
 - `skills/` — the actual Agent Skills tree (`SKILL_TREE.md` index, per-skill folders). [skills/CLAUDE.md](skills/CLAUDE.md) (agent rules), [skills/COOPERATION.md](skills/COOPERATION.md) (how skills compose), `skills/_meta/` (skill-creation, human-ai-execution).
 
 Defer subdirectory-specific instructions to files within that subdirectory once they exist; this file stays high-level.

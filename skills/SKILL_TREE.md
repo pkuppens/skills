@@ -90,6 +90,6 @@ ml-cv-specialist — independent domain-specific skill
 
 ## Migration
 
-- [issue #13](https://github.com/pkuppens/skills/issues/13): Epic — Migrate all 13 personal skills from local `~/.claude/skills/` to pkuppens/skills (in progress via PR)
+- [issue #13](https://github.com/pkuppens/skills/issues/13): Epic — Migrate all 13 personal skills from local `~/.claude/skills/` to pkuppens/skills (done; landed in #12)
 - `readme-authoring` migrated from `~/.cursor/skills/readme-authoring` (local-only, not yet symlinked to a shared source), extended with explicit getting-the-code / prerequisites / dev-server-vs-deploy guidance and GFM admonition usage inspired by GitHub's `create-readme` skill
 - Additional lifecycle skills migrate from [`pkuppens/pkuppens`](https://github.com/pkuppens/pkuppens) per [issue #90](https://github.com/pkuppens/pkuppens/issues/90). See repository issues for status.

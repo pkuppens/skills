@@ -2,7 +2,7 @@
 
 Canonical **Agent Skills** library for Cursor, Claude, and Codex. The skills span shell and terminal work, README and documentation authoring, architecture and CTO-level strategy, code review, and ML/CV guidance — plus meta tooling for transferring and validating skills. See [What's inside](#whats-inside) for the map and [skills/SKILL_TREE.md](skills/SKILL_TREE.md) for the full index. GitHub profile narrative stays in [`pkuppens/pkuppens`](https://github.com/pkuppens/pkuppens); **this repository is the skills-only home.**
 
-**Quick links:** [skills/SKILL_TREE.md](skills/SKILL_TREE.md) (full index) · [skills/COOPERATION.md](skills/COOPERATION.md) (how skills compose) · [skills/CLAUDE.md](skills/CLAUDE.md) (agent rules) · curated workflow (planned, [#7](https://github.com/pkuppens/skills/issues/7)): `docs/curated-skill-selection.md`
+**Quick links:** [skills/SKILL_TREE.md](skills/SKILL_TREE.md) (full index) · [skills/COOPERATION.md](skills/COOPERATION.md) (how skills compose) · [skills/CLAUDE.md](skills/CLAUDE.md) (agent rules)
 
 ## Quick start: install one skill and use it
 
@@ -163,20 +163,19 @@ Use `npx skills add --help` for current flags. Installs default to **symlinks**;
 2. Confirm files under paths from [IDE expected locations](#ide-expected-locations).
 3. Run `skills-ref validate <path-to-skill-dir>` to mirror CI ([skills-ref](https://www.npmjs.com/package/skills-ref)).
 
-### Git refs on installs (reproducibility)
+## Pinning a version
 
-CLI installs are **Git-based**. Pin **`owner/repo@<ref>`** in consumer project docs when you need a fixed baseline—not npm versions of `skills` or `skills-ref`:
+Every install path clones from Git, so a fixed baseline is a **Git ref**: a release tag such as `v1.0.0` ([releases](https://github.com/pkuppens/skills/releases)), a commit SHA, or a branch. Pin in your project docs or CI when you need reproducible installs. npm versions of `skills` / `skills-ref` don't pin skill content.
 
-| Install style | Example | When to use |
-|---------------|---------|-------------|
-| Floating (default branch) | `pkuppens/skills` | Latest `main` |
-| Pinned to commit / tag / branch | `pkuppens/skills@<ref>` | Team or CI baseline |
+Use **`#<ref>`**, which works for both the Skills CLI and the Claude Code marketplace:
 
-```bash
-npx --yes skills add pkuppens/skills@<git-ref> --list -y
-```
+| Install path | Pinned command | Notes |
+|--------------|----------------|-------|
+| **Skills CLI** | `npx --yes skills add pkuppens/skills#v1.0.0 --skill terminal -y` | Also `https://github.com/pkuppens/skills.git#v1.0.0`. **Not** `pkuppens/skills@v1.0.0`: the CLI ignores `@ref` and installs `main`. |
+| **Claude Code marketplace** | `/plugin marketplace add pkuppens/skills#v1.0.0`, then `/plugin install terminal@pkuppens-skills` | The whole marketplace follows the ref; plugin versions shown are that commit's SHA. `/plugin marketplace update` stays on the pinned ref. |
+| **Symlink / clone** | `git clone --branch v1.0.0 https://github.com/pkuppens/skills.git` | Or `git -C <clone> checkout v1.0.0` in an existing clone; symlinks then serve that version. |
 
-Optional `metadata.version` on a skill does **not** control what the CLI clones—**`@ref` does**.
+Optional `metadata.version` in a skill's frontmatter does **not** control what gets cloned; the ref does.
 
 ## External and vendor skills
 
@@ -214,10 +213,9 @@ pkuppens/skills/
 ├── .claude-plugin/
 │   └── marketplace.json      # Claude Code plugin marketplace (one plugin per skill)
 ├── docs/
-│   ├── decisions/
-│   │   └── 001-skill-validation-and-tooling.md
-│   ├── curated-skill-selection.md   # planned (#7)
-│   └── bundles/                   # planned (#7)
+│   ├── agents/               # issue tracker, triage labels, domain-doc rules for agents
+│   └── decisions/
+│       └── 001-skill-validation-and-tooling.md
 ├── CONTEXT.md                # Domain glossary
 ├── skills/
 │   ├── README.md             # Pointer / conventions (see migration issues)
