@@ -233,11 +233,12 @@ else
   HAS_MERGE_TREE=false
 fi
 
-# Merged GitHub PRs as "headRefName<TAB>headRefOid<TAB>number" lines. Empty
-# without gh/auth/a GitHub remote - then only the git checks above apply.
+# Merged GitHub PRs as "headRefName<TAB>headRefOid<TAB>number<TAB>baseRefName"
+# lines. Empty without gh/auth/a GitHub remote - then only the git checks
+# above apply.
 MERGED_PRS=""
 if command -v gh >/dev/null 2>&1; then
-  MERGED_PRS=$(gh pr list --state merged --limit 1000 --json number,headRefName,headRefOid     --jq '.[] | [.headRefName, .headRefOid, (.number | tostring)] | @tsv' 2>/dev/null) || MERGED_PRS=""
+  MERGED_PRS=$(gh pr list --state merged --limit 1000 --json number,headRefName,headRefOid,baseRefName     --jq '.[] | [.headRefName, .headRefOid, (.number | tostring), .baseRefName] | @tsv' 2>/dev/null) || MERGED_PRS=""
 fi
 
 # changes_id <commit>: patch-id of the lines <commit> adds/removes relative to
@@ -249,17 +250,19 @@ changes_id() {
   git diff -U0 "$base" "$1" | git patch-id --stable | cut -d' ' -f1
 }
 
-# merged_pr_of <ref> <branch-name>: prints the number of a merged PR whose head
-# was <branch-name> and that carried everything on <ref>:
+# merged_pr_of <ref> <branch-name>: prints the number of a PR merged into the
+# main branch whose head was <branch-name> and that carried everything on <ref>:
 #   - the PR head contains <ref>'s tip (every commit went through the PR), or
 #   - the PR was rebased/rewritten before merging, but makes exactly the same
 #     line changes as <ref> (compared via refs/pull/<n>/head).
 # A commit added after the merge fails both checks, so that work is kept.
+# A PR merged into another branch (e.g. a stacked PR whose base was never
+# retargeted to main) doesn't count: its content need not be in main.
 merged_pr_of() {
-  local tip head oid num mine
+  local tip head oid num base mine
   tip=$(git rev-parse "$1" 2>/dev/null) || return
-  while IFS=$'	' read -r head oid num; do
-    [ "$head" = "$2" ] || continue
+  while IFS=$'	' read -r head oid num base; do
+    [ "$head" = "$2" ] && [ "$base" = "$MAIN_BRANCH" ] || continue
     if [ "$oid" = "$tip" ] || git merge-base --is-ancestor "$tip" "$oid" 2>/dev/null; then
       echo "$num"; return
     fi

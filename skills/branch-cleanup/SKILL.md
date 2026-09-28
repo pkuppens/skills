@@ -33,7 +33,7 @@ skill — this skill only touches branches.
    - `squash-merged` — merging it into main would change nothing
      (`git merge-tree --write-tree` result equals main's tree), i.e. all of
      its changes are already in main. Catches squash/rebase merges.
-   - `pr-merged #N` — a merged GitHub PR had this branch as its head, and
+   - `pr-merged #N` — a GitHub PR **merged into main** had this branch as its head, and
      either its head commit contains the branch tip, or (if the PR was
      rebased before merging) it makes exactly the same line changes
      (zero-context patch-id against `refs/pull/N/head`). Catches squash
