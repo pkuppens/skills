@@ -1,6 +1,6 @@
 # Working in `pkuppens/skills`
 
-Repo-wide guidance for agents and contributors. This file owns **cross-cutting process** (how to scope work, verify it, and avoid duplication across issues/docs). Skill-validation-specific policy belongs in `skills/CLAUDE.md` once it migrates ([#5](https://github.com/pkuppens/skills/issues/5)) — that file should link back here for anything not specific to skill validation, rather than restating it.
+Repo-wide guidance for agents and contributors. This file owns **cross-cutting process** (how to scope work, verify it, and avoid duplication across issues/docs). Skill-authoring and validation policy lives in [skills/CLAUDE.md](skills/CLAUDE.md), which links back here for anything cross-cutting rather than restating it.
 
 For domain vocabulary (what terms like "Catalog", "Skills transfer", "Canonical skill" mean), see [CONTEXT.md](CONTEXT.md) — this file is process, not glossary.
 
@@ -21,7 +21,7 @@ _Why:_ `docs/curated-skill-selection.md` / `docs/bundles/` cross-linking was alr
 - `CONTEXT.md` — domain glossary only.
 - `docs/decisions/` — ADRs (hard-to-reverse, non-obvious, real-tradeoff decisions only).
 - `docs/curated-skill-selection.md`, `docs/bundles/` — planned, owned by [#7](https://github.com/pkuppens/skills/issues/7).
-- `skills/` — the actual Agent Skills tree (`SKILL_TREE.md` index, per-skill folders). `skills/CLAUDE.md` and `skills/COOPERATION.md` are planned migration targets ([#5](https://github.com/pkuppens/skills/issues/5)).
+- `skills/` — the actual Agent Skills tree (`SKILL_TREE.md` index, per-skill folders). [skills/CLAUDE.md](skills/CLAUDE.md) (agent rules), [skills/COOPERATION.md](skills/COOPERATION.md) (how skills compose), `skills/_meta/` (skill-creation, human-ai-execution).
 
 Defer subdirectory-specific instructions to files within that subdirectory once they exist; this file stays high-level.
 

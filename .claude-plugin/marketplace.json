@@ -133,6 +133,15 @@
       "strict": false
     },
     {
+      "name": "skill-creation",
+      "source": "./",
+      "description": "Authors AI agent skills for Cursor, Claude Code, and similar tools using SKILL.md structure and progressive disclosure. Use when creating, writing, or refactoring a skill; when the user mentions SKILL.md, skill frontmatter, or skill best practices; or when the user invokes slash commands that map here (includes create-skill).",
+      "skills": [
+        "./skills/_meta/skill-creation"
+      ],
+      "strict": false
+    },
+    {
       "name": "skills-transfer",
       "source": "./",
       "description": "Guides intake of Agent Skills from Git repos, skills.sh, and pkuppens/pkuppens into IDE paths or this library. Covers project vs global install, derivative skills, and catalog maintenance. Use when installing, adapting, or contributing skills.",
