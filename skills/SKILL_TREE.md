@@ -33,6 +33,7 @@ Also in `_meta/`: [human-ai-execution.md](_meta/human-ai-execution.md) (which st
 | cmd | [terminal/cmd/SKILL.md](terminal/cmd/SKILL.md) | Windows cmd.exe and batch files (replaces external batch-files) |
 | powershell | [terminal/powershell/SKILL.md](terminal/powershell/SKILL.md) | PowerShell 5.1 and 7+ |
 | bash | [terminal/bash/SKILL.md](terminal/bash/SKILL.md) | bash on Linux, macOS, WSL2, Git Bash |
+| zsh | [terminal/zsh/SKILL.md](terminal/zsh/SKILL.md) | zsh (macOS default): paste-breaking differences from bash |
 
 ### Terminal tree (nested)
 
@@ -42,10 +43,9 @@ terminal/
 ├── references/
 ├── cmd/SKILL.md
 ├── powershell/SKILL.md
-└── bash/SKILL.md
+├── bash/SKILL.md
+└── zsh/SKILL.md
 ```
-
-Phase 2 (Epic #10): `terminal/zsh/`, expanded `references/terminal-emulators.md`.
 
 ## Documentation skills
 

@@ -16,7 +16,7 @@ Not first-class sub-skills in Phase 1. Use when user names fish, `sh`, or anothe
 
 ## When to ask
 
-If detection is ambiguous between bash and zsh on macOS, ask before using bash-specific syntax. zsh leaf skill arrives in Phase 2 (#10).
+If detection is ambiguous between bash and zsh on macOS, probe `$ZSH_VERSION` / `$BASH_VERSION`, or ask. zsh has its own leaf: [zsh/SKILL.md](../zsh/SKILL.md).
 
 ## Routing default
 

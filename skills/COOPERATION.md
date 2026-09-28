@@ -33,7 +33,7 @@ Then, when the plan is accepted: [roadmap-generator](roadmap-generator/SKILL.md)
 
 ## Terminal routing
 
-Any skill that emits shell commands should follow [terminal](terminal/SKILL.md), which detects the shell (project docs → runtime probe → ask) and routes to one leaf: [cmd](terminal/cmd/SKILL.md), [powershell](terminal/powershell/SKILL.md) or [bash](terminal/bash/SKILL.md). Load only the leaf for the detected shell.
+Any skill that emits shell commands should follow [terminal](terminal/SKILL.md), which detects the shell (project docs → runtime probe → ask) and routes to one leaf: [cmd](terminal/cmd/SKILL.md), [powershell](terminal/powershell/SKILL.md), [bash](terminal/bash/SKILL.md) or [zsh](terminal/zsh/SKILL.md). Load only the leaf for the detected shell.
 
 ## Repo maintenance (after merges)
 

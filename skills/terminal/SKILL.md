@@ -15,7 +15,7 @@ Orchestrates multi-OS terminal work by detecting shell context, loading the matc
 
 ## Two work modes
 
-Both modes use the same leaf skill (cmd, powershell, bash). Only output shape differs.
+Both modes use the same leaf skill (cmd, powershell, bash, zsh). Only output shape differs.
 
 | Mode | When | Output |
 |------|------|--------|
@@ -39,7 +39,7 @@ Do not treat script files as "documentation" — they follow the leaf skill's sc
    - Windows cmd.exe → [cmd/SKILL.md](cmd/SKILL.md)
    - PowerShell → [powershell/SKILL.md](powershell/SKILL.md)
    - bash (Linux, macOS, WSL2, Git Bash) → [bash/SKILL.md](bash/SKILL.md)
-   - zsh → Phase 2 (not yet in this library); use bash rules only when user confirms zsh is acceptable
+   - zsh (macOS default, some Linux) → [zsh/SKILL.md](zsh/SKILL.md)
 3. **Apply copy-paste rules** (below).
 4. **Prefer non-admin** — detect elevation; offer elevated variants only when required. Never silently assume admin.
 

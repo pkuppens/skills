@@ -37,7 +37,7 @@ Prefer Linux paths inside WSL for repo work under `~` or `/home`.
 
 - Default login shell is often zsh; user may still run bash explicitly
 - Homebrew prefix: Apple Silicon `/opt/homebrew`, Intel `/usr/local`
-- Phase 2 adds zsh leaf; until then ask when `echo $0` shows zsh
+- When `$ZSH_VERSION` is set, route to [zsh/SKILL.md](../../zsh/SKILL.md) instead
 
 ## Agent routing
 
@@ -45,4 +45,4 @@ Prefer Linux paths inside WSL for repo work under `~` or `/home`.
 |--------------|--------|
 | WSL2 detected | bash rules + `/mnt/` path awareness |
 | Git Bash on Windows | bash rules + path caution |
-| macOS + zsh default | Ask before bash-only syntax, or note zsh Phase 2 |
+| macOS + zsh default | zsh rules ([zsh/SKILL.md](../../zsh/SKILL.md)); bash rules only when the user runs bash explicitly |
