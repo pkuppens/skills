@@ -2,7 +2,7 @@
 
 Canonical **Agent Skills** library for Cursor, Claude, and Codex. The skills span shell and terminal work, README and documentation authoring, architecture and CTO-level strategy, code review, and ML/CV guidance — plus meta tooling for transferring and validating skills. See [What's inside](#whats-inside) for the map and [skills/SKILL_TREE.md](skills/SKILL_TREE.md) for the full index. GitHub profile narrative stays in [`pkuppens/pkuppens`](https://github.com/pkuppens/pkuppens); **this repository is the skills-only home.**
 
-**Quick links:** [skills/SKILL_TREE.md](skills/SKILL_TREE.md) (full index) · `skills/COOPERATION.md`, `skills/CLAUDE.md` (planned, [#5](https://github.com/pkuppens/skills/issues/5)) · curated workflow (planned, [#7](https://github.com/pkuppens/skills/issues/7)): `docs/curated-skill-selection.md`
+**Quick links:** [skills/SKILL_TREE.md](skills/SKILL_TREE.md) (full index) · [skills/COOPERATION.md](skills/COOPERATION.md) (how skills compose) · [skills/CLAUDE.md](skills/CLAUDE.md) (agent rules) · curated workflow (planned, [#7](https://github.com/pkuppens/skills/issues/7)): `docs/curated-skill-selection.md`
 
 ## Quick start: install one skill and use it
 
@@ -46,7 +46,9 @@ Every skill is one `skills/<name>/SKILL.md`. Categories below mirror [SKILL_TREE
 | **Shell / terminal** ([index](skills/SKILL_TREE.md#language-and-framework-skills)) | `terminal` orchestrator routing to `cmd`, `powershell`, and `bash` leaves |
 | **Documentation** ([index](skills/SKILL_TREE.md#documentation-skills)) | `readme-authoring` |
 | **Strategy, review & ML/CV** ([index](skills/SKILL_TREE.md#strategy-and-lifecycle-skills)) | `tech-stack-recommender`, `architecture-pattern-selector`, `scalability-advisor`, `cost-estimator`, `roadmap-generator`, `delegation-prompt-crafter`, `request-analyzer`, `clarification-protocol`, `antipattern-detector`, `assumption-challenger`, `brutally-honest-code-review`, `validation-report-generator`, `ml-cv-specialist` |
-| **Meta** ([index](skills/SKILL_TREE.md#meta)) | `skills-transfer`, `repo-transfer` (install, catalog, and land skills via PR) |
+| **Repo maintenance** ([index](skills/SKILL_TREE.md#repo-maintenance)) | `branch-cleanup`, `dependabot` |
+| **Agent orchestration** ([index](skills/SKILL_TREE.md#agent-orchestration)) | `ai-factory` |
+| **Meta** ([index](skills/SKILL_TREE.md#meta)) | `skills-transfer`, `repo-transfer` (install, catalog, and land skills via PR), `skill-creation` (author new skills) |
 
 ## Getting the code
 
@@ -86,7 +88,7 @@ Reference the **`skills/`** folder from your IDE. Do not duplicate skills. Symli
 
 ### Option A: Symlinks (recommended)
 
-Symlink targets must be the **inner** Agent Skills tree in this repository: the directory named `skills/` at the **root of the `pkuppens/skills` clone** (same level as this `README.md`). That inner folder already contains `SKILL_TREE.md` and per-skill folders; `CLAUDE.md` lands with migration ([#5](https://github.com/pkuppens/skills/issues/5)).
+Symlink targets must be the **inner** Agent Skills tree in this repository: the directory named `skills/` at the **root of the `pkuppens/skills` clone** (same level as this `README.md`). That inner folder contains `SKILL_TREE.md`, `CLAUDE.md`, `COOPERATION.md`, `_meta/`, and the per-skill folders.
 
 **Project-level** (your app repo sits beside the `pkuppens/skills` clone):
 
@@ -190,7 +192,7 @@ Symlinks here target **this** repo’s `skills/` tree. Extra packages from the e
 npx --yes skills add https://github.com/github/awesome-copilot --skill azure-devops-cli -y
 ```
 
-Authoring guidance (“install first; author only when needed”) will live in `skills/_meta/skill-creation/reference.md` once migrated (planned, [#5](https://github.com/pkuppens/skills/issues/5)).
+Authoring guidance (“install first; author only when needed”) lives in [skills/_meta/skill-creation/reference.md](skills/_meta/skill-creation/reference.md#public-agent-skills-ecosystem-before-authoring).
 
 ## Canonical plus public skills (side by side)
 
@@ -222,7 +224,9 @@ pkuppens/skills/
 │   ├── skills-transfer/      # meta: install, sources, derivatives, catalog
 │   │   └── repo-transfer/    # nested: land skills tree via PR
 │   ├── SKILL_TREE.md         # skill index
-│   ├── CLAUDE.md             # planned (#5)
+│   ├── CLAUDE.md             # agent rules for skills/
+│   ├── COOPERATION.md        # how skills compose
+│   ├── _meta/                # skill-creation, human-ai-execution
 │   └── …                     # skill directories
 └── .github/workflows/
     └── validate-skills.yml
