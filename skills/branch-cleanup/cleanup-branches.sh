@@ -8,9 +8,11 @@
 #   2. Refresh   - fast-forward every local branch, main included, from its
 #                  upstream - without checking anything out
 #   3. Verify    - classify every branch by *content*: merged (ancestor),
-#                  squash-merged (its changes are already in main), or
-#                  unmerged (kept). Local branches with uncommitted changes or
-#                  checked out in another worktree are never deleted.
+#                  squash-merged (its changes are already in main), pr-merged
+#                  (its tip went through a merged GitHub PR, even if main has
+#                  changed the same files since), or unmerged (kept). Local
+#                  branches with uncommitted changes or checked out in another
+#                  worktree are never deleted.
 #   4. Switch    - check out the freshly fast-forwarded main (skipped when the
 #                  working tree has changes, or with --stay)
 #   5. Delete    - verified-merged local branches, then remote branches
@@ -25,7 +27,8 @@
 #   ./cleanup-branches.sh --help
 #
 # Requirements: git (2.38+ for the fast squash-merge check; older versions
-# fall back to a patch-id check); gh CLI recommended (fallback path for
+# fall back to a patch-id check); gh CLI recommended (merged-PR lookup for
+# squash-merged branches that main has edited since, and fallback path for
 # remote deletion when a plain `git push --delete` is rejected for auth).
 # Works from Git Bash on Windows, and bash/zsh elsewhere.
 
@@ -132,7 +135,8 @@ echo ""
 # STEP 1: fetch --all --prune
 # ---------------------------------------------------------------------------
 print_info "STEP 1: git fetch --all --prune"
-if ! git fetch --all --prune 2>&1 | sed 's/^/  /'; then
+git fetch --all --prune 2>&1 | sed 's/^/  /'
+if [ "${PIPESTATUS[0]}" -ne 0 ]; then
   print_warning "fetch --all --prune reported errors (see above)"
   UNRESOLVED+=("git fetch --all --prune failed or was incomplete - results below may be stale")
 fi
@@ -160,6 +164,7 @@ echo ""
 # ---------------------------------------------------------------------------
 print_info "STEP 2: Fast-forwarding local branches from their upstreams..."
 FF_COUNT=0
+WOULD_FF=""   # dry-run: "branch<TAB>upstream" lines, so step 3 plans against the post-refresh tip
 while IFS=' ' read -r branch upstream track; do
   [ -z "$upstream" ] && continue
   [ "$track" = "[gone]" ] && continue
@@ -187,6 +192,8 @@ while IFS=' ' read -r branch upstream track; do
   if [ "$DRY_RUN" = true ]; then
     print_warning "Would fast-forward: $branch $old..$new ($behind behind)"
     ACTIONS+=("would fast-forward $branch $old..$new")
+    WOULD_FF+="$branch"$'	'"$upstream"$'
+'
     continue
   fi
 
@@ -212,10 +219,12 @@ echo ""
 # ---------------------------------------------------------------------------
 # STEP 3: verify each branch's content against main
 #
-# content_status <ref> prints one of:
+# content_status <ref> <branch-name> prints one of:
 #   merged         - ref is an ancestor of main
 #   squash-merged  - merging ref into main would change nothing: all of its
 #                    changes are already in main (squash/rebase merges)
+#   pr-merged #<n> - ref's tip went through merged GitHub PR <n> (catches
+#                    squash merges whose files main has edited since)
 #   unmerged:<n>   - ref carries changes main doesn't have (<n> commits ahead)
 # ---------------------------------------------------------------------------
 if git merge-tree --write-tree "$MAIN_REF" "$MAIN_REF" >/dev/null 2>&1; then
@@ -224,8 +233,45 @@ else
   HAS_MERGE_TREE=false
 fi
 
+# Merged GitHub PRs as "headRefName<TAB>headRefOid<TAB>number" lines. Empty
+# without gh/auth/a GitHub remote - then only the git checks above apply.
+MERGED_PRS=""
+if command -v gh >/dev/null 2>&1; then
+  MERGED_PRS=$(gh pr list --state merged --limit 1000 --json number,headRefName,headRefOid     --jq '.[] | [.headRefName, .headRefOid, (.number | tostring)] | @tsv' 2>/dev/null) || MERGED_PRS=""
+fi
+
+# changes_id <commit>: patch-id of the lines <commit> adds/removes relative to
+# its merge base with main. Zero context lines, so the same change made on an
+# older or newer base gives the same id.
+changes_id() {
+  local base
+  base=$(git merge-base "$MAIN_REF" "$1" 2>/dev/null) || return
+  git diff -U0 "$base" "$1" | git patch-id --stable | cut -d' ' -f1
+}
+
+# merged_pr_of <ref> <branch-name>: prints the number of a merged PR whose head
+# was <branch-name> and that carried everything on <ref>:
+#   - the PR head contains <ref>'s tip (every commit went through the PR), or
+#   - the PR was rebased/rewritten before merging, but makes exactly the same
+#     line changes as <ref> (compared via refs/pull/<n>/head).
+# A commit added after the merge fails both checks, so that work is kept.
+merged_pr_of() {
+  local tip head oid num mine
+  tip=$(git rev-parse "$1" 2>/dev/null) || return
+  while IFS=$'	' read -r head oid num; do
+    [ "$head" = "$2" ] || continue
+    if [ "$oid" = "$tip" ] || git merge-base --is-ancestor "$tip" "$oid" 2>/dev/null; then
+      echo "$num"; return
+    fi
+    [ -n "${mine:=$(changes_id "$tip")}" ] || continue
+    if git fetch --quiet origin "refs/pull/$num/head" 2>/dev/null       && [ "$(changes_id "$oid")" = "$mine" ]; then
+      echo "$num"; return
+    fi
+  done <<< "$MERGED_PRS"
+}
+
 content_status() {
-  local ref=$1 out base synth
+  local ref=$1 name=$2 out base synth pr
   if git merge-base --is-ancestor "$ref" "$MAIN_REF" 2>/dev/null; then
     echo merged; return
   fi
@@ -243,6 +289,10 @@ content_status() {
       echo squash-merged; return
     fi
   fi
+  # Squash-merged, but main has changed the same files since: git alone can't
+  # prove it adds nothing, GitHub's record of the merge can.
+  pr=$(merged_pr_of "$ref" "$name")
+  [ -n "$pr" ] && { echo "pr-merged #$pr"; return; }
   echo "unmerged:$(git rev-list --count "$MAIN_REF..$ref")"
 }
 
@@ -260,7 +310,11 @@ while IFS=' ' read -r branch track; do
     continue
   fi
 
-  status=$(content_status "refs/heads/$branch")
+  # Dry-run skipped the fast-forward: plan against the tip --execute would see.
+  ref="refs/heads/$branch"
+  ff_to=$(printf '%s' "$WOULD_FF" | awk -F'	' -v b="$branch" '$1==b {print $2}')
+  [ -n "$ff_to" ] && ref=$ff_to
+  status=$(content_status "$ref" "$branch")
   gone=""
   [ "$track" = "[gone]" ] && gone=", upstream deleted"
 
@@ -300,7 +354,7 @@ if [ "$CLEAN_REMOTE" = true ] && git remote | grep -qx origin; then
       print_info "Protected, kept: origin/$branch"
       continue
     fi
-    status=$(content_status "refs/remotes/$ref")
+    status=$(content_status "refs/remotes/$ref" "$branch")
     case "$status" in
       unmerged:*) continue ;;
     esac

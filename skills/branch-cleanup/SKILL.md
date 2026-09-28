@@ -33,6 +33,12 @@ skill — this skill only touches branches.
    - `squash-merged` — merging it into main would change nothing
      (`git merge-tree --write-tree` result equals main's tree), i.e. all of
      its changes are already in main. Catches squash/rebase merges.
+   - `pr-merged #N` — a merged GitHub PR had this branch as its head, and
+     either its head commit contains the branch tip, or (if the PR was
+     rebased before merging) it makes exactly the same line changes
+     (zero-context patch-id against `refs/pull/N/head`). Catches squash
+     merges whose files main has edited since, which `merge-tree` can't
+     prove. Needs `gh`; a commit added after the merge fails both checks.
    - `unmerged` — it has changes main doesn't: **kept**. If its upstream is
      also gone, it is reported as unresolved so it gets a human look.
 
@@ -72,12 +78,15 @@ remote-tracking refs) so the plan reflects the remote's current state.
 
 Requirements: `git` (2.38+ for the `merge-tree` squash check; older versions
 fall back to a `git cherry` patch-id check, which misses squashes that main
-later modified). `gh` CLI recommended as a fallback when `git push origin
---delete` is rejected for auth reasons.
+later modified). `gh` CLI recommended: it supplies the merged-PR list for the
+`pr-merged` check (without it, such branches are kept as unresolved), and is
+the fallback when `git push origin --delete` is rejected for auth reasons.
 
 To verify the script end-to-end without touching a real repo, run
 [tests/test-cleanup.sh](tests/test-cleanup.sh): it builds a throwaway repo
-with a local bare `origin` (merged, squash-merged, unmerged, behind and
+with a local bare `origin` and a fake `gh` (merged, squash-merged,
+PR-merged after main edited the same files, rewritten-then-merged, unmerged,
+behind and
 dirty branches), runs dry-run and `--execute`, and prints PASS/FAIL per
 check.
 
