@@ -50,7 +50,8 @@ Inspect the active execution environment when docs are silent or for conflict ch
 | PowerShell | `$PSVersionTable.PSVersion`; `$PSVersionTable.PSEdition` (`Desktop` = 5.1, `Core` = 7+) |
 | bash | `$BASH_VERSION` set; `$0` or `$SHELL` contains `bash` |
 | WSL2 | `/proc/version` contains `Microsoft` or `WSL`; `wsl.exe -l -v` from Windows host |
-| macOS | `uname` = `Darwin`; default login shell often zsh (Phase 2 leaf — confirm with user in Phase 1) |
+| zsh | `$ZSH_VERSION` set; `ps -p $$ -o comm=` shows `zsh` (`$SHELL` is only the login shell) |
+| macOS | `uname` = `Darwin`; default login shell is zsh — probe before assuming bash |
 
 Also note:
 
