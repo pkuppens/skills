@@ -8,6 +8,15 @@ Discoverable index of skills in this library. Keep aligned with folders under `s
 |-------|------|---------|
 | skills-transfer | [skills-transfer/SKILL.md](skills-transfer/SKILL.md) | Install, catalog, derivative skills |
 | repo-transfer | [skills-transfer/repo-transfer/SKILL.md](skills-transfer/repo-transfer/SKILL.md) | Land skills tree via PR |
+| skill-creation | [_meta/skill-creation/SKILL.md](_meta/skill-creation/SKILL.md) | Author skills: SKILL.md structure, frontmatter, progressive disclosure; install before authoring |
+
+Also in `_meta/`: [human-ai-execution.md](_meta/human-ai-execution.md) (which steps an agent may do alone). How skills compose: [COOPERATION.md](COOPERATION.md). Agent rules for this directory: [CLAUDE.md](CLAUDE.md).
+
+## Agent orchestration
+
+| Skill | Path | Purpose |
+|-------|------|---------|
+| ai-factory | [ai-factory/SKILL.md](ai-factory/SKILL.md) | Supervisor + subagent swarm; confidential tasks on local Ollama via LiteLLM, public tasks on cloud Claude |
 
 ## Repo maintenance
 
