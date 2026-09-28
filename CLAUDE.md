@@ -24,3 +24,17 @@ _Why:_ `docs/curated-skill-selection.md` / `docs/bundles/` cross-linking was alr
 - `skills/` — the actual Agent Skills tree (`SKILL_TREE.md` index, per-skill folders). `skills/CLAUDE.md` and `skills/COOPERATION.md` are planned migration targets ([#5](https://github.com/pkuppens/skills/issues/5)).
 
 Defer subdirectory-specific instructions to files within that subdirectory once they exist; this file stays high-level.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `pkuppens/skills`, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage roles, each label named after its role (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `CONTEXT.md` plus ADRs in `docs/decisions/`. See `docs/agents/domain.md`.
