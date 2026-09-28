@@ -9,7 +9,7 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
 $isAdmin
 ```
 
-On PowerShell 7+ on Linux/macOS, sudo is separate — see [bash references](../bash/references/sudo-elevation.md) when in WSL.
+On PowerShell 7+ on Linux/macOS, sudo is separate — see [bash references](../../bash/references/sudo-elevation.md) when in WSL.
 
 ## Patterns (offer explicitly)
 

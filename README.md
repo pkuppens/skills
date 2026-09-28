@@ -43,7 +43,7 @@ Every skill is one `skills/<name>/SKILL.md`. Categories below mirror [SKILL_TREE
 
 | Category | Skills |
 | --- | --- |
-| **Shell / terminal** ([index](skills/SKILL_TREE.md#language-and-framework-skills)) | `terminal` orchestrator routing to `cmd`, `powershell`, and `bash` leaves |
+| **Shell / terminal** ([index](skills/SKILL_TREE.md#language-and-framework-skills)) | `terminal` orchestrator routing to `cmd`, `powershell`, `bash`, and `zsh` leaves |
 | **Documentation** ([index](skills/SKILL_TREE.md#documentation-skills)) | `readme-authoring` |
 | **Strategy, review & ML/CV** ([index](skills/SKILL_TREE.md#strategy-and-lifecycle-skills)) | `tech-stack-recommender`, `architecture-pattern-selector`, `scalability-advisor`, `cost-estimator`, `roadmap-generator`, `delegation-prompt-crafter`, `request-analyzer`, `clarification-protocol`, `antipattern-detector`, `assumption-challenger`, `brutally-honest-code-review`, `validation-report-generator`, `ml-cv-specialist` |
 | **Repo maintenance** ([index](skills/SKILL_TREE.md#repo-maintenance)) | `branch-cleanup`, `dependabot` |
