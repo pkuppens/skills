@@ -25,7 +25,9 @@ new code is correct.
 
 So the difficult part is proof, not search. You need a tool that proves two
 things. The change is complete. The change does not change the behavior. This
-workshop calls such a tool an **oracle**.
+workshop calls such a tool a **[test oracle](../../CONTEXT.md#language-legacy-refactoring)**. That is the standard
+term from software testing, not the database vendor, and the link holds the one
+definition this repository uses.
 
 Make the oracle first. Then let the oracle direct the work.
 

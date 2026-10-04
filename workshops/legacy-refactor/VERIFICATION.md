@@ -13,7 +13,7 @@ command and no stored output does not go in the workshop.
 
 | Claim | Verified by | Where |
 | --- | --- | --- |
-| 1. The problem is proof, not search | The readiness table names the oracle that each code base has, and the oracle it does not have. | `01_precondition_checks` |
+| 1. The problem is proof, not search | The readiness table names the [test oracle](../../CONTEXT.md#language-legacy-refactoring) that each code base has, and the oracle it does not have. | `01_precondition_checks` |
 | 2. Let the compiler find the places | Two counts on one screen: the text-search count and the compiler count. The two lists differ. | `05_refactoring` |
 | 3. Static types help you | The compiler produces the list with no extra work. Nobody had to write an oracle first. | `05_refactoring` |
 | 4. Green tests are not proof | One deliberate failure of the output comparison, while the build and the unit tests stay green. | `03_test_driven_development` |
