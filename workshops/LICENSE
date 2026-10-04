@@ -1,0 +1,80 @@
+Copyright (c) 2026 Pieter Kuppens. All rights reserved, except as granted below.
+
+================================================================================
+SCOPE
+================================================================================
+
+This licence applies to the `workshops/` directory of this repository and to
+everything inside it: text, notebooks, stored notebook output, slides, images,
+and any other teaching material.
+
+This licence does NOT apply to the rest of the repository. The `skills/`
+directory, the repository tooling, and the repository documentation outside
+`workshops/` stay under the MIT licence in the root LICENSE file. The two
+licences are separate on purpose. See
+`docs/decisions/004-licensing-split.md`.
+
+The example code bases that a workshop uses (for example fo-dicom and DCMTK)
+keep their own licences. This licence gives you no rights to them.
+
+================================================================================
+LICENCE
+================================================================================
+
+The material in `workshops/` is licensed under the
+
+    Creative Commons Attribution-NonCommercial-NoDerivatives 4.0
+    International Licence (CC BY-NC-ND 4.0)
+
+The complete text of the licence is at:
+
+    https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
+
+A summary of the licence is at:
+
+    https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+================================================================================
+WHAT THIS MEANS, IN SHORT
+================================================================================
+
+This summary is not the licence. The licence text decides. The summary helps
+you to read the licence.
+
+You MAY:
+
+  - Read this material.
+  - Copy it and give it to other people, without change.
+  - Use it inside your organisation, to learn from it.
+
+You MAY NOT:
+
+  - Use it for commercial purposes. You may not sell it, and you may not teach
+    it for payment.
+  - Publish a changed version of it.
+
+You MUST:
+
+  - Give credit to the author.
+  - Give a link to the licence.
+  - Say whether you changed anything. (You may not publish a changed version,
+    but you must still be honest about changes that you make for yourself.)
+
+================================================================================
+NOTE ON THE SKILLS
+================================================================================
+
+The method that this workshop teaches lives in the `skills/` directory. Those
+files are MIT licensed. You may use them, change them, and build on them, also
+for commercial work. If you want to apply the method to your own code base,
+then use the skills. That is what they are for.
+
+The restriction here protects the teaching material only: the talk, the
+notebooks, and the order in which the subject is presented.
+
+================================================================================
+CONTACT
+================================================================================
+
+For a different licence, write to the author. See the repository owner in
+`.claude-plugin/marketplace.json`.

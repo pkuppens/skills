@@ -8,7 +8,7 @@ Healthcare software engineers. They write C++ and C#. Their code base is about
 5 million lines. It is 15 to 30 years old. Their toolchain has the same age.
 IEC 62304 applies to their product.
 
-They expect a new insight. They do not want a tool tour.
+They expect to learn something new. They do not want a demonstration of tools.
 
 ## Goal
 
@@ -17,7 +17,8 @@ evidence for each step.
 
 The attendees must be able to do two things after the session:
 
-1. Name the oracle ladder, and name the oracle for a change that they plan.
+1. Name the reason for a change that they plan, and name the oracle that this
+   reason needs.
 2. Run the precondition check against their own code base.
 
 The session does **not** teach the attendees to install and operate the full
@@ -76,12 +77,12 @@ result, and it gives a reason for steps 3 and 4 of the ladder.
 ## Order of the talk
 
 The notebook numbers follow the software lifecycle. The talk does not. Say this
-difference out loud. It shows that the notebooks have random access.
+difference clearly. It shows that you can read the notebooks in any order.
 
 | Time | Block | On the screen |
 | --- | --- | --- |
 | 0:00–0:15 | Introductions. Their code base. Their regulatory context. | — |
-| 0:15–0:25 | The problem and the thesis. The example code is a proxy. Size does not change the method. | The oracle ladder |
+| 0:15–0:25 | **Why you would refactor at all**, with the five reasons. Then the problem and the claims. The example code is a stand-in. Size does not change the method. | The five reasons, then the oracle ladder |
 | 0:25–0:40 | `00_setup`. I did not build an environment. I built the skill that builds it. A pinned toolchain is evidence under IEC 62304. | Image digest, toolchain versions, the learned-environments diff |
 | 0:40–0:55 | `01_precondition_checks`. The most reusable artifact of the session. | The readiness table, both languages |
 | 0:55–1:20 | `05_refactoring`. **The proof.** It ends on the call site that neither method found. | Text-search count against compiler count. The diff. The miss. |

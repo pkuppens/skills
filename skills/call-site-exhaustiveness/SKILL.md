@@ -33,8 +33,9 @@ Three methods. Each method is more sound than the method above it.
 [`oracle-first-refactor`](../oracle-first-refactor/SKILL.md) to make the
 compiler produce the list.
 
-Use step 1 to form a first idea. Use step 2 to judge the blast radius before
-you choose an approach. Use step 3 to prove the work is complete.
+Use step 1 to form a first idea. Use step 2 to see how much code the change
+touches, before you choose an approach. Use step 3 to prove that the work is
+complete.
 
 ---
 
@@ -114,8 +115,8 @@ diff <(cut -d: -f1,2 /tmp/sites-rg.txt | sort -u) \
      <(cut -d: -f1,2 /tmp/sites-cc.txt | sort -u)
 ```
 
-Explain **each** difference. A difference is never noise. Each difference has
-one of these causes:
+Explain **each** difference. Every difference has a cause. Find the cause. It is
+one of these three:
 
 | Direction | Cause |
 | --- | --- |
@@ -157,8 +158,8 @@ Good report:
 > Recall: complete for the two configurations that I built. Not proven for the
 > rest of the matrix.
 
-The last line is the point. State what you proved, and state what you did not
-prove.
+The last sentence is the most important part. Say what you proved. Then say
+what you did not prove.
 
 ---
 

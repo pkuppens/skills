@@ -34,7 +34,7 @@ The same rule applies to the learned-environments file of a skill.
 
 Task B1 is the only task that can fail without damage to the session. Reduce it
 in this order: a smaller subset; a newer compiler, with the difference stated
-out loud; a stored build log; a screenshot.
+clearly; a stored build log; a screenshot.
 
 ## Tier C — ship as a plan
 

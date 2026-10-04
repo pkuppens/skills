@@ -49,7 +49,7 @@ terminal/
 
 ## Legacy refactoring skills
 
-For code bases that are larger than any context window. The common principle: generation is cheap, a trustworthy verdict is scarce — so establish the oracle (compiler, semantic index, tests, golden outputs) before editing, and let the oracle drive the work.
+For code bases that are too large for an agent to read at one time. The shared idea: an agent writes code quickly, but proving the new code correct is the slow part. So make the oracle first (compiler, semantic index, tests, output comparison), then let the oracle direct the work. Terms: [CONTEXT.md](../CONTEXT.md#language-legacy-refactoring).
 
 | Skill | Path | Purpose |
 |-------|------|---------|
