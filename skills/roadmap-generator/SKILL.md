@@ -282,7 +282,6 @@ Including every possible feature in MVP.
 This skill includes Python utilities for roadmap generation:
 
 - `generator.py` - Core roadmap generation logic
-- `templates/` - Output templates (markdown, JSON)
 
 See [generator.py](generator.py) for programmatic roadmap generation.
 
@@ -290,5 +289,4 @@ See [generator.py](generator.py) for programmatic roadmap generation.
 
 ## References
 
-- [Roadmap Templates](templates/) - Standard output formats
 - [Estimation Guide](estimation-guide.md) - Detailed estimation techniques

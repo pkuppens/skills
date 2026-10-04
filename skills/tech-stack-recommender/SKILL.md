@@ -439,9 +439,3 @@ HIGH RISK:
 | **Standard** | Multiple services, caching | AWS ECS + RDS + Redis |
 | **Complex** | Microservices, event-driven | K8s + Multiple DBs + Kafka |
 
----
-
-## References
-
-- [Framework Comparison](framework-comparison.md) - Detailed feature comparisons
-- [Migration Playbooks](migration-playbooks.md) - Step-by-step migration guides

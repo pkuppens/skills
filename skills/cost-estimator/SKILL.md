@@ -429,9 +429,3 @@ Calculations:
 Sum of (Monthly × (1 + W%)^month) for months 1-12
 ```
 
----
-
-## References
-
-- [Cloud Pricing Calculator](cloud-pricing.md) - Detailed cloud provider comparison
-- [Build vs Buy Framework](build-vs-buy.md) - Extended decision framework

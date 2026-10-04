@@ -351,5 +351,4 @@ Proposal/Plan
 
 ## References
 
-- [Wishful Thinking Patterns](wishful-thinking-patterns.md) - Common patterns to watch for
 - [Challenge Questions](challenge-questions.md) - Ready-to-use challenge questions by category

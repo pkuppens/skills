@@ -457,9 +457,3 @@ Cache Size:
 | 1M | Microservices + sharding | $10,000-30,000 |
 | 10M | Multi-region | $100,000+ |
 
----
-
-## References
-
-- [Bottleneck Diagnosis Guide](bottleneck-diagnosis.md) - Detailed troubleshooting
-- [Capacity Planning Calculator](capacity-calculator.md) - Sizing formulas
