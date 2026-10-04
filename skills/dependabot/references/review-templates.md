@@ -71,6 +71,18 @@ Flagging rather than approving, since an empty bump usually means the real
 change is somewhere the version parser didn't look.
 ```
 
+**Conflict — the manifest diff and the PR body disagree:**
+
+```
+Holding this one for manual review: the manifest diff says {package}
+{diff_old} -> {diff_new}, but the PR body's own update metadata says
+{body_old} -> {body_new}.
+CI status: {green | red | pending | no checks ran}.
+Not auto-approving while the two sources disagree about what is actually
+changing — picking one over the other would be a guess, and the severity
+differs depending on which is right.
+```
+
 **Unclassifiable:**
 
 ```

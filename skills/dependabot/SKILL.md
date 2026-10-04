@@ -54,22 +54,42 @@ that turns out not to be Dependabot-authored included.
 ### 2. Classify each bump's severity and gate verdict
 
 Run [scripts/classify_bump.py](scripts/classify_bump.py) (resolve the path
-relative to this skill's own directory) against the PR's diff:
+relative to this skill's own directory) against the PR's diff **and** its
+body:
 
 ```bash
-gh pr diff <number> --repo <repo> | python scripts/classify_bump.py
+gh pr diff <number> --repo <repo> > /tmp/pr.diff
+gh pr view <number> --repo <repo> --json body --jq .body > /tmp/pr.body
+python scripts/classify_bump.py /tmp/pr.diff --body /tmp/pr.body
 ```
 
 It parses every `"pkg": "old"` → `"pkg": "new"` pair and compares versions
 as numeric tuples — never lexicographically, so `1.9.0` → `1.11.0` reads as
 minor, not a downgrade. It prints a per-package severity, an `OVERALL:`
-(the worst across the PR — one major package makes a whole group major), and
-a `GATE:` verdict of `AUTO` or `HOLD` applying the rule below.
+(the worst across the PR — one major package makes a whole group major), a
+`GATE:` verdict of `AUTO` or `HOLD` applying the rule below, and any
+`WARN:` lines.
 
-If it prints `NO_VERSION_CHANGES_FOUND` (non-npm ecosystem, or the diff
-doesn't show the manifest), parse the PR title's "from X to Y" wording by
-hand and apply the same rule — treating anything you can't pin to a concrete
-old→new pair as `unclassifiable`, which holds.
+**Always pass `--body` on a group PR.** When a package's existing range
+already covers the new version (`^5.0.2` covering `5.0.3`), Dependabot
+updates only the lock file and the manifest diff shows nothing for it — so
+the diff alone silently under-reports. The body's `Updates \`pkg\` from X to
+Y` lines come from Dependabot's update metadata, so reconciling against them
+recovers those packages (tagged `[lock-only]`) without parsing the lock file.
+This matters because the templates promise a concrete package list: an
+approval naming 2 of 3 bumped packages is a misleading review, even when the
+verdict happens to be right.
+
+Read the `WARN:` lines rather than skimming past them. A count mismatch
+against the body's "with N updates" claim, or a `conflict` row where the
+manifest and the body disagree about a version, means the package list you
+are about to put in a review is not trustworthy — hold instead of guessing
+which source is right.
+
+If it prints `NO_VERSION_CHANGES_FOUND` (non-npm ecosystem, or neither
+source yields a pair), parse the PR title's "from X to Y" wording by hand and
+apply the same rule — treating anything you can't pin to a concrete old→new
+pair as `unclassifiable`, which holds.
 
 #### The version rule
 
@@ -152,6 +172,7 @@ All three gates must pass to merge. Any one failing holds the PR:
 | HOLD — major | any | any | **Comment**, hold (Template B) — a major bump can break even with green CI |
 | HOLD — downgrade | any | any | **Comment**, hold (Template B) — a version going backwards is never an expected Dependabot bump |
 | HOLD — unchanged | any | any | **Comment**, hold (Template B) — nothing effective to approve |
+| HOLD — conflict | any | any | **Comment**, hold (Template B) — the manifest diff and the PR body disagree about a version, so the real change is unclear |
 | HOLD — unclassifiable | any | any | **Comment**, hold (Template B) |
 | any | red or none | any | **Comment** with the Step 5 finding (Template C) |
 
