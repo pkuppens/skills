@@ -14,9 +14,11 @@ description: >
 **Invoke:** `/legacy-build-container`
 **Use when:** an old code base does not build with the current toolchain, and
 an agent or a team needs a working build.
-**Status:** no verified environment yet. `reference/verified-environments.md`
-holds zero rows and three recorded traps. The first green build adds the first
-row. See [`workshops/legacy-refactor/`](../../workshops/legacy-refactor/README.md).
+**Status:** two verified environments, both from executed runs: `gcc:4.9`
+pinned by digest for C++03, and the host .NET SDK for fo-dicom 4.0.8. Rows in
+[`reference/verified-environments.md`](reference/verified-environments.md).
+Evidence: [`00_setup.ipynb`](../../workshops/legacy-refactor/notebooks/00_setup.ipynb).
+DCMTK at scale is not yet built.
 
 **Why this matters:** the build is the first rung of the
 [test oracle](../../CONTEXT.md#language-legacy-refactoring) ladder. Without a build, nobody can prove that a change to
@@ -88,7 +90,8 @@ image.
 
 | Need | Base image | Note |
 | --- | --- | --- |
-| GCC 4.x, C++98 or C++03 | `debian:jessie` or `ubuntu:14.04` | The package servers moved. See the traps. |
+| GCC 4.x, C++98 or C++03 | **`gcc:4.9`** | **Preferred.** Verified: g++ 4.9.4 on Debian 8.9. The compiler is already in the image, so no package server is involved and the archived-mirror trap cannot happen. 1.3 GB. |
+| GCC 4.x, if you need the distribution too | `debian:jessie` or `ubuntu:14.04` | Only when you must install more packages. The package servers moved; see the traps. |
 | GCC 5 to 7, C++11 | `debian:stretch`, `ubuntu:16.04` | |
 | GCC 8 to 10, C++14 or C++17 | `debian:bullseye` | |
 | .NET Framework code on Linux | `mono:latest` | WinForms and WPF do not work. Libraries often do. |
@@ -158,6 +161,7 @@ A demonstration or a CI job can have no network. Prepare for that state.
 | Language | Action |
 | --- | --- |
 | C# | Vendor the packages into a local folder. Add a `nuget.config` that points at that folder. Then use `dotnet build --no-restore`. |
+| C++ | Prefer an image that already holds the compiler, such as `gcc:4.9`. Then `docker save -o image.tar` is the whole offline story. |
 | C++ | Clone the dependencies into the image, or vendor them in the repository. |
 | Any | Save the image with `docker save -o image.tar <image>`. Restore it with `docker load`. |
 

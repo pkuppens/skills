@@ -21,7 +21,7 @@ The same rule applies to the learned-environments file of a skill.
 | A2 | Choose the fo-dicom tag and the target member. Count the call sites. Find one call site that only reflection reaches. | 45 min | A member name, a count, and one invisible site. |
 | A3 | Make the C# path work without a network. Vendor the packages. Add a local `nuget.config`. Run `dotnet build --no-restore`. | 45 min | A green build with the network switched off. |
 | A4 | ~~Run `05_refactoring`.~~ **Done.** fo-dicom 4.0.8, target `AsyncManualResetEvent`. Counts 62 / 8 / 6, plus the `error: true` under-report at 3. | — | Executed, 9 of 9 cells, no errors. Committed. |
-| A5 | Write the `legacy-build-container` skill, with its learned-environments file. | 1.5 h | The skill validates. A notebook uses it. |
+| A5 | ~~Write the `legacy-build-container` skill.~~ **Done**, and two verified rows recorded from real runs. | — | Skill validates. `00_setup` exercises it. |
 | A6 | Run `00_setup` and `01_precondition_checks`. | 1.5 h | Tier A is complete and pushed. |
 | A7 | Write the `call-site-exhaustiveness` skill. | 1 h | The skill validates. |
 | A8 | Write ADR 002 and ADR 003. | 45 min | Both files exist. The notebooks link to them. |
