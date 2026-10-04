@@ -47,7 +47,13 @@ Switch the network off. Then run these checks.
 
 ### The demonstration laptop
 
-- [ ] The repository is cloned to the laptop.
+Both events are in person, so this list is not optional.
+
+- [ ] The repository is cloned to the laptop, on `main`, not only on a branch.
+- [ ] HDMI, USB-C and DisplayPort adapters are in the bag.
+- [ ] The battery is full and the charger is in the bag.
+- [ ] A one-page command list is printed, for the case where the projector
+      refuses the laptop.
 - [ ] The saved images are on the laptop disk, not on removable media.
 - [ ] `00_setup` runs offline.
 - [ ] `05_refactoring` runs offline.

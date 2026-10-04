@@ -29,7 +29,9 @@ after the session.
 
 | Constraint | Consequence |
 | --- | --- |
-| The slot is 2 hours. | About 90 minutes of content. The remainder is introductions and questions. |
+| The slot is 2 hours. | About 90 minutes of content. The remainder is introductions and questions. Confirm the real length at the preparation meeting on Tuesday 2026-10-06. |
+| **Both events are in person.** | No screen share. No remote fallback. Everything runs from the laptop in the bag, and the cables are my problem. See the equipment list in [TASKS.md](TASKS.md). |
+| **There is a preparation meeting first**, Tuesday 2026-10-06 at 13:00. | It is a feedback gate, not a rehearsal. Arrive with the executed notebooks and a list of questions. The answers decide Wednesday. |
 | A modest laptop runs the demonstration. | Small images. Short builds. No warm cache. |
 | Assume no network and no model API. | Every claim must be provable from committed files. |
 | The attendees follow the session on their own equipment. | The artifact is a public repository with stored notebook output. |
@@ -76,6 +78,18 @@ result, and it gives a reason for steps 3 and 4 of the ladder.
 | fo-dicom | C# | Live demonstration | The project moved its 1.x methods into a separate `fo-dicom.Legacy` package. The migration is therefore real and documented upstream. Older releases target .NET Framework 4.5.2, so a pinned old tag gives period code. |
 | DCMTK | C++ | Stored output only | It has `OFString`, `OFList`, and `OFCondition`, because it is older than portable STL. Build `ofstd` and `dcmdata` only. |
 | ClearCanvas | C# | One read-only slide | It is the truest legacy: an unmaintained DICOM and PACS platform on .NET Framework. It does not build in a Linux container, so it is not used live. |
+
+## The two events
+
+| When | What it is for |
+| --- | --- |
+| Tuesday 2026-10-06, 13:00 | Preparation meeting. Show that the method is real, and ask what the room needs. The question list is in [TASKS.md](TASKS.md). |
+| Wednesday 2026-10-07, 14:00 | The workshop itself, in the order below. |
+
+The best outcome of Tuesday is permission to run `01_precondition_checks`
+against one of their own modules on Wednesday. That turns a demonstration on a
+public DICOM library into a reading of their own code base, which is a
+different kind of evidence.
 
 ## Order of the talk
 
