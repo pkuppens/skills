@@ -88,6 +88,15 @@
       "strict": false
     },
     {
+      "name": "dependabot",
+      "source": "./",
+      "description": "Run the daily Dependabot check — find the open Dependabot PRs assigned to you (by bot author, dependencies label, or dependabot/** branch), classify each version bump as patch/minor/major from the diff rather than the title, require green CI and a clean no-conflict rebase, post a formal GitHub review (not a plain comment) approving only same-major increases, rebase-merge those, then babysit the base branch run afterwards. Use when the user wants their daily or routine dependency check, or wants to review, triage, clear out, or work through Dependabot PRs, dependency-update PRs, or version-bump PRs.",
+      "skills": [
+        "./skills/dependabot"
+      ],
+      "strict": false
+    },
+    {
       "name": "ml-cv-specialist",
       "source": "./",
       "description": "Deep expertise in ML/CV model selection, training pipelines, and inference architecture. Use when designing machine learning systems, computer vision pipelines, or AI-powered features.",
