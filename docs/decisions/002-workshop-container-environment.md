@@ -11,8 +11,12 @@ old can need a compiler of the same age. The current compiler on the developer
 machine often cannot build it.
 
 An AI agent cannot help with such a code base if the agent has no build. The
-build is the first oracle in the oracle ladder. Without a build, the agent can
-only guess whether a change is complete.
+build is the first rung of the [test oracle](../../CONTEXT.md#language-legacy-refactoring)
+ladder. Without a build, the agent can only guess whether a change is complete.
+
+("Oracle" here is the testing term, not the database vendor. The linked entry
+is the single definition for this repository, and it names where the term comes
+from.)
 
 There is a second problem. The agent must run where the toolchain runs. If the
 source is in one environment and the agent is in another, then the agent cannot
@@ -44,6 +48,14 @@ Three options were considered.
    person can reuse.
 6. **Pin the base image by digest**, not by tag. A tag moves. A digest does
    not.
+7. **Declare the build matrix, even when it holds one entry.** The compiler is
+   a sound oracle only for the settings that you build, so the set of settings
+   is part of every claim about completeness. Write it as a list with one entry
+   and a comment that says why it is one, rather than leaving it out. Adding
+   the second entry then costs one line. A parallel matrix across shared
+   hardware is a different decision, and it is the trigger to revisit point 4.
+   The procedure is step 6 of
+   [`legacy-build-container`](../../skills/legacy-build-container/SKILL.md).
 
 ## Consequences
 
@@ -62,12 +74,21 @@ Use `old-releases.ubuntu.com`, or use a Debian image with
 `archive.debian.org`. Verify this first, because it is the common cause of a
 long failure.
 
+This trap is also in the skill, so that an agent meets it without reading this
+ADR: see the trap table in
+[`legacy-build-container`](../../skills/legacy-build-container/SKILL.md) and the
+recorded traps in
+[`reference/verified-environments.md`](../../skills/legacy-build-container/reference/verified-environments.md).
+Keep the three lists consistent.
+
 **Reversible?** Partly. The notebooks and the skill assume a container. A change
 to a native build needs a rewrite of the setup steps, but not of the method.
 
 ## Revisit when
 
-- A build matrix must run in parallel. Then evaluate an orchestrator again.
+- The build matrix grows past one entry **and** the entries must run in
+  parallel on shared hardware. Then evaluate an orchestrator again. A matrix
+  that runs one entry after another needs no orchestrator.
 - A toolchain exists only as a Windows installer. Then a Windows container or a
   native Windows build is the only option.
 - The image exceeds the disk of the target machine. Then split the image per

@@ -52,9 +52,22 @@ _Avoid_: Shell (cmd, bash), OS, terminal multiplexer when used only as a protoco
 
 These terms come from the legacy-refactoring skills and the [`workshops/legacy-refactor/`](workshops/legacy-refactor/README.md) material. Use the plain words in prose; use the term only where a reader needs the precise meaning.
 
-**Oracle**:
+**Oracle** (full form: **test oracle**):
 A tool that answers one of two questions about a change: is the change complete, and did the behavior stay the same. Four oracles, from weak to strong: the compiler, a semantic index, tests, and a comparison of produced output files.
-_Avoid_: Validator, checker, ground truth. Do not use "oracle" for the AI model — the model proposes, the oracle judges.
+_Avoid_: Validator, checker, ground truth. Do not use "oracle" for the AI model — the model proposes, the oracle judges. Do not write "oracle" unqualified where a reader could think of the database vendor; write "test oracle" at first use in a document, and link this entry.
+
+Where the term comes from: **"test oracle" is standard software-testing vocabulary, not a term invented here.** It is normally traced to William Howden's testing work of the late 1970s, and Elaine Weyuker's _On Testing Non-testable Programs_ (The Computer Journal, 1982) is the classic treatment of programs that have no oracle. "The oracle problem" has its own survey: Barr, Harman, McMinn, Shahbaz and Yoo, _The Oracle Problem in Software Testing: A Survey_, IEEE TSE 41(5), 2015.
+
+What this library adds: the literature uses an oracle to judge whether **output** is correct. This library also uses it to judge whether a change is **complete** — the compiler as the oracle for "did I find every call site". That extension is this library's framing. Say so rather than implying it is established.
+
+How the oracle differs by reason for the change:
+
+| Reason | What the oracle must prove | Which rung you start on |
+| --- | --- | --- |
+| Refactor | **Nothing changed.** Every stored output file must stay identical. A changed output file is a failure. | Rung 1. The compiler proves you reached every call site. |
+| Bug fix | **Exactly one thing changed.** One stored output file changes on purpose; every other file must stay identical. The deliberate change to that one file is the evidence of intent. | Rung 3. A bug is rarely a type error, so the compiler cannot see it. |
+
+That difference is the whole reason to name the oracle before you start. Same ladder, different rung, and the opposite meaning for a changed output file.
 
 **Oracle ladder**:
 The four oracles in order of strength. "Climb the ladder" means: use a stronger oracle because the weaker one cannot answer the question.

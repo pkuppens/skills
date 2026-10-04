@@ -52,8 +52,9 @@ proof of two things:
 1. The change is complete. No place was missed.
 2. The change does not change the behavior.
 
-A tool that gives such proof is called an **oracle** in this workshop. Four
-oracles exist, and they differ in strength:
+A tool that gives such proof is called a **[test oracle](../../CONTEXT.md#language-legacy-refactoring)**. The term comes
+from software testing and is about 45 years old; it does not mean the database
+vendor. Four oracles exist, and they differ in strength:
 
 | Step | Oracle | Question that it answers |
 | --- | --- | --- |
@@ -115,6 +116,20 @@ Only a comparison of the output, byte for byte, answers the question.
 Under IEC 62304, this set of oracles **is** the record that an auditor checks.
 The same files that make the change safe also make it possible to audit. This
 is the reason why AI-assisted work is acceptable in a medical product.
+
+### Where the method comes from
+
+Say this out of honesty, and because it is stronger than claiming novelty.
+
+| Idea | Established name |
+| --- | --- |
+| Test oracle, and "the oracle problem" | Standard testing vocabulary. Weyuker, _On Testing Non-testable Programs_ (1982); Barr et al., _The Oracle Problem in Software Testing: A Survey_ (IEEE TSE, 2015). |
+| Breaking the old function on purpose | **"Leaning on the Compiler"** — Michael Feathers, _Working Effectively with Legacy Code_ (2004). |
+| Stored output files | **Characterization tests** (Feathers). Also golden-master or approval testing. |
+
+What is new here is the framing, not the technique: the four rungs as a named
+order, and the use of an oracle to prove that a change is **complete** where
+the literature uses one to prove that output is **correct**.
 
 ## 5. Write down the intent first
 

@@ -11,12 +11,16 @@ description: >
 
 # Legacy build container
 
+**Invoke:** `/legacy-build-container`
 **Use when:** an old code base does not build with the current toolchain, and
 an agent or a team needs a working build.
+**Status:** no verified environment yet. `reference/verified-environments.md`
+holds zero rows and three recorded traps. The first green build adds the first
+row. See [`workshops/legacy-refactor/`](../../workshops/legacy-refactor/README.md).
 
-**Why this matters:** the build is the first oracle. Without a build, nobody can
-prove that a change to legacy code is complete. An agent without a build can
-only guess.
+**Why this matters:** the build is the first rung of the
+[test oracle](../../CONTEXT.md#language-legacy-refactoring) ladder. Without a build, nobody can prove that a change to
+legacy code is complete. An agent without a build can only guess.
 
 Environment decisions: [ADR 002](../../docs/decisions/002-workshop-container-environment.md).
 
@@ -122,7 +126,32 @@ cmake --build build --target <subset>
 `CMAKE_EXPORT_COMPILE_COMMANDS` writes `compile_commands.json`. The language
 server needs that file. Without it, there is no semantic index.
 
-### Step 6 — Make the build work without a network
+### Step 6 — Declare the build matrix, even when it has one entry
+
+The compiler is a sound oracle **only for the settings that you build**. So the
+set of settings is part of the result, and it must be written down rather than
+assumed.
+
+Write the matrix as a list, in the build script or the notebook, even when the
+list has one entry:
+
+```bash
+# Build matrix. One entry on purpose: the workshop proves the method, not the
+# full configuration space. Each extra entry multiplies build time, and every
+# claim about complete recall is limited to the entries listed here.
+MATRIX=("default")
+# MATRIX=("default" "WITH_OPENSSL=ON" "WITH_ICU=ON")   # the real project's set
+```
+
+Two reasons to keep the single entry explicit instead of leaving it out:
+
+1. The reader sees that a choice was made, not forgotten.
+2. Adding the second entry later costs one line, so nobody has to restructure
+   the script to widen the claim.
+
+Report the entries that you built. Never report complete recall without them.
+
+### Step 7 — Make the build work without a network
 
 A demonstration or a CI job can have no network. Prepare for that state.
 
@@ -135,10 +164,14 @@ A demonstration or a CI job can have no network. Prepare for that state.
 **Test this with the network switched off.** A network that is merely idle is
 not a test.
 
-### Step 7 — Record the result
+### Step 8 — Record the result
 
 Complete the step in [Rule 5](#rule-5-record-what-you-learned). Do not skip
 it. The record is the value of this skill.
+
+The traps below are also recorded in
+[ADR 002](../../docs/decisions/002-workshop-container-environment.md), which
+explains why this skill exists at all. Keep the two lists consistent.
 
 ---
 

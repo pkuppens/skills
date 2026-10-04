@@ -6,6 +6,9 @@ task after its limit.
 The tiers set the order. Tier A must be complete. Tier B is next. A tier C item
 can ship as a Markdown file that states the plan.
 
+Terms used here ([test oracle](../../CONTEXT.md#language-legacy-refactoring) and the rest) have one definition for this
+repository. Follow the link before you use them in a report.
+
 **Rule: never store output that a cell did not produce.** A notebook that is
 marked as "not run" is acceptable. A notebook with invented output is not.
 The same rule applies to the learned-environments file of a skill.
@@ -44,6 +47,7 @@ clearly; a stored build log; a screenshot.
 | C2 | `04_bug_investigation` | Executed, or marked as not run. |
 | C3 | `06_transfer` | The pinned install command, with its verify output. |
 | C4 | Verify the installation in a clean user profile. | The verify output lists the skills. |
+| C5 | Add a minimal `.pre-commit-config.yaml`: whitespace and end-of-file hooks, plus the skills validation that CI already runs. Leave `nbstripout` commented out, with the reason beside it. | `pre-commit run --all-files` passes, and `grep -n nbstripout .pre-commit-config.yaml` shows only commented lines. |
 
 ## Known traps
 
@@ -51,7 +55,7 @@ clearly; a stored build log; a screenshot.
 | --- | --- |
 | `dotnet restore` needs a network. | Vendor the packages. Use `--no-restore`. Test with the network switched off, not merely idle. |
 | Old Linux distributions moved their package servers. | Use `old-releases.ubuntu.com`, or Debian with `archive.debian.org`. Settle this in the first 20 minutes of task B1. |
-| A tool that strips notebook output deletes the offline fallback. | This repository has no `pre-commit` configuration. Do not add `nbstripout` for this directory. See [notebooks/README.md](notebooks/README.md). |
+| A tool that strips notebook output deletes the offline fallback. | `pre-commit` is fine; `nbstripout` is not. Keep it absent or excluded for `workshops/`. See [notebooks/README.md](notebooks/README.md) and task C5. |
 | A USB port can be blocked by policy. | Keep the saved images on the laptop disk. |
 | A new skill must pass CI. | Run `npx --yes skills-ref validate skills/<name>` before the commit. |
 | A new skill must be registered twice. | Add it to `skills/SKILL_TREE.md` and to `.claude-plugin/marketplace.json`. |

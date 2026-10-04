@@ -10,8 +10,15 @@ description: >
 
 # Call-site exhaustiveness
 
+**Invoke:** `/call-site-exhaustiveness`
 **Use when:** you must change or remove a member, and you must know every place
 that uses it.
+**Status:** not yet exercised by a recorded run. The comparison procedure below
+is the design; `workshops/legacy-refactor/notebooks/05_refactoring.ipynb` will
+hold the executed proof, with the two counts side by side.
+
+Terms used here — [test oracle, sound, recall, call site](../../CONTEXT.md#language-legacy-refactoring) — have one
+definition for this library. Read it before you use them in a report.
 
 **The failure that this skill prevents:** an agent runs one text search, finds
 some call sites, fixes those, and reports the refactor as complete. The missed

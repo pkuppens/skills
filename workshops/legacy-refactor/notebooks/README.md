@@ -10,10 +10,30 @@ Commit each notebook **with** the output of each cell.
 The stored output makes the notebook three things at the same time: the
 runbook, the recording, and the handout. A reader needs only a browser.
 
-**Do not add a tool that strips output.** `nbstripout` deletes the stored
-output. The workshop then has no offline fallback. This repository has no
-`pre-commit` configuration at this time. Keep it that way for this directory,
-or exclude this directory.
+**`nbstripout` must never run on this directory.** It deletes the stored
+output, and the workshop then has no offline fallback.
+
+`pre-commit` itself is welcome in this repository, and a minimal configuration
+is wanted later — see task C5 in [../TASKS.md](../TASKS.md). The rule is not
+"no pre-commit". The rule is that this directory keeps its cell output.
+
+When somebody adds the configuration, `nbstripout` must be absent or excluded:
+
+```yaml
+# .pre-commit-config.yaml
+# nbstripout is deliberately NOT enabled. It strips notebook cell output, and
+# workshops/ depends on that output being committed: it is the offline
+# fallback and the handout. If you ever enable it, exclude workshops/ as below.
+#
+# - repo: https://github.com/kynan/nbstripout
+#   rev: 0.7.1
+#   hooks:
+#     - id: nbstripout
+#       exclude: ^workshops/
+```
+
+Commented out on purpose, with the reason next to it, so that nobody enables it
+by accident while adding an unrelated hook.
 
 ## 2. Never store output that the cell did not produce
 
@@ -67,7 +87,7 @@ Current ADRs:
 - [ADR 002 — Workshop container environment](../../../docs/decisions/002-workshop-container-environment.md)
 - [ADR 003 — AI assistance, network, and confidentiality](../../../docs/decisions/003-ai-assistance-network-and-confidentiality.md)
 
-## 7. Show the oracle, not the tool
+## 7. Show the [test oracle](../../../CONTEXT.md#language-legacy-refactoring), not the tool
 
 A cell must answer a question from [THESIS.md](../THESIS.md). A cell that only
 shows a tool version is setup, not content. Keep the setup cells together at

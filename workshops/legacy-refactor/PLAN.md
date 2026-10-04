@@ -17,8 +17,8 @@ evidence for each step.
 
 The attendees must be able to do two things after the session:
 
-1. Name the reason for a change that they plan, and name the oracle that this
-   reason needs.
+1. Name the reason for a change that they plan, and name the
+   [test oracle](../../CONTEXT.md#language-legacy-refactoring) that this reason needs.
 2. Run the precondition check against their own code base.
 
 The session does **not** teach the attendees to install and operate the full

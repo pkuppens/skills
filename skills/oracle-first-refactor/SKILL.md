@@ -11,9 +11,17 @@ description: >
 
 # Oracle-first refactor
 
-**Use when:** you plan a refactor in a large or legacy code base, and you must
-be able to prove two things. The change is complete. The change does not change
-the behavior.
+**Invoke:** `/oracle-first-refactor`
+**Use when:** you plan a refactor **or a bug fix** in a large or legacy code
+base, and you must be able to prove what changed and what did not.
+**Status:** not yet exercised by a recorded run. See
+[`workshops/legacy-refactor/`](../../workshops/legacy-refactor/README.md) for
+the planned proof.
+
+A [test oracle](../../CONTEXT.md#language-legacy-refactoring) is a tool that decides whether a result is correct. The
+term is standard software-testing vocabulary, not invented here: see the
+CONTEXT.md entry for the references. This skill uses it for two questions —
+is the change complete, and did the behavior stay the same.
 
 **The principle:** an AI agent writes code quickly. It is much more difficult
 to know whether the new code is correct. So the slow part is proof, not writing.
@@ -66,6 +74,45 @@ A change that moves data needs step 4. A change that only moves types needs
 step 1. Match the oracle to the change, and say which step you chose.
 
 ---
+
+## Refactor and bug fix need the same ladder, from a different rung
+
+The two jobs look similar and they use opposite tests for success. Decide which
+one you are doing before you choose the oracle.
+
+| | Refactor | Bug fix |
+| --- | --- | --- |
+| What must happen to the behavior | Nothing changes. | Exactly one thing changes. |
+| What the oracle must prove | Every stored output file is identical. | One stored output file changes on purpose. Every other file is identical. |
+| A changed output file means | **Failure.** You broke something. | **Success**, for that one file only. Any second change is a defect. |
+| Where you start on the ladder | Rung 1. The compiler proves that you reached every call site. | Rung 3. A defect is rarely a type error, so the compiler cannot see it. |
+| What you write first | The stored output of the current behavior. | A test that fails because of the defect. |
+
+### Worked example, both ways
+
+Take a function that writes a DICOM tag, and say it writes the patient name
+with the wrong character set.
+
+**As a refactor** — you move that function to another class, and the defect
+stays. Procedure: store the output of 200 files first. Break the old function
+name so that the compiler lists every caller. Fix each caller. Compare the 200
+files. All 200 must be identical, **including the wrong character set.** A
+refactor that also fixes the defect is two changes in one commit, and a
+reviewer then cannot see which change caused which effect.
+
+**As a bug fix** — you correct the character set. Procedure: write the failing
+test first, from the standard, not from the current output. Fix the function.
+Compare the 200 files. Now exactly the files with a non-ASCII patient name must
+differ, and you must look at each difference and accept it. The other files must
+be identical. Then update those stored files in their own commit, with the
+standard quoted in the message. That commit is the evidence of intent.
+
+### The rule that follows
+
+**Never put a refactor and a bug fix in the same commit.** The oracle cannot
+tell you which change moved the output, so the evidence becomes useless. Do the
+bug fix first if the defect blocks the refactor. Otherwise refactor first, prove
+that nothing moved, and fix the defect after.
 
 ## The deliberate-breakage technique
 
@@ -174,6 +221,27 @@ comes from deterministic local tools, not from the model.
 4. Report the configurations that you compiled.
 5. Fix one diagnostic at a time. Keep each step reviewable.
 6. State the caveats in the same report as the result.
+
+## Where this comes from
+
+Say this when you present the technique. Most of it is established work, and
+claiming otherwise is the one thing that damages your credibility.
+
+| Idea here | Established name and source |
+| --- | --- |
+| Test oracle, and "the oracle problem" | Standard testing vocabulary. Traced to William Howden's testing work of the late 1970s; Elaine Weyuker, _On Testing Non-testable Programs_ (1982); Barr, Harman, McMinn, Shahbaz and Yoo, _The Oracle Problem in Software Testing: A Survey_, IEEE TSE 41(5), 2015. |
+| Deliberate breakage | **"Leaning on the Compiler"** — Michael Feathers, _Working Effectively with Legacy Code_ (2004), chapter 8. |
+| Stored output files | **Characterization tests** (Feathers, same book). Also called golden-master or approval testing. |
+| Sequencing a large refactor | The **Mikado Method** is the closest established treatment. |
+
+**What this library adds.** Two things, and they are framing rather than
+discovery. First, the four-rung ladder as a named order with the rule to build
+the missing rung first. Second, using an oracle to judge **completeness** —
+the compiler as the answer to "did I find every call site" — where the
+literature uses an oracle to judge whether output is **correct**.
+
+Present it as: Feathers' technique, with an agent doing the edits, and a named
+ladder deciding when the compiler is not enough.
 
 ## Related skills
 
