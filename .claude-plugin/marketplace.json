@@ -61,6 +61,15 @@
       "strict": false
     },
     {
+      "name": "call-site-exhaustiveness",
+      "source": "./",
+      "description": "Answer one question honestly: did I find every call site? Ranks the search methods by soundness, and makes the agent report the method, the count, and the blind spots. Use before any rename, signature change, API removal, or impact analysis in a code base that is too large to read, and whenever an agent is about to claim that a refactor is complete.",
+      "skills": [
+        "./skills/call-site-exhaustiveness"
+      ],
+      "strict": false
+    },
+    {
       "name": "clarification-protocol",
       "source": "./",
       "description": "Generate targeted clarifying questions (2-3 max) that challenge vague requirements and extract missing context. Use after request-analyzer identifies clarification needs, before routing to specialist agents. Helps cto-orchestrator avoid delegating unclear requirements.",
@@ -97,11 +106,29 @@
       "strict": false
     },
     {
+      "name": "legacy-build-container",
+      "source": "./",
+      "description": "Build a Docker container that compiles an old code base with a period-correct toolchain, then record the result so the next attempt is faster. Use when a C++, C#, or other compiled project does not build with the current compiler, when a legacy build must be reproducible for an audit, or when an AI agent needs a working build as its oracle before it changes legacy code.",
+      "skills": [
+        "./skills/legacy-build-container"
+      ],
+      "strict": false
+    },
+    {
       "name": "ml-cv-specialist",
       "source": "./",
       "description": "Deep expertise in ML/CV model selection, training pipelines, and inference architecture. Use when designing machine learning systems, computer vision pipelines, or AI-powered features.",
       "skills": [
         "./skills/ml-cv-specialist"
+      ],
+      "strict": false
+    },
+    {
+      "name": "oracle-first-refactor",
+      "source": "./",
+      "description": "Establish the oracle before you edit, then let the oracle drive the refactor. Holds the deliberate-breakage technique that makes the compiler list every call site, and the four-step oracle ladder with the rule to build the missing oracle first. Use before any refactor of a code base that is too large to read, and whenever an agent must prove that a change is complete and does not change the behavior.",
+      "skills": [
+        "./skills/oracle-first-refactor"
       ],
       "strict": false
     },

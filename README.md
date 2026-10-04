@@ -48,7 +48,11 @@ Every skill is one `skills/<name>/SKILL.md`. Categories below mirror [SKILL_TREE
 | **Strategy, review & ML/CV** ([index](skills/SKILL_TREE.md#strategy-and-lifecycle-skills)) | `tech-stack-recommender`, `architecture-pattern-selector`, `scalability-advisor`, `cost-estimator`, `roadmap-generator`, `delegation-prompt-crafter`, `request-analyzer`, `clarification-protocol`, `antipattern-detector`, `assumption-challenger`, `brutally-honest-code-review`, `validation-report-generator`, `ml-cv-specialist` |
 | **Repo maintenance** ([index](skills/SKILL_TREE.md#repo-maintenance)) | `branch-cleanup`, `dependabot` |
 | **Agent orchestration** ([index](skills/SKILL_TREE.md#agent-orchestration)) | `ai-factory` |
+| **Legacy refactoring** ([index](skills/SKILL_TREE.md#legacy-refactoring-skills)) | `oracle-first-refactor`, `call-site-exhaustiveness`, `legacy-build-container` |
 | **Meta** ([index](skills/SKILL_TREE.md#meta)) | `skills-transfer`, `repo-transfer` (install, catalog, and land skills via PR), `skill-creation` (author new skills) |
+
+> [!TIP]
+> The legacy-refactoring skills have a worked example with stored output: [`workshops/legacy-refactor/`](workshops/legacy-refactor/README.md) — refactoring a code base larger than any context window, on a public healthcare C#/C++ specimen.
 
 ## Getting the code
 
@@ -215,8 +219,12 @@ pkuppens/skills/
 ├── docs/
 │   ├── agents/               # issue tracker, triage labels, domain-doc rules for agents
 │   └── decisions/
-│       └── 001-skill-validation-and-tooling.md
+│       ├── 001-skill-validation-and-tooling.md
+│       ├── 002-workshop-container-environment.md
+│       └── 003-ai-assistance-network-and-confidentiality.md
 ├── CONTEXT.md                # Domain glossary
+├── workshops/
+│   └── legacy-refactor/      # worked example: notebooks with stored output
 ├── skills/
 │   ├── README.md             # Pointer / conventions (see migration issues)
 │   ├── skills-transfer/      # meta: install, sources, derivatives, catalog
