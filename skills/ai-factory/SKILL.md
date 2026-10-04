@@ -54,6 +54,28 @@ User Request
 
 **Rule of thumb:** if the file contains proprietary business logic, PII, credentials, or trade secrets → route to a local agent. Everything else can go to the cloud.
 
+### Why a weaker local model is acceptable
+
+The usual objection to local routing is capability: the local model is weaker, so the output is worse. That objection assumes the **model** gives the verdict. In a code base with static types it does not.
+
+Put the oracle next to the local agent, and the model only has to produce a candidate edit:
+
+| Oracle | Runs where | Needs a model? |
+|--------|-----------|----------------|
+| Compiler | Local | No |
+| Semantic index (LSP) | Local | No |
+| Tests | Local | No |
+| Golden-output comparison | Local | No |
+
+The local agent edits. The deterministic local tools judge. A failed judgement costs one more iteration, not a wrong merge — so a weaker model trades capability for iterations, not for correctness. This is what makes confidential routing practical rather than merely compliant.
+
+Two consequences:
+
+- **Prefer local routing for typed, compiled code** (C++, C#, Java, Rust, TypeScript). The oracle is strongest there. Reserve cloud agents for tasks where breadth of knowledge is the scarce input: architecture, unfamiliar APIs, intent reconstruction.
+- **In a regulated product** (IEC 62304, SaMD), the evidence trail is produced locally by deterministic tools. The same artifacts that make the change safe make it auditable. See [ADR 003 — AI assistance, network, and confidentiality](../../docs/decisions/003-ai-assistance-network-and-confidentiality.md).
+
+Skills that supply those local oracles: [`oracle-first-refactor`](../oracle-first-refactor/SKILL.md), [`call-site-exhaustiveness`](../call-site-exhaustiveness/SKILL.md), [`legacy-build-container`](../legacy-build-container/SKILL.md).
+
 ---
 
 ## Quick Start

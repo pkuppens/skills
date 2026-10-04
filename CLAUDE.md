@@ -22,6 +22,7 @@ _Why:_ `docs/curated-skill-selection.md` / `docs/bundles/` cross-linking was alr
 - `docs/decisions/` — ADRs (hard-to-reverse, non-obvious, real-tradeoff decisions only).
 - `docs/agents/` — issue tracker, triage labels, and domain-doc rules the engineering skills read.
 - `skills/` — the actual Agent Skills tree (`SKILL_TREE.md` index, per-skill folders). [skills/CLAUDE.md](skills/CLAUDE.md) (agent rules), [skills/COOPERATION.md](skills/COOPERATION.md) (how skills compose), `skills/_meta/` (skill-creation, human-ai-execution).
+- `workshops/` — worked examples that prove a skill set works, as notebooks with their cell output committed. Rules: [workshops/legacy-refactor/notebooks/README.md](workshops/legacy-refactor/notebooks/README.md). **Never add `nbstripout` to this repo** — it deletes the stored output these examples depend on.
 
 Defer subdirectory-specific instructions to files within that subdirectory once they exist; this file stays high-level.
 

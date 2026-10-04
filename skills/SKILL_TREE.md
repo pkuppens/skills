@@ -47,6 +47,28 @@ terminal/
 └── zsh/SKILL.md
 ```
 
+## Legacy refactoring skills
+
+For code bases that are larger than any context window. The common principle: generation is cheap, a trustworthy verdict is scarce — so establish the oracle (compiler, semantic index, tests, golden outputs) before editing, and let the oracle drive the work.
+
+| Skill | Path | Purpose |
+|-------|------|---------|
+| oracle-first-refactor | [oracle-first-refactor/SKILL.md](oracle-first-refactor/SKILL.md) | The four-step oracle ladder and the deliberate-breakage technique that makes the compiler enumerate every call site |
+| call-site-exhaustiveness | [call-site-exhaustiveness/SKILL.md](call-site-exhaustiveness/SKILL.md) | Did I find every call site? Method ladder by soundness, the three-way comparison procedure, and the recall-reporting rule |
+| legacy-build-container | [legacy-build-container/SKILL.md](legacy-build-container/SKILL.md) | Docker container with a period-correct toolchain for an old code base, plus a reviewed record of environments that built |
+
+```text
+legacy-build-container        # oracle 1 exists at all
+          |
+          v
+oracle-first-refactor         # name the oracle, break the API on a branch
+          |
+          v
+call-site-exhaustiveness      # compare three methods, report recall honestly
+```
+
+Worked example with stored output: [`workshops/legacy-refactor/`](../workshops/legacy-refactor/README.md). Related: [ai-factory](ai-factory/SKILL.md) decides whether the editing model runs locally or in the cloud.
+
 ## Documentation skills
 
 | Skill | Path | Purpose |
