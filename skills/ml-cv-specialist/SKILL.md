@@ -379,4 +379,3 @@ Production Distribution ─┘
 ## References
 
 - [Model Catalog](model-catalog.md) - Detailed model comparison and benchmarks
-- [Inference Patterns](inference-patterns.md) - Architecture patterns for different use cases
