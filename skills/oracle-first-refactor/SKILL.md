@@ -14,9 +14,9 @@ description: >
 **Invoke:** `/oracle-first-refactor`
 **Use when:** you plan a refactor **or a bug fix** in a large or legacy code
 base, and you must be able to prove what changed and what did not.
-**Status:** not yet exercised by a recorded run. See
-[`workshops/legacy-refactor/`](../../workshops/legacy-refactor/README.md) for
-the planned proof.
+**Status:** exercised on fo-dicom 4.0.8. The recorded run is
+[`05_refactoring.ipynb`](../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb),
+which produced the counts quoted below. The C++ half is not yet run.
 
 A [test oracle](../../CONTEXT.md#language-legacy-refactoring) is a tool that decides whether a result is correct. The
 term is standard software-testing vocabulary, not invented here: see the
@@ -138,8 +138,20 @@ list is complete because of the method, not because somebody was careful.
    | C++ | Mark it deprecated and make the warning an error. | `[[deprecated]]` with `-Werror=deprecated-declarations` |
    | C++ | Or delete the member. | None needed |
    | C++ | Or change the parameter type to an incompatible type. | None needed |
-   | C# | Mark it as an error. | `[Obsolete("message", error: true)]` |
-   | C# | Or make every warning an error. | `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` |
+   | C# | **Promote the obsolete warning.** Use this to *enumerate*. | `dotnet build -warnaserror:CS0618` |
+   | C# | Mark it an error. Use this to *block* new use, not to enumerate. | `[Obsolete("message", error: true)]` |
+
+   **Measured, not assumed: `error: true` reports fewer sites than the warning
+   form.** On fo-dicom 4.0.8, promoting `CS0618` listed 6 sites;
+   `[Obsolete(..., error: true)]` listed 3. Once a field *declaration* is an
+   error, the compiler suppresses the later *uses* of that field, which is
+   ordinary error recovery. The suppressed sites are real work.
+
+   So in C#: promote the warning to enumerate. If you must use `error: true`,
+   fix and rebuild until the count reaches zero, and never report the first
+   count as the total. Evidence:
+   [`05_refactoring.ipynb`](../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb),
+   step 4.
 
 3. **Build every configuration that you intend to claim.**
 

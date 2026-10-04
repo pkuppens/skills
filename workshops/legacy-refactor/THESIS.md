@@ -78,9 +78,21 @@ rename it, or mark it so that the compiler refuses it.
 | Language | How to break it |
 | --- | --- |
 | C++ | Delete the member. Or mark it `[[deprecated]]` and compile with `-Werror=deprecated-declarations`. |
-| C# | Mark it `[Obsolete("message", error: true)]`. |
+| C# | Build with `-warnaserror:CS0618`, which promotes the obsolete warning. |
 
-The build then stops at every place that calls the function. The compiler shows
+In C#, do **not** use `[Obsolete("message", error: true)]` to make the list. It
+reports fewer places, because the compiler stops reporting uses of a field once
+the declaration of that field is an error. Measured on the example code: the
+promoted warning found 6 places, the error attribute found 3. Use the error
+attribute to stop new use, not to count existing use.
+
+The build then stops at every place that calls the function. On the example
+code the text search gave 62 matches in 11 files, and 8 after you remove the
+files that are not built. The compiler gave 6. The 2 extra were a **different
+class with the same name**, which is the replacement for the deprecated one. A
+text search cannot tell them apart; the compiler can.
+
+The compiler shows
 you the complete list. The list also holds the places that a text search cannot
 find.
 
