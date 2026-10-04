@@ -39,7 +39,7 @@ neither option is acceptable for their daily work.
 4. **For a regulated team, route by sensitivity.** Confidential work runs on an
    on-premises model. Public work can run on a cloud model. This is the routing
    rule of the [`ai-factory`](../../skills/ai-factory/SKILL.md) skill.
-5. **State the exposure out loud.** Name what leaves the machine, where it
+5. **Say clearly what is exposed.** Name what leaves the machine, where it
    goes, and who can read it. Raise the subject before the audience raises it.
 
 ## Consequences

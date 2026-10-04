@@ -48,6 +48,46 @@ _Avoid_: Devcontainer spec (machine-readable source that may override or complem
 The host application that wraps shell sessions (tabs, splits, copy-paste behavior). Examples: Windows Terminal on Windows (tabs over cmd or PowerShell), [cmux](https://cmux.com/) on macOS (multiplexer like tmux on Linux), iTerm2, WezTerm, Alacritty.
 _Avoid_: Shell (cmd, bash), OS, terminal multiplexer when used only as a protocol (unless the user names the emulator).
 
+## Language: legacy refactoring
+
+These terms come from the legacy-refactoring skills and the [`workshops/legacy-refactor/`](workshops/legacy-refactor/README.md) material. Use the plain words in prose; use the term only where a reader needs the precise meaning.
+
+**Oracle**:
+A tool that answers one of two questions about a change: is the change complete, and did the behavior stay the same. Four oracles, from weak to strong: the compiler, a semantic index, tests, and a comparison of produced output files.
+_Avoid_: Validator, checker, ground truth. Do not use "oracle" for the AI model — the model proposes, the oracle judges.
+
+**Oracle ladder**:
+The four oracles in order of strength. "Climb the ladder" means: use a stronger oracle because the weaker one cannot answer the question.
+_Avoid_: Pyramid, hierarchy, test pyramid (that is a different idea about test counts).
+
+**Sound (of a search method)**:
+A method is sound when it never misses a real result. A text search is not sound. The compiler is sound for the build settings that you actually build.
+_Avoid_: Accurate, reliable, correct (these do not say in which direction the method fails).
+
+**Recall**:
+The part of the real results that a method found. "Complete recall" means that no place was missed.
+_Avoid_: Coverage (that word is already used for test coverage), accuracy.
+
+**Call site**:
+One place in the code that calls a specific function or uses a specific member.
+_Avoid_: Usage, reference, occurrence (a text search finds occurrences; only some occurrences are call sites).
+
+**Deliberate breakage**:
+Breaking an old function on purpose, on a separate branch, so that the compiler stops at every call site and lists them. The list is then complete because of the method, not because somebody was careful.
+_Avoid_: Sabotage, hack. Always say "on a branch" — that is what makes it safe.
+
+**Reference output file**:
+A stored file that holds the output the code produced before the change. A later run must produce the same bytes. This is the only oracle that catches a change in produced data when the types and the tests stay the same.
+_Avoid_: Snapshot test (too broad), golden file (use only when quoting the `golden-output-regression` skill name).
+
+**Intent layer**:
+The written record of what legacy code must do: the rules it keeps, the words it uses, and the decisions behind it. In undocumented code it is the first thing an AI agent should produce, before any change.
+_Avoid_: Requirements (those are for new work), specification, documentation (too broad).
+
+**Period-correct toolchain**:
+A compiler and build system of the same age as the code, usually inside a container, because a current compiler cannot build the old code.
+_Avoid_: Legacy toolchain (ambiguous: it can mean an old tool or a tool for old code).
+
 ## Example dialogue
 
 **Dev:** I want grill to pick defaults without asking every time.  

@@ -67,12 +67,12 @@ Put the oracle next to the local agent, and the model only has to produce a cand
 | Tests | Local | No |
 | Golden-output comparison | Local | No |
 
-The local agent edits. The deterministic local tools judge. A failed judgement costs one more iteration, not a wrong merge — so a weaker model trades capability for iterations, not for correctness. This is what makes confidential routing practical rather than merely compliant.
+The local agent makes the change. The local tools judge it. If the judgement fails, you pay one more attempt — you do not merge a wrong change. So a weaker model costs you time, not correctness. That is what makes local routing practical, and not only a rule you must follow.
 
 Two consequences:
 
 - **Prefer local routing for typed, compiled code** (C++, C#, Java, Rust, TypeScript). The oracle is strongest there. Reserve cloud agents for tasks where breadth of knowledge is the scarce input: architecture, unfamiliar APIs, intent reconstruction.
-- **In a regulated product** (IEC 62304, SaMD), the evidence trail is produced locally by deterministic tools. The same artifacts that make the change safe make it auditable. See [ADR 003 — AI assistance, network, and confidentiality](../../docs/decisions/003-ai-assistance-network-and-confidentiality.md).
+- **In a medical product** (IEC 62304, SaMD), the records that an auditor checks are produced on your own machine, by tools that give the same answer every time. The same files that make the change safe also make it possible to audit. See [ADR 003 — AI assistance, network, and confidentiality](../../docs/decisions/003-ai-assistance-network-and-confidentiality.md).
 
 Skills that supply those local oracles: [`oracle-first-refactor`](../oracle-first-refactor/SKILL.md), [`call-site-exhaustiveness`](../call-site-exhaustiveness/SKILL.md), [`legacy-build-container`](../legacy-build-container/SKILL.md).
 

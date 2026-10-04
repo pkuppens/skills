@@ -221,9 +221,12 @@ pkuppens/skills/
 │   └── decisions/
 │       ├── 001-skill-validation-and-tooling.md
 │       ├── 002-workshop-container-environment.md
-│       └── 003-ai-assistance-network-and-confidentiality.md
+│       ├── 003-ai-assistance-network-and-confidentiality.md
+│       └── 004-licensing-split.md
 ├── CONTEXT.md                # Domain glossary
+├── LICENSE                   # MIT — covers skills/, tooling, docs outside workshops/
 ├── workshops/
+│   ├── LICENSE               # CC BY-NC-ND 4.0 — covers workshops/ only
 │   └── legacy-refactor/      # worked example: notebooks with stored output
 ├── skills/
 │   ├── README.md             # Pointer / conventions (see migration issues)
@@ -246,4 +249,16 @@ Content is moving from [`pkuppens/pkuppens`](https://github.com/pkuppens/pkuppen
 
 Report bugs or request skills via [GitHub issues](https://github.com/pkuppens/skills/issues). Pull requests that touch `skills/` must pass [`validate-skills.yml`](.github/workflows/validate-skills.yml) (`skills-ref validate` on every changed skill directory). See [ADR 001](docs/decisions/001-skill-validation-and-tooling.md) for the tooling rationale behind that check.
 
-Licensed under the [MIT License](LICENSE).
+## Licence
+
+This repository uses **two** licences. GitHub shows only the first one, so read this table before you reuse anything.
+
+| What | Licence | What you may do |
+| --- | --- | --- |
+| `skills/`, repository tooling, and docs outside `workshops/` | [MIT](LICENSE) | Use, change, and build on it. Commercial use is allowed. |
+| [`workshops/`](workshops/) — teaching material, notebooks, stored output | [CC BY-NC-ND 4.0](workshops/LICENSE) | Read it, keep it, and share it without change. No commercial use. No published changes. |
+| Example code bases that a workshop clones (fo-dicom, DCMTK) | Their own licences | Not covered here. |
+
+In short: **learn from the workshops, build with the skills.** To apply a method to your own code base, use the skills — they are MIT and meant to be adapted.
+
+Reasons for the split: [ADR 004](docs/decisions/004-licensing-split.md).

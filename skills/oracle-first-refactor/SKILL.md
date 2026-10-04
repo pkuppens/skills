@@ -15,10 +15,37 @@ description: >
 be able to prove two things. The change is complete. The change does not change
 the behavior.
 
-**The principle:** generation is cheap, and a trustworthy verdict is scarce.
-Therefore the oracle, not the context window, is the bottleneck.
+**The principle:** an AI agent writes code quickly. It is much more difficult
+to know whether the new code is correct. So the slow part is proof, not writing.
+The oracle gives the proof. Make the oracle first.
 
 ---
+
+## Rule 0 — name the reason before you start
+
+**Refuse to start a refactor that has no reason.** Nobody changes old code
+because the code is old. A refactor costs money and it adds risk.
+
+Ask the user which reason applies. Write the answer down.
+
+| Reason | What the user wants | Which oracle the work needs |
+| --- | --- | --- |
+| 1. Fix a defect | The defect is gone, and no caller breaks. | Steps 1 and 3. Step 4 if the code produces data. |
+| 2. Give a client one function | One function, usable on its own. | Steps 1 and 3. |
+| 3. The platform forces it | An old interface is gone, or a framework is out of support. | Step 1, for every build setting. |
+| 4. Nobody understands the code | Written rules, words, and decisions. | Step 2 first. The result is text, not a code change. |
+| 5. There are no tests | Proof that a later change is safe. | Step 4 first. Record what the code produces now. |
+
+Two things follow from the reason.
+
+1. **The reason sets the smallest change.** Reason 2 does not permit a rewrite
+   of the module. Say what is in scope and what is not.
+2. **The reason sets the oracle.** A change that moves data needs step 4. A
+   change that only moves types needs step 1.
+
+If the user cannot name a reason, then the correct answer is **do not
+refactor**. Say so. Offer reason 4 or reason 5 instead: better understanding
+and a first test set are useful on their own, and they are cheaper.
 
 ## The oracle ladder
 
@@ -27,7 +54,7 @@ Name the oracle **before** the first edit.
 | Step | Oracle | Question that it answers | Cost |
 | --- | --- | --- | --- |
 | 1 | Type system and compiler | Is the change complete? | Free, if a build exists |
-| 2 | Semantic index | What is the blast radius, before I choose an approach? | Low |
+| 2 | Semantic index | How much code does this change touch? | Low |
 | 3 | Tests | Does the observable contract still hold? | Medium |
 | 4 | Golden outputs | Is the produced data bit-identical? | Medium |
 
@@ -45,8 +72,8 @@ step 1. Match the oracle to the change, and say which step you chose.
 Do not ask a text search to find every call site. Do not ask the model either.
 **Break the old interface on purpose and let the build list the call sites.**
 
-The roles change. The compiler is the search. The AI makes the edits. The
-recall is then 100% by construction, not by diligence.
+The roles change. The compiler does the search. The AI makes the changes. The
+list is complete because of the method, not because somebody was careful.
 
 ### Procedure
 
@@ -111,9 +138,11 @@ recall is then 100% by construction, not by diligence.
 
 Work in this order. Each step produces evidence for the next step.
 
-1. **Name the oracle.** Which step of the ladder does this change need?
+1. **Name the reason and the oracle.** Why does this change happen? Which step
+   of the ladder does it need?
 2. **Build the missing oracle.** Commit it on its own.
-3. **Measure the blast radius.** Use the semantic index, step 2.
+3. **Measure how much code the change touches.** Use the semantic index,
+   step 2.
 4. **Reconstruct the intent**, if the code has no documentation. A reviewer
    cannot approve a diff when nobody knows whether the old behavior was
    intentional.

@@ -137,12 +137,12 @@ not a test.
 
 ### Step 7 — Record the result
 
-Complete the step in [Rule 5](#rule-5--record-what-you-learned). Do not skip
+Complete the step in [Rule 5](#rule-5-record-what-you-learned). Do not skip
 it. The record is the value of this skill.
 
 ---
 
-## Rule 5 — Record what you learned
+## Rule 5: record what you learned
 
 The skill improves because each run adds a fact. The record is a reviewed Git
 commit, so the facts keep their provenance.

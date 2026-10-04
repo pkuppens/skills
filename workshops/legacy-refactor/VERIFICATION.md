@@ -5,20 +5,20 @@ command. Do not assume an item.
 
 ## Rule
 
-A claim without a command is an opinion. Each claim in
-[THESIS.md](THESIS.md) must have one command that the audience watches, or one
-stored cell output that the audience can read.
+Each claim in [THESIS.md](THESIS.md) must have one command that the audience
+watches, or one stored cell output that the audience can read. A claim with no
+command and no stored output does not go in the workshop.
 
 ## Claim verification
 
 | Claim | Verified by | Where |
 | --- | --- | --- |
-| 1. It is an oracle problem | The readiness table names the oracle that each code base has and does not have. | `01_precondition_checks` |
-| 2. The compiler finds the call sites | Two counts on one screen: the text-search count and the compiler count. The sets differ. | `05_refactoring` |
-| 3. Static types are an asset | The compiler produces the list without extra work. No oracle was written first. | `05_refactoring` |
-| 4. A green test run is not proof | One deliberate failure of the output comparison, while the build and the unit tests stay green. | `03_test_driven_development` |
-| 5. Reconstruct the intent first | A glossary and an invariant list exist, and each entry names the code that supports it. | `02_requirements_engineering` |
-| 6. The context discipline is auditable | The stored transcript shows that no file was opened before a tool named the lines. | Every notebook |
+| 1. The problem is proof, not search | The readiness table names the oracle that each code base has, and the oracle it does not have. | `01_precondition_checks` |
+| 2. Let the compiler find the places | Two counts on one screen: the text-search count and the compiler count. The two lists differ. | `05_refactoring` |
+| 3. Static types help you | The compiler produces the list with no extra work. Nobody had to write an oracle first. | `05_refactoring` |
+| 4. Green tests are not proof | One deliberate failure of the output comparison, while the build and the unit tests stay green. | `03_test_driven_development` |
+| 5. Write down the intent first | A glossary and an invariant list exist, and each entry names the code that supports it. | `02_requirements_engineering` |
+| 6. You can check the discipline | The stored transcript shows that no file was opened before a tool named the lines. | Every notebook |
 
 ## Acceptance checks
 
@@ -56,6 +56,9 @@ Switch the network off. Then run these checks.
 
 ### Content
 
+- [ ] The reason for the refactor is stated before the first demonstration.
+      See [THESIS.md](THESIS.md#why-refactor-legacy-code). An audience that does
+      not know why you would do this cannot judge whether the method is good.
 - [ ] The limits of claim 2 are written in the notebook, not only spoken.
 - [ ] The version-control limit is named: this method needs cheap branches and
       bisect.
