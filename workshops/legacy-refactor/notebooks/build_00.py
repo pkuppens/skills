@@ -312,8 +312,121 @@ The compiler lists them, and it names the macro-use line.
 This is also where the limits are visible. The template body is checked only
 because `main.cpp` instantiates it. Remove that line and the compiler goes
 quiet, while the code is still there.
+"""),
 
-## Step 6 — Record the environment
+md("""\
+## Step 6 — Prove it works with no network
+
+Both events are in person, and a guest network may not exist or may block
+outbound HTTPS. The demo must not need one.
+
+`dotnet build --no-restore` is **not** a proof on its own. It only skips the
+restore step, and it still depends on packages already sitting in the global
+cache. A warm cache is not an artifact you can carry.
+
+The real proof uses a **local feed with the source list cleared**. If `<clear />`
+removes nuget.org and the restore still succeeds, then nothing remote was
+needed. That is a statement about the configuration, not about whatever the
+network happened to be doing at the time.
+
+Build the feed once on a machine that has already restored online, then carry
+`offline-feed/` to the demonstration laptop.
+"""),
+
+code("""\
+import json, shutil
+
+feed = os.path.join(SPECIMEN, "offline-feed")
+os.makedirs(feed, exist_ok=True)
+cache = os.path.expanduser("~/.nuget/packages")
+
+with open(os.path.join(SPECIMEN, "FO-DICOM.Core", "obj", "project.assets.json"),
+          encoding="utf-8-sig") as fh:
+    assets = json.load(fh)
+
+copied, missing = [], []
+for key, v in assets.get("libraries", {}).items():
+    if v.get("type") != "package":
+        continue
+    name, _, ver = key.partition("/")
+    nupkg = os.path.join(cache, name.lower(), ver,
+                         "%s.%s.nupkg" % (name.lower(), ver))
+    if os.path.isfile(nupkg):
+        shutil.copy2(nupkg, feed)
+        copied.append(name)
+    else:
+        missing.append(key)
+
+size_mb = sum(os.path.getsize(os.path.join(feed, f))
+              for f in os.listdir(feed)) / 1048576
+print("packages vendored :", len(copied))
+print("feed size         : %.1f MB" % size_mb)
+print("missing           :", missing or "none")
+
+def write_config(path, with_feed):
+    lines = ['<?xml version="1.0" encoding="utf-8"?>',
+             "<configuration>",
+             "  <packageSources>",
+             "    <clear />"]
+    if with_feed:
+        lines.append('    <add key="offline" value="offline-feed" />')
+    lines += ["  </packageSources>", "</configuration>", ""]
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(os.linesep.join(lines))
+    return path
+
+offline_cfg = write_config(os.path.join(SPECIMEN, "nuget.offline.config"), True)
+print("wrote            :", os.path.basename(offline_cfg))"""),
+
+code("""\
+cold = os.path.join(WORKSPACE, "offline-test", "packages")
+shutil.rmtree(os.path.join(WORKSPACE, "offline-test"), ignore_errors=True)
+os.makedirs(cold, exist_ok=True)
+
+rc_ok, out_ok = run(["dotnet", "restore", PROJECT, "--configfile", offline_cfg,
+                     "--packages", cold, "--force"], cwd=SPECIMEN)
+print("A. restore from the local feed only, into a cold package folder")
+print("   exit code :", rc_ok, " <- 0 means nothing remote was needed")
+for line in out_ok.splitlines():
+    if "Restored" in line:
+        print("   restored in:", line.strip().split("(in ")[-1].rstrip(").").strip())
+
+env = dict(os.environ, NUGET_PACKAGES=cold)
+t0 = time.time()
+p = subprocess.run(["dotnet", "build", PROJECT, "-v", "q", "--nologo",
+                    "--no-restore"], cwd=SPECIMEN, capture_output=True,
+                   text=True, errors="replace", env=env)
+offline_build_s = time.time() - t0
+combined = (p.stdout or "") + (p.stderr or "")
+print()
+print("B. build --no-restore against that cold folder")
+print("   exit code  :", p.returncode)
+print("   errors     :", len(re.findall(r": error ", combined)))
+print("   build time : %.1f s" % offline_build_s)"""),
+
+code("""\
+# Negative control. Without it, "A worked" proves nothing - the restore could
+# simply have reached the network. Clear every source and offer no feed.
+nosrc = write_config(os.path.join(SPECIMEN, "nuget.nosources.config"), False)
+cold2 = os.path.join(WORKSPACE, "offline-test", "packages-nosource")
+shutil.rmtree(cold2, ignore_errors=True)
+os.makedirs(cold2, exist_ok=True)
+
+rc_bad, out_bad = run(["dotnet", "restore", PROJECT, "--configfile", nosrc,
+                       "--packages", cold2, "--force"], cwd=SPECIMEN)
+nu1101 = [l.strip() for l in out_bad.splitlines() if "NU1101" in l]
+
+print("C. negative control: no feed at all, cold folder")
+print("   exit code     :", rc_bad, " <- non-zero is the expected result")
+print("   NU1101 errors :", len(nu1101))
+for l in nu1101[:3]:
+    print("      ", l.split(" : ")[-1][:100])
+print()
+print("So A did not pass by accident. With no local feed the restore cannot find")
+print("a single package. With the local feed it finds every one of them.")"""),
+
+md("""\
+## Step 7 — Record the environment
 
 The skill's value is that the next attempt is faster. So a green build adds one
 row to
