@@ -22,7 +22,44 @@ evidence.
 
 ## Verified rows
 
-None yet. This file was created on 2026-10-04 with the skill.
+### C++03 fixture — g++ 4.9 in a container — 2026-10-04
+
+| Field | Value |
+| --- | --- |
+| Base image | `gcc:4.9@sha256:6356ef8b29cc3522527a85b6c58a28626744514bea87a10ff2bf67599a7474f5` |
+| Image size | 1305 MB |
+| Compiler | `g++ (GCC) 4.9.4`, Debian 8.9 (jessie), `GNU ld 2.25` |
+| Build system | `g++` called directly. The fixture is two files, so no CMake. |
+| Flags | `-std=c++03 -Werror=deprecated-declarations` |
+| Index | none. No `compile_commands.json` for a two-file fixture. |
+| Package source | **not used.** The image already holds the compiler. |
+| Network needed after the image exists | no |
+| Result | 5 deprecated call sites reported: 3 written by a macro, 1 direct, 1 from a template instantiation. A text search showed 1. |
+| Verified by | [`00_setup.ipynb`](../../../workshops/legacy-refactor/notebooks/00_setup.ipynb), executed |
+
+**Why this image and not an old distribution.** `gcc:4.9` carries a 2016
+toolchain and needs no package server, so it avoids the archived-mirror trap
+below entirely. Prefer an image that already holds the compiler over an old
+base plus `apt`.
+
+### fo-dicom 4.0.8 — .NET SDK on the host — 2026-10-04
+
+| Field | Value |
+| --- | --- |
+| Base image | none. The host SDK builds it. |
+| Compiler | .NET SDK `10.0.400` |
+| Target | `FO-DICOM.Core`, `netstandard2.0`, C# 8 |
+| Build system | `dotnet build` |
+| Build matrix | `["FO-DICOM.Core/netstandard2.0"]` — one entry, declared |
+| Rebuild time | 1.4 s, clean rebuild |
+| Index | Roslyn. No compilation database needed. |
+| Network needed after the first restore | no |
+| Result | Rung 1 available. 0 errors, 5 distinct warning kinds. |
+| Verified by | [`00_setup.ipynb`](../../../workshops/legacy-refactor/notebooks/00_setup.ipynb) and [`05_refactoring.ipynb`](../../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb), both executed |
+
+**Note.** The clone declares eight target frameworks, including `net462` and
+`netstandard1.3`. Only the one in the matrix was built, so any claim of
+complete recall is limited to it.
 
 <!--
 Row template. Copy it, fill it, and put the newest row at the top.

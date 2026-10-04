@@ -112,7 +112,7 @@ output for it, and that is visible.
 
 | Notebook | State |
 | --- | --- |
-| `00_setup.ipynb` | To do. Tier A. |
+| `00_setup.ipynb` | **EXECUTED.** Tier A. |
 | `01_precondition_checks.ipynb` | To do. Tier A. |
 | `02_requirements_engineering.ipynb` | To do. Tier C. |
 | `03_test_driven_development.ipynb` | To do. Tier B. |

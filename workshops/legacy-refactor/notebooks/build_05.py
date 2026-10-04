@@ -443,8 +443,8 @@ md("""\
   lie outside the one-entry build matrix.
 
 What this notebook did **not** prove: that a green build means the behavior did
-not change. It does not. See
-[`03_test_driven_development`](03_test_driven_development.ipynb).
+not change. It does not. That is the job of `03_test_driven_development`, which
+is planned and not yet written.
 
 The specimen is left unmodified — step 4 restores the file it patched.
 """),

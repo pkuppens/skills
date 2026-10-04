@@ -60,7 +60,7 @@ header cell that tells you what it proves.
 
 | Notebook | Subject | Skill that it proves |
 | --- | --- | --- |
-| `00_setup` | The build environment is a file that you can version and share. | [`legacy-build-container`](../../skills/legacy-build-container/SKILL.md) |
+| `00_setup` | The build environment is a file that you can version and share. **Executed.** | [`legacy-build-container`](../../skills/legacy-build-container/SKILL.md) |
 | `01_precondition_checks` | Which oracles does this code base already have? | [`call-site-exhaustiveness`](../../skills/call-site-exhaustiveness/SKILL.md) |
 | `02_requirements_engineering` | Write down what the code must do, before you change it. | `intent-layer-reconstruction` |
 | `03_test_driven_development` | Make the output comparison before you change the code. | `golden-output-regression` |
