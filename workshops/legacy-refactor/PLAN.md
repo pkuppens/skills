@@ -53,8 +53,11 @@ after the session.
 C# is the better choice for the live part, and it makes a stronger argument
 than C++.
 
-- `[Obsolete("message", error: true)]` is one attribute. It needs no build
-  flags. Every call site becomes a compile error.
+- `-warnaserror:CS0618` promotes the obsolete warning that the library already
+  carries. One flag, and no source edit at all. The `[Obsolete(..., error: true)]`
+  attribute looks neater but reports fewer places, which `05_refactoring`
+  measured. Say that on stage: a correction found by running the thing is good
+  material, not a weakness.
 - Roslyn is a semantic index. It needs no compilation database. Step 2 of the
   ladder is therefore free.
 - `dotnet build` is one command. CMake leaves the live path.

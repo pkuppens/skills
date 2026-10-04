@@ -65,7 +65,7 @@ header cell that tells you what it proves.
 | `02_requirements_engineering` | Write down what the code must do, before you change it. | `intent-layer-reconstruction` |
 | `03_test_driven_development` | Make the output comparison before you change the code. | `golden-output-regression` |
 | `04_bug_investigation` | Find the cause of a defect with an oracle, not with a text search. | [`oracle-first-refactor`](../../skills/oracle-first-refactor/SKILL.md) |
-| `05_refactoring` | Let the compiler find every place that calls the old function. | [`call-site-exhaustiveness`](../../skills/call-site-exhaustiveness/SKILL.md) |
+| `05_refactoring` | Let the compiler find every place that calls the old function. **Executed — start here.** | [`call-site-exhaustiveness`](../../skills/call-site-exhaustiveness/SKILL.md) |
 | `06_transfer` | How to use this method in your own team. | [`skills-transfer`](../../skills/skills-transfer/SKILL.md) |
 
 See [notebooks/README.md](notebooks/README.md) for the rules that each notebook

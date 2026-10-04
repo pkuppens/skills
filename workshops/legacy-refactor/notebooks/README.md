@@ -93,6 +93,21 @@ A cell must answer a question from [THESIS.md](../THESIS.md). A cell that only
 shows a tool version is setup, not content. Keep the setup cells together at
 the start.
 
+## How a notebook is authored
+
+A notebook's cells are written by a small `build_NN.py` script next to it, and
+the outputs come from a real kernel run:
+
+```bash
+python workshops/legacy-refactor/notebooks/build_05.py      # writes cells, no outputs
+cd workshops/legacy-refactor/notebooks
+jupyter nbconvert --to notebook --execute --inplace 05_refactoring.ipynb
+```
+
+The script never writes an output value. That is deliberate: it makes rule 2
+structural rather than a promise. If a cell did not run, the notebook has no
+output for it, and that is visible.
+
 ## Planned notebooks
 
 | Notebook | State |
@@ -102,7 +117,7 @@ the start.
 | `02_requirements_engineering.ipynb` | To do. Tier C. |
 | `03_test_driven_development.ipynb` | To do. Tier B. |
 | `04_bug_investigation.ipynb` | To do. Tier C. |
-| `05_refactoring.ipynb` | To do. Tier A. The headline. |
+| `05_refactoring.ipynb` | **EXECUTED.** Tier A. The headline. |
 | `06_transfer.ipynb` | To do. Tier C. |
 
 The tiers and the gates are in [../TASKS.md](../TASKS.md).

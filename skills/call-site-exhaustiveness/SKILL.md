@@ -13,9 +13,10 @@ description: >
 **Invoke:** `/call-site-exhaustiveness`
 **Use when:** you must change or remove a member, and you must know every place
 that uses it.
-**Status:** not yet exercised by a recorded run. The comparison procedure below
-is the design; `workshops/legacy-refactor/notebooks/05_refactoring.ipynb` will
-hold the executed proof, with the two counts side by side.
+**Status:** exercised on fo-dicom 4.0.8 (76 kLOC, 313 files). The recorded run
+is [`05_refactoring.ipynb`](../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb).
+It measured 62 text-search occurrences, 8 scoped text-search sites, and 6 true
+call sites, with the 2 extra caused by a second class of the same name.
 
 Terms used here — [test oracle, sound, recall, call site](../../CONTEXT.md#language-legacy-refactoring) — have one
 definition for this library. Read it before you use them in a report.
@@ -107,8 +108,8 @@ Break the member on purpose, on a branch. The build then lists every call site.
 ```bash
 # C++
 cmake --build build 2>&1 | rg 'error:' | sort -u > /tmp/sites-cc.txt
-# C#
-dotnet build --no-restore 2>&1 | rg 'error CS0619' | sort -u > /tmp/sites-cc.txt
+# C#  - promote the obsolete warning; do NOT rely on [Obsolete(error: true)]
+dotnet build --no-restore -warnaserror:CS0618 2>&1 | rg 'error CS0618' | sort -u > /tmp/sites-cc.txt
 ```
 
 The procedure for the breakage is in
@@ -128,8 +129,15 @@ one of these three:
 | Direction | Cause |
 | --- | --- |
 | Only the compiler found it | A macro, a template, an alias, or ADL. |
-| Only the text search found it | The line is behind a build condition that you did not build, or it is in a comment, a string, or dead code. |
+| Only the text search found it | A different type with the same name; a line behind a build setting you did not build; a comment, a string, or dead code. |
 | Neither found it | Reflection, a string key, or a serialization contract. Find these by hand, and write a test. |
+
+**The second row is the dangerous one.** A missed site fails loudly at the next
+build. A false site invites an engineer — or an agent working from text-search
+output — to change code that was already correct. In the recorded fo-dicom run,
+2 of the 8 text-search sites were uses of the *replacement* class, which has the
+same short name as the deprecated one. Acting on them would have put the
+deprecated type back.
 
 ### Step 5 — Name the configurations
 
