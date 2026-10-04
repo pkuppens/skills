@@ -57,7 +57,7 @@ goes on making `01_precondition_checks` run against a path they name.
 | --- | --- | --- |
 | A1 | Publish the branch and open the pull request. | **Done.** PR #39. |
 | A2 | Choose the target and count the call sites. | **Done.** fo-dicom 4.0.8, `AsyncManualResetEvent`, counts 62 / 8 / 6. No reflective call site exists for this target, and the notebook says so instead of inventing one. |
-| A3 | **Prove the C# build works with no network.** Vendor the packages, add a local `nuget.config`, then run `dotnet build --no-restore` with the adapter switched off. | **To do. Sunday, 45 min.** The one untested thing that can kill a live demo silently. |
+| A3 | Prove the C# build works with no network. | **Done.** Proved by configuration rather than by network state: a local feed with `<clear />` removes nuget.org, and the restore still succeeds into a cold package folder in under half a second, then builds green in about two seconds. A negative control with no feed fails with 6 × `NU1101`, so the pass was not an accident. See `00_setup`, step 6. **Still to do on the demo laptop:** the same run with the adapter physically off (task A9/A11). |
 | A4 | Run `05_refactoring`. | **Done.** 9 of 9 cells, no errors. |
 | A5 | Write `legacy-build-container` with its learned-environments file. | **Done.** Two verified rows, both from real runs. |
 | A6 | Run `00_setup`. | **Done.** 8 of 8 cells. g++ 4.9.4, pinned by digest. |

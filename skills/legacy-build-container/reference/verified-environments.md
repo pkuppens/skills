@@ -53,7 +53,7 @@ base plus `apt`.
 | Build matrix | `["FO-DICOM.Core/netstandard2.0"]` — one entry, declared |
 | Rebuild time | 1.4 s, clean rebuild |
 | Index | Roslyn. No compilation database needed. |
-| Network needed after the first restore | no |
+| Network needed after the first restore | **no, proved.** A local feed of 16 `.nupkg` files (9.4 MB) with `<clear />` in `nuget.config` restores into a cold package folder in under half a second and builds in about two seconds. Negative control with no feed: 6 × `NU1101`. |
 | Result | Rung 1 available. 0 errors, 5 distinct warning kinds. |
 | Verified by | [`00_setup.ipynb`](../../../workshops/legacy-refactor/notebooks/00_setup.ipynb) and [`05_refactoring.ipynb`](../../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb), both executed |
 
