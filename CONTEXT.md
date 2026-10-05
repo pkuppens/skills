@@ -62,16 +62,16 @@ What this library adds: the literature uses an oracle to judge whether **output*
 
 How the oracle differs by reason for the change:
 
-| Reason | What the oracle must prove | Which rung you start on |
+| Reason | What the oracle must prove | Which step you start on |
 | --- | --- | --- |
-| Refactor | **Nothing changed.** Every stored output file must stay identical. A changed output file is a failure. | Rung 1. The compiler proves you reached every call site. |
-| Bug fix | **Exactly one thing changed.** One stored output file changes on purpose; every other file must stay identical. The deliberate change to that one file is the evidence of intent. | Rung 3. A bug is rarely a type error, so the compiler cannot see it. |
+| Refactor | **Nothing changed.** Every stored output file must stay identical. A changed output file is a failure. | Step 1. The compiler proves you reached every call site. |
+| Bug fix | **Exactly one thing changed.** One stored output file changes on purpose; every other file must stay identical. The deliberate change to that one file is the evidence of intent. | Step 3. A bug is rarely a type error, so the compiler cannot see it. |
 
-That difference is the whole reason to name the oracle before you start. Same ladder, different rung, and the opposite meaning for a changed output file.
+That difference is the whole reason to name the oracle before you start. Same ladder, different step, and the opposite meaning for a changed output file.
 
-**Oracle ladder**:
-The four oracles in order of strength. "Climb the ladder" means: use a stronger oracle because the weaker one cannot answer the question.
-_Avoid_: Pyramid, hierarchy, test pyramid (that is a different idea about test counts).
+**Oracle ladder**, and a **step** of it:
+The four oracles in order of strength. "Climb the ladder" means: use a stronger oracle because the weaker one cannot answer the question. One oracle is one **step**: step 1 is the compiler, step 4 is the comparison of produced output files. Write "oracle step 1" where a document also numbers its own procedure steps.
+_Avoid_: Rung (the earlier word in this repository; "step" replaced it everywhere). Pyramid, hierarchy, test pyramid (that is a different idea about test counts).
 
 **Sound (of a search method)**:
 A method is sound when it never misses a real result. A text search is not sound. The compiler is sound for the build settings that you actually build.

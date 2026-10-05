@@ -11,7 +11,7 @@ old can need a compiler of the same age. The current compiler on the developer
 machine often cannot build it.
 
 An AI agent cannot help with such a code base if the agent has no build. The
-build is the first rung of the [test oracle](../../CONTEXT.md#language-legacy-refactoring)
+build is the first step of the [test oracle](../../CONTEXT.md#language-legacy-refactoring)
 ladder. Without a build, the agent can only guess whether a change is complete.
 
 ("Oracle" here is the testing term, not the database vendor. The linked entry

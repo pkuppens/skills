@@ -71,6 +71,17 @@ header cell that tells you what it proves.
 See [notebooks/README.md](notebooks/README.md) for the rules that each notebook
 must obey.
 
+## The evidence
+
+A notebook is a guided tour. The evidence that a skill works is the record of a
+real run, and those records live in [`evidence/`](evidence/).
+
+| Record | What it is |
+| --- | --- |
+| [`evidence/legacy-build-container/`](evidence/legacy-build-container/README.md) | One session, started in a clone of fo-dicom 4.0.8 with the single prompt `/legacy-build-container`. It holds every tool call, the `Dockerfile` and the `BUILD.md` that the session wrote, and the limits of the run. |
+
+`00_setup` visits that record. It does not replace it.
+
 ## The deliverable is a skill, not an environment
 
 Each notebook proves that one **skill** works. A skill is a set of instructions
