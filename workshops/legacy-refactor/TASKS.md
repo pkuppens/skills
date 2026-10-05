@@ -63,7 +63,7 @@ goes on making `01_precondition_checks` run against a path they name.
 | A6 | Run `00_setup`. | **Done.** 8 of 8 cells. g++ 4.9.4, pinned by digest. |
 | A7 | Write `call-site-exhaustiveness`. | **Done.** Validates. |
 | A8 | Write the ADRs. | **Done.** 002, 003, and 004 for licensing. |
-| A9 | Write and run `01_precondition_checks`: which rungs does a code base already have? | **To do. Sunday, 2 h.** The most reusable artifact for the audience. |
+| A9 | Write and run `01_precondition_checks`: which steps does a code base already have? | **To do. Sunday, 2 h.** The most reusable artifact for the audience. |
 | A10 | Merge PR #39 into `main` and tag it. Both events then show one clean URL, and `/plugin install` resolves with no branch reference. | **To do. Tuesday morning, before the meeting.** |
 | A11 | Full dry run, timed, with the network off. | **To do. Wednesday morning.** |
 | A12 | Equipment check. See the list below. | **To do. Tuesday evening.** |

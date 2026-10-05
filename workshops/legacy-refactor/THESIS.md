@@ -139,7 +139,7 @@ Say this out of honesty, and because it is stronger than claiming novelty.
 | Breaking the old function on purpose | **"Leaning on the Compiler"** — Michael Feathers, _Working Effectively with Legacy Code_ (2004). |
 | Stored output files | **Characterization tests** (Feathers). Also golden-master or approval testing. |
 
-What is new here is the framing, not the technique: the four rungs as a named
+What is new here is the framing, not the technique: the four steps as a named
 order, and the use of an oracle to prove that a change is **complete** where
 the literature uses one to prove that output is **correct**.
 

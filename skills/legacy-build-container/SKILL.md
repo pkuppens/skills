@@ -1,32 +1,56 @@
 ---
 name: legacy-build-container
 description: >
-  Build a Docker container that compiles an old code base with a
-  period-correct toolchain, then record the result so the next attempt is
-  faster. Use when a C++, C#, or other compiled project does not build with
-  the current compiler, when a legacy build must be reproducible for an audit,
-  or when an AI agent needs a working build as its oracle before it changes
-  legacy code.
+  Run from the root of any compiled project. Work out which toolchain the code
+  needs, write a Docker build container and the instructions to use it, and
+  record the result so the next attempt is faster. Use when a C++, C#, or other
+  compiled project does not build with the current compiler, when a legacy
+  build must be reproducible for an audit, or when an AI agent needs a working
+  build as its oracle before it changes legacy code. When the evidence in the
+  repository is not enough to choose a toolchain, report what is missing
+  instead of guessing.
 ---
 
 # Legacy build container
 
-**Invoke:** `/legacy-build-container`
+**Invoke:** `/legacy-build-container`, from the root of the project you must build.
 **Use when:** an old code base does not build with the current toolchain, and
 an agent or a team needs a working build.
-**Status:** two verified environments, both from executed runs: `gcc:4.9`
-pinned by digest for C++03, and the host .NET SDK for fo-dicom 4.0.8. Rows in
+**Status:** exercised by a real run from a foreign project root — a clone of
+fo-dicom 4.0.8, in
+[`workshops/legacy-refactor/evidence/legacy-build-container/`](../../workshops/legacy-refactor/evidence/legacy-build-container/README.md).
+Two verified environments from executed runs: `gcc:4.9` pinned by digest for
+C++03, and the .NET SDK for fo-dicom 4.0.8. Rows in
 [`reference/verified-environments.md`](reference/verified-environments.md).
-Evidence: [`00_setup.ipynb`](../../workshops/legacy-refactor/notebooks/00_setup.ipynb).
+Guided tour of the method: [`00_setup.ipynb`](../../workshops/legacy-refactor/notebooks/00_setup.ipynb).
 DCMTK at scale is not yet built.
 
-**Why this matters:** the build is the first rung of the
+**Why this matters:** the build is the first step of the
 [test oracle](../../CONTEXT.md#language-legacy-refactoring) ladder. Without a build, nobody can prove that a change to
 legacy code is complete. An agent without a build can only guess.
 
 Environment decisions: [ADR 002](../../docs/decisions/002-workshop-container-environment.md).
 
 ---
+
+## The contract
+
+The skill takes one input: the directory you start it in. It needs no prior
+knowledge of the project.
+
+| | |
+| --- | --- |
+| **Input** | the project root. Nothing else is required. |
+| **Output, success** | `build-container/Dockerfile`, `build-container/BUILD.md`, and a proposed row for [`reference/verified-environments.md`](reference/verified-environments.md). |
+| **Output, not enough evidence** | the report in [When you cannot decide](#when-you-cannot-decide). Never a guessed Dockerfile. |
+| **Needs** | a shell, `git`, and Docker. Network for the first image pull only. |
+| **Writes** | files under `build-container/` only. The project belongs to somebody else. |
+
+The skill runs ordinary shell commands: `git`, `docker`, and the project's own
+build tool. It needs no MCP server and no special tool. An agent that has a
+shell runs the procedure itself; a person with a terminal runs the same
+commands by hand and gets the same result. Keep every command in `BUILD.md`
+copy-pasteable for that reason.
 
 ## Rule 1 — Read the learned facts first
 
@@ -37,7 +61,16 @@ That file holds environments that built successfully, and traps that cost time.
 A matching row saves one to three hours. Start from the row. Do not start from
 an empty file.
 
-## Rule 2 — The agent runs where the toolchain runs
+## Rule 2 — Build in the container, not on the host
+
+Do not install a toolchain on the host. A legacy project needs an old
+compiler, and an old compiler on a working laptop is a cost that never ends.
+
+A host build is allowed in one case only: the host already holds the toolchain,
+and you want a smoke test of a few seconds before you spend minutes on an
+image. Say which one you did. Never report a host build as the container build.
+
+## Rule 3 — The agent runs where the toolchain runs
 
 The agent must start the compiler. Therefore the agent runs inside the
 container, or the agent runs the compiler through `docker exec`.
@@ -45,7 +78,7 @@ container, or the agent runs the compiler through `docker exec`.
 A common failure: the source is in the container, and the agent is on the host.
 The agent then cannot see `cmake`, `clangd`, or `dotnet`. Check this first.
 
-## Rule 3 — Mount the source. Do not copy it.
+## Rule 4 — Mount the source. Do not copy it.
 
 ```bash
 docker run --rm -it -v "$PWD:/work" -w /work <image> bash
@@ -55,7 +88,7 @@ The source stays on the host disk. This matters when the source is
 confidential, because the image never holds it. See
 [ADR 003](../../docs/decisions/003-ai-assistance-network-and-confidentiality.md).
 
-## Rule 4 — Pin the base image by digest
+## Rule 5 — Pin the base image by digest
 
 A tag moves. A digest does not.
 
@@ -72,21 +105,41 @@ a controlled build environment.
 
 Follow these steps in order. Stop at the first failure and fix it.
 
-### Step 1 — Find the toolchain that the code needs
+### Step 1 — Confirm where you are, and that there is code to build
+
+The code comes first. Tool needs are read out of the code, so there is nothing
+to decide before the code is on disk.
+
+```bash
+git rev-parse --show-toplevel                 # you must be at a project root
+git log -1 --date=short --format='%ad %h %s'  # how old is this code?
+git describe --tags --always                  # which version is checked out?
+```
+
+If the directory is not a project root, stop. Ask for the root, or for the
+clone command.
+
+### Step 2 — Find the toolchain that the code needs
 
 Read the build files, not the documentation. The build files are current.
 
-| Evidence | Where to look |
-| --- | --- |
-| C++ standard | `CMakeLists.txt`, `configure.ac`, `*.vcxproj`, compiler flags |
-| Compiler age | `#if __GNUC__` guards, `#pragma` use, missing `nullptr` |
-| C# framework | `TargetFramework`, `TargetFrameworkVersion`, `packages.config` |
-| Build system | `CMakeLists.txt`, `Makefile`, `*.sln`, `autogen.sh` |
+```bash
+git ls-files | grep -Ei '(CMakeLists\.txt|Makefile|configure\.ac|\.sln|\.csproj|\.vcxproj|packages\.config|\.pro|pom\.xml)$'
+```
 
-Write down the oldest requirement that you find. That requirement sets the base
-image.
+| Evidence | Where to look | What it tells you |
+| --- | --- | --- |
+| C++ standard | `CMakeLists.txt`, `configure.ac`, `*.vcxproj`, compiler flags | the lowest standard you must accept |
+| Compiler age | `#if __GNUC__` guards, `#pragma` use, missing `nullptr` | which compiler generation the code expects |
+| C# framework | `TargetFramework`, `TargetFrameworks`, `TargetFrameworkVersion`, `packages.config` | the SDK, and whether .NET Framework is involved |
+| Build system | `CMakeLists.txt`, `Makefile`, `*.sln`, `autogen.sh` | which command builds it |
+| Age of the code | the date of the oldest and the newest commit | a cross-check on everything above |
 
-### Step 2 — Choose the base image
+Write down the **oldest** requirement that you find, and the file that it came
+from. That requirement sets the base image, and the file is the evidence for
+it. A requirement with no file behind it is a guess.
+
+### Step 3 — Choose the base image
 
 | Need | Base image | Note |
 | --- | --- | --- |
@@ -99,49 +152,62 @@ image.
 | .NET Core or .NET 5 and later | `mcr.microsoft.com/dotnet/sdk:<version>` | Match the `TargetFramework`. |
 
 Prefer the newest image that still builds the code. An older image costs more
-time.
+time. Record the digest, not the tag — Rule 5.
 
-### Step 3 — Fix the package source before you install anything
+### Step 4 — Fix the package source before you install anything
 
-This step prevents the most common failure. See the traps table.
+This step prevents the most common failure. See the traps table. An image that
+already holds the compiler needs no package server at all, which is why Step 3
+prefers one.
 
-### Step 4 — Install the toolchain and the index
+### Step 5 — Write the two artifacts
 
-Install the compiler, the build system, and a language server. The language
-server is step 2 of the oracle ladder.
+Write both files under `build-container/`, and nothing anywhere else.
+
+`build-container/Dockerfile` installs the compiler, the build system, and a
+language server. The language server is oracle step 2.
 
 ```dockerfile
+FROM <image>@sha256:<digest>
 RUN apt-get update && apt-get install -y --no-install-recommends \
       build-essential cmake ninja-build clangd git \
  && rm -rf /var/lib/apt/lists/*
+WORKDIR /work
 ```
 
-### Step 5 — Build one subset target first
+`build-container/BUILD.md` holds the commands a reader runs, and the facts a
+reviewer checks: the image and its digest, how to build the image, how to start
+the build, the smoke test, the build matrix, and whether a network is needed.
+Use the [report format](reference/verified-environments.md#report-format).
+
+### Step 6 — Build one subset target first
 
 Do not build the whole project. Choose the smallest target that contains the
 code that you must change.
 
 ```bash
-cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-cmake --build build --target <subset>
+docker build -t <project>-build build-container
+docker run --rm -v "$PWD:/work" -w /work <project>-build \
+  cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+docker run --rm -v "$PWD:/work" -w /work <project>-build \
+  cmake --build build --target <subset>
 ```
 
 `CMAKE_EXPORT_COMPILE_COMMANDS` writes `compile_commands.json`. The language
 server needs that file. Without it, there is no semantic index.
 
-### Step 6 — Declare the build matrix, even when it has one entry
+### Step 7 — Declare the build matrix, even when it has one entry
 
 The compiler is a sound oracle **only for the settings that you build**. So the
 set of settings is part of the result, and it must be written down rather than
 assumed.
 
-Write the matrix as a list, in the build script or the notebook, even when the
-list has one entry:
+Write the matrix as a list, even when the list has one entry:
 
 ```bash
-# Build matrix. One entry on purpose: the workshop proves the method, not the
-# full configuration space. Each extra entry multiplies build time, and every
-# claim about complete recall is limited to the entries listed here.
+# Build matrix. One entry on purpose: this run proves the method, not the full
+# configuration space. Each extra entry multiplies build time, and every claim
+# about complete recall is limited to the entries listed here.
 MATRIX=("default")
 # MATRIX=("default" "WITH_OPENSSL=ON" "WITH_ICU=ON")   # the real project's set
 ```
@@ -154,23 +220,25 @@ Two reasons to keep the single entry explicit instead of leaving it out:
 
 Report the entries that you built. Never report complete recall without them.
 
-### Step 7 — Make the build work without a network
+### Step 8 — Make the build work without a network
 
 A demonstration or a CI job can have no network. Prepare for that state.
 
 | Language | Action |
 | --- | --- |
-| C# | Vendor the packages into a local folder. Add a `nuget.config` that points at that folder. Then use `dotnet build --no-restore`. |
+| C# | Vendor the packages into a local folder. Add a `nuget.config` with `<clear />` that points at that folder. Then use `dotnet build --no-restore`. |
 | C++ | Prefer an image that already holds the compiler, such as `gcc:4.9`. Then `docker save -o image.tar` is the whole offline story. |
 | C++ | Clone the dependencies into the image, or vendor them in the repository. |
 | Any | Save the image with `docker save -o image.tar <image>`. Restore it with `docker load`. |
 
-**Test this with the network switched off.** A network that is merely idle is
-not a test.
+**Test this with the sources removed, not with the network merely idle.** Clear
+the package sources and restore into an empty folder. Then run the same thing
+with no local feed either: that negative control must fail. Without it, a pass
+proves nothing — the restore could simply have reached the network.
 
-### Step 8 — Record the result
+### Step 9 — Record the result
 
-Complete the step in [Rule 5](#rule-5-record-what-you-learned). Do not skip
+Complete the step in [Rule 6](#rule-6-record-what-you-learned). Do not skip
 it. The record is the value of this skill.
 
 The traps below are also recorded in
@@ -179,7 +247,32 @@ explains why this skill exists at all. Keep the two lists consistent.
 
 ---
 
-## Rule 5: record what you learned
+## When you cannot decide
+
+Some projects do not hold the evidence. A generated build system, a vendored
+toolchain that is missing, or a build that only ever ran on one machine. Report
+that state. Do not write a Dockerfile that you cannot defend.
+
+```text
+Project:        <path>, <version or commit>
+Language:       <what the files say, or "cannot tell">
+Build files:    <the files you found, or "none">
+Blocked on:     <the one fact that is missing>
+Evidence read:  <the files you actually opened>
+Question:       <the single question whose answer unblocks this>
+Best guess:     <an image, marked clearly as unverified, or "none">
+```
+
+Two rules for this report:
+
+1. **Name one blocker, not a list.** A list reads as "this is hard". One
+   blocker reads as "answer this and I continue".
+2. **Mark a guess as a guess.** An unverified image in a report is useful. The
+   same image in `verified-environments.md` is a defect.
+
+---
+
+## Rule 6: record what you learned
 
 The skill improves because each run adds a fact. The record is a reviewed Git
 commit, so the facts keep their provenance.
@@ -191,36 +284,15 @@ Then open a pull request.
 **After a failure that cost more than 15 minutes**, append one line to the
 traps list in the same file.
 
-Obey these limits:
+The limits on that file — green build only, one row per environment, at most
+20 rows, one line per trap, a human merges it — are stated once, in
+[its own rules](reference/verified-environments.md#rules-for-this-file). Read
+them there before you append. The shape of a finished row is the
+[report format](reference/verified-environments.md#report-format).
 
-1. **Append a verified row only after a green build.** Never record an
-   environment that you did not build. A false row is worse than no row.
-2. **One row per environment.** Update an existing row; do not add a duplicate.
-3. **Keep the file short.** Hold at most 20 verified rows, newest first. Remove
-   the oldest row when the file is full. A long file wastes the context of
-   every later run.
-4. **A trap is one line.** Name the symptom and the fix. Do not write a report.
-5. **A human merges the change.** This skill proposes. It does not self-approve.
-
-An artifact that rewrites itself with no review has no change control. In a
-regulated process that is a defect, not a feature. The reviewable form is the
-compliant form.
-
----
-
-## Report format
-
-Report the environment like this. A reader must be able to repeat it.
-
-```text
-Base image:   debian:bullseye@sha256:abc123...
-Compiler:     g++ (Debian 10.2.1-6) 10.2.1
-Build system: cmake 3.18.4, ninja 1.10.1
-Index:        clangd 11, compile_commands.json present
-Target built: ofstd, dcmdata
-Build time:   4 min 12 s, 4 cores
-Network:      not needed after the image exists
-```
+A false row is worse than no row. And an artifact that rewrites itself with no
+review has no change control: in a regulated process that is a defect, not a
+feature. The reviewable form is the compliant form.
 
 ## Traps
 
@@ -239,6 +311,6 @@ Network:      not needed after the image exists
 | Skill | Relation |
 | --- | --- |
 | [`call-site-exhaustiveness`](../call-site-exhaustiveness/SKILL.md) | Uses the build that this skill produces, to find every call site. |
-| [`oracle-first-refactor`](../oracle-first-refactor/SKILL.md) | The build is oracle 1 in its ladder. |
+| [`oracle-first-refactor`](../oracle-first-refactor/SKILL.md) | The build is oracle step 1 in its ladder. |
 | [`ai-factory`](../ai-factory/SKILL.md) | Decides whether the model that uses this build runs locally or in the cloud. |
 | [`terminal`](../terminal/SKILL.md) | Shell differences between the host and the container. |
