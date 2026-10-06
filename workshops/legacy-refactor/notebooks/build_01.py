@@ -50,6 +50,23 @@ real defect. One hides nothing. Three must stay exactly as they are, and this
 notebook shows the compiler proving it.
 """),
 
+md("""\
+### If the next cell stops
+
+Every build in this notebook runs in a container. When the Docker engine is
+not running, the next cell stops with:
+
+```text
+SystemExit: docker daemon: NOT RUNNING - start Docker Desktop, ...
+```
+
+This is normal after a reboot: Docker Desktop does not always start by itself.
+**To continue:** start Docker Desktop, wait until it shows *Engine running*,
+and run the notebook again from the next cell. The other pitfalls (kernel,
+Jupyter server, network change) are in the *Pitfalls* table of
+[`00_setup`](00_setup.ipynb).
+"""),
+
 code("""\
 import os, subprocess, shlex, re, time, shutil, json
 
@@ -81,6 +98,12 @@ if not os.path.isdir(SPECIMEN):
                               "--branch", SPECIMEN_TAG,
                               "https://github.com/fo-dicom/fo-dicom.git",
                               "fo-dicom"], cwd=WORKSPACE)[0])
+
+# Docker installed is not Docker running. Without this check the notebook runs
+# on and fails at station 5 with an AssertionError that does not name the cause.
+if run(["docker", "version", "--format", "{{.Server.Version}}"])[0] != 0:
+    raise SystemExit("docker daemon: NOT RUNNING - start Docker Desktop, wait for "
+                     "'Engine running', then run this notebook again")
 
 rc, _ = run(["docker", "image", "inspect", IMAGE])
 if rc != 0:
