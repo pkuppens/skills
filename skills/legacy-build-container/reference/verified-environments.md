@@ -99,7 +99,7 @@ base plus `apt`.
 | Index | Roslyn. No compilation database needed. |
 | Network needed after the first restore | **no, proved.** A local feed of 16 `.nupkg` files (9.4 MB) with `<clear />` in `nuget.config` restores into a cold package folder in under half a second and builds in about two seconds. Negative control with no feed: 6 × `NU1101`. |
 | Result | Oracle step 1 available. 0 errors, 5 distinct warning kinds. |
-| Verified by | [`00_setup.ipynb`](../../../workshops/legacy-refactor/notebooks/00_setup.ipynb) and [`05_refactoring.ipynb`](../../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb), both executed |
+| Verified by | [`00_setup.ipynb`](../../../workshops/legacy-refactor/notebooks/00_setup.ipynb) and [`01a_find_obsolete_call_sites.ipynb`](../../../workshops/legacy-refactor/notebooks/01a_find_obsolete_call_sites.ipynb), both executed |
 
 **Note.** The clone declares eight target frameworks, including `net462` and
 `netstandard1.3`. Only the one in the matrix was built, so any claim of

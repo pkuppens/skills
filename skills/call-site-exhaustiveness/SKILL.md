@@ -14,7 +14,7 @@ description: >
 **Use when:** you must change or remove a member, and you must know every place
 that uses it.
 **Status:** exercised on fo-dicom 4.0.8 (76 kLOC, 313 files), twice.
-[`05_refactoring.ipynb`](../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb)
+[`01a_find_obsolete_call_sites.ipynb`](../../workshops/legacy-refactor/notebooks/01a_find_obsolete_call_sites.ipynb)
 measured 62 text-search occurrences, 8 scoped text-search sites, and 6 true
 call sites, with the 2 extra caused by a second class of the same name.
 [`01_build_warnings.ipynb`](../../workshops/legacy-refactor/notebooks/01_build_warnings.ipynb)

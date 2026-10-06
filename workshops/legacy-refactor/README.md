@@ -1,134 +1,113 @@
-# Workshop — AI-assisted refactoring of large legacy code bases
+# AI-assisted refactoring of legacy code
 
-A 2-hour workshop. It shows how to work. It is not a demonstration of tools.
+A 2-hour workshop. You need no preparation and no prior knowledge of this
+repository. Start here.
 
-The subject is a code base that is too large for an AI agent to read at one
-time. The example code is a public healthcare code base. The method works for
-any size, because the method does not read the whole code base.
+## The idea in one sentence
 
-## Why you would do this
+**An AI agent can change code fast. The hard part is knowing the change is
+right, so set up the thing that checks the change *before* you let the AI
+change anything.**
 
-Nobody changes old code because the code is old. There must be a reason. A
-defect that you must fix. A function that a client needs. A platform that no
-longer gets security updates. Code that nobody understands. Code that has no
+## Why this matters
+
+Nobody changes old code just because it is old. There is always a reason: a
+bug, a new feature, an old library, code nobody understands, code without
 tests.
 
-In all five cases you need the same two answers first. **Where is this code
-used? Did I change the behavior?**
+Whatever the reason, you need two answers before you change anything:
 
-Reasons and examples: [THESIS.md](THESIS.md#why-refactor-legacy-code).
+1. **Where is this code used?** Did I find every place?
+2. **Did I change the behavior?** Does it still do the same thing?
 
-## The claim
+An AI agent does not answer these questions for you. It guesses quickly. You
+need something that *knows*.
 
-An AI agent writes code quickly. It is much more difficult to know whether the
-new code is correct.
+## Three things to remember
 
-So the difficult part is proof, not search. You need a tool that proves two
-things. The change is complete. The change does not change the behavior. This
-workshop calls such a tool a **[test oracle](../../CONTEXT.md#language-legacy-refactoring)**. That is the standard
-term from software testing, not the database vendor, and the link holds the one
-definition this repository uses.
+1. **First choose the checker, then let the AI change code.** The checker is
+   any tool that gives a yes or no without your opinion: the compiler, the
+   tests, or comparing output before and after the change. (The textbook name
+   is *test oracle*.)
+2. **Start with the cheapest checker: the compiler.** It already exists, it is
+   fast, and it finds real uses of the code. A text search finds names, not
+   uses.
+3. **A green build is not proof that the behavior did not change.** The
+   compiler shows that the change is complete. Only tests or output
+   comparisons show that the behavior stayed the same.
 
-Make the oracle first. Then let the oracle direct the work.
+## What we do in the session
 
-All six claims: [THESIS.md](THESIS.md).
+We work on a real, public, open-source code base:
+[fo-dicom](https://github.com/fo-dicom/fo-dicom), a C# library for medical
+images (DICOM). Its old interface was moved out of the main package, so it has
+to be migrated, just like legacy code at work.
 
-## How to follow this workshop
-
-You can use three levels of detail. Each level needs more tools than the level
-before it.
-
-| Level | What you need | What you get |
+| Notebook | The question | Status |
 | --- | --- | --- |
-| 1. Read | A web browser | Every notebook, with the stored output of each cell. |
-| 2. Clone and read | Git | The same content on your own disk. |
-| 3. Clone and run | Git, Docker, and a model API key | A new run with your own code base. |
+| [`00_setup`](notebooks/00_setup.ipynb) | Can we build this old code, the same way on every machine? An AI skill writes the build container. | Done |
+| [`01_build_warnings`](notebooks/01_build_warnings.ipynb) | The build works but shows 11 warnings. Which ones matter? We fix them with the compiler as the checker. | Done |
+| [`01a_find_obsolete_call_sites`](notebooks/01a_find_obsolete_call_sites.ipynb) | Optional deep dive into `01`: how many uses does a text search find, and how many does the compiler find? | Done |
+| `02_test_driven_development` | Some fixes change behavior. Write a test first, then make the change. | Planned |
 
-Level 1 is enough to follow the session. The notebooks hold the output of each
-cell, so the workshop does not need a network connection.
+Each notebook stands on its own and starts with a short summary. You can open
+them in a browser on GitHub, with the results already shown. You do not need to
+install anything.
 
-```bash
-git clone https://github.com/pkuppens/skills.git
-cd skills/workshops/legacy-refactor
-```
+## The results: what we checked
 
-## The notebooks
+These numbers come from real runs that are saved in the notebooks. They are not
+slides.
 
-The numbers give the order of the software lifecycle. They do not give the order
-of the talk. Read each notebook alone. Each notebook starts with a
-header cell that tells you what it proves.
+- **The old code builds the same way for everyone.** One container, every tool
+  version pinned, no network needed. The next person gets the same build, so
+  there is no "works on my PC".
+  ([`00_setup`](notebooks/00_setup.ipynb), and the full session record in
+  [`evidence/`](evidence/legacy-build-container/README.md))
+- **11 warnings were really 4 decisions.** What mattered was not the warning
+  code but whether the fix changes behavior. We fixed some warnings and kept
+  three on purpose, with the reason written next to the code.
+  ([`01_build_warnings`](notebooks/01_build_warnings.ipynb))
+- **The compiler judged three fix attempts.** It accepted one, rejected one,
+  and showed that the third would change the public interface. A text search
+  could not have shown any of this.
+- **A text search found 62 matches. The compiler found 6 real uses.** If you
+  had trusted the search, you would have edited the wrong places.
+  ([`01a_find_obsolete_call_sites`](notebooks/01a_find_obsolete_call_sites.ipynb))
 
-| Notebook | Subject | Skill that it proves |
-| --- | --- | --- |
-| `00_setup` | The build environment is a file that you can version and share. **Executed.** | [`legacy-build-container`](../../skills/legacy-build-container/SKILL.md) |
-| `01_build_warnings` | The build is green and not clean. Eleven warnings, four decisions, fixed on a branch. **Executed.** | [`call-site-exhaustiveness`](../../skills/call-site-exhaustiveness/SKILL.md) |
-| `02_test_driven_development` | Refactor under test: a runnable test project, coverage of the lines you touch, then the change. **Planned.** | `legacy-test-harness`, `refactor-under-test` |
-| `05_refactoring` | The full call-site comparison behind `01`: text search against compiler, on one deprecated member. **Executed. Appendix.** | [`call-site-exhaustiveness`](../../skills/call-site-exhaustiveness/SKILL.md) |
+**What is not proven yet:** that the behavior stayed the same. No tests ran.
+That is `02`, which is still planned.
 
-Three notebooks are dropped for this session: `02_requirements_engineering`,
-`04_bug_investigation` and `06_transfer`. The transfer subject becomes one
-slide. See [notebooks/README.md](notebooks/README.md) for the state of each
-notebook, and for the rules that each notebook must obey.
+## Try it on your own code
 
-## The evidence
+The method is packaged as **skills**: instructions that an AI agent (for
+example Claude Code) reads and follows. You install them in your own project
+and run them there.
 
-A notebook is a guided tour. The evidence that a skill works is the record of a
-real run, and those records live in [`evidence/`](evidence/).
+- [`legacy-build-container`](../../skills/legacy-build-container/SKILL.md):
+  writes a build container for an old project.
+- [`call-site-exhaustiveness`](../../skills/call-site-exhaustiveness/SKILL.md):
+  uses the compiler to find every use of the code you want to change.
+- [`oracle-first-refactor`](../../skills/oracle-first-refactor/SKILL.md):
+  chooses the checker before any change.
 
-| Record | What it is |
-| --- | --- |
-| [`evidence/legacy-build-container/`](evidence/legacy-build-container/README.md) | One session, started in a clone of fo-dicom 4.0.8 with the single prompt `/legacy-build-container`. It holds every tool call, the `Dockerfile` and the `BUILD.md` that the session wrote, and the limits of the run. |
+How to install the skills, or run the notebooks yourself: [SETUP.md](SETUP.md).
 
-`00_setup` visits that record. It does not replace it.
+## More detail (optional)
 
-## The deliverable is a skill, not an environment
-
-Each notebook proves that one **skill** works. A skill is a set of instructions
-that an agent reads. The skills are in [`skills/`](../../skills/) in this
-repository. You can install them. See [`06_transfer`](notebooks/) or the
-[repository README](../../README.md).
-
-This is the important part. A Dockerfile solves one problem one time. A skill
-that writes the correct Dockerfile for your toolchain solves the problem again
-for each new toolchain. The notebook output is the proof that the skill works.
-
-## The example code
-
-| Code base | Language | Role |
-| --- | --- | --- |
-| [fo-dicom](https://github.com/fo-dicom/fo-dicom) | C# | The live demonstration. It has a real legacy API, because the project moved its 1.x methods into a separate package. |
-| [DCMTK](https://github.com/DCMTK/dcmtk) | C++ | The proof that the container skill works. It has its own string and list types, because it is older than the standard C++ library. |
-
-Both code bases are DICOM toolkits. The domain is the same as the audience's
-domain.
-
-## Documents
+You do not need these files to follow the session.
 
 | File | Contents |
 | --- | --- |
-| [PLAN.md](PLAN.md) | The design of the workshop and the order of the talk. |
-| [THESIS.md](THESIS.md) | Why you refactor at all, the six claims, and the command that proves each claim. |
-| [TASKS.md](TASKS.md) | The preparation tasks, with a gate for each task. |
-| [VERIFICATION.md](VERIFICATION.md) | How to verify each claim and each task. |
-| [ISSUES.md](ISSUES.md) | The work that remains, and the commands that file it. |
-
-Decisions with a long effect are in [`docs/decisions/`](../../docs/decisions/):
-
-- [ADR 002 — Workshop container environment](../../docs/decisions/002-workshop-container-environment.md)
-- [ADR 003 — AI assistance, network, and confidentiality](../../docs/decisions/003-ai-assistance-network-and-confidentiality.md)
-- [ADR 004 — Licensing split](../../docs/decisions/004-licensing-split.md)
+| [CLAIMS.md](CLAIMS.md) | The reasons to refactor, and the six claims, each with a way to check it. |
+| [PLAN.md](PLAN.md) | Audience, timing, and the order of the talk. |
+| [notebooks/README.md](notebooks/README.md) | How the notebooks are built and run. |
+| [TASKS.md](TASKS.md), [VERIFICATION.md](VERIFICATION.md), [ISSUES.md](ISSUES.md) | Preparation and open work. |
 
 ## Licence
 
-**This workshop is not MIT licensed. The skills are.**
-
-| What | Licence | What you may do |
-| --- | --- | --- |
-| This directory and everything in it | [CC BY-NC-ND 4.0](../LICENSE) | Read it, keep it, and share it without change. You may not sell it and you may not publish a changed version. |
-| [`skills/`](../../skills/) | [MIT](../../LICENSE) | Use it, change it, and build on it. Commercial use is allowed. |
-| The example code bases | Their own licences | See fo-dicom and DCMTK. |
-
-So: **learn from the workshop, build with the skills.** If you want to use this
-method on your own code, use the skills. That is what they are for.
-
-Reasons for the split: [ADR 004](../../docs/decisions/004-licensing-split.md).
+**Learn from the workshop, build with the skills.** This directory is
+[CC BY-NC-ND 4.0](../LICENSE): read it and share it unchanged, but do not sell
+it or publish changed versions. The [`skills/`](../../skills/) are
+[MIT](../../LICENSE): use them freely, including commercially. Reasons:
+[ADR 004](../../docs/decisions/004-licensing-split.md).

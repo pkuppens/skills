@@ -15,7 +15,7 @@ description: >
 **Use when:** you plan a refactor **or a bug fix** in a large or legacy code
 base, and you must be able to prove what changed and what did not.
 **Status:** exercised on fo-dicom 4.0.8. The recorded run is
-[`05_refactoring.ipynb`](../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb),
+[`01a_find_obsolete_call_sites.ipynb`](../../workshops/legacy-refactor/notebooks/01a_find_obsolete_call_sites.ipynb),
 which produced the counts quoted below. The C++ half is not yet run.
 
 A [test oracle](../../CONTEXT.md#language-legacy-refactoring) is a tool that decides whether a result is correct. The
@@ -150,7 +150,7 @@ list is complete because of the method, not because somebody was careful.
    So in C#: promote the warning to enumerate. If you must use `error: true`,
    fix and rebuild until the count reaches zero, and never report the first
    count as the total. Evidence:
-   [`05_refactoring.ipynb`](../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb),
+   [`01a_find_obsolete_call_sites.ipynb`](../../workshops/legacy-refactor/notebooks/01a_find_obsolete_call_sites.ipynb),
    step 4.
 
 3. **Build every configuration that you intend to claim.**

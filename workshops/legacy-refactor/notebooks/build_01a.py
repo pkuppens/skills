@@ -1,4 +1,4 @@
-"""Author 05_refactoring.ipynb. Run from the repo root, then execute the notebook.
+"""Author 01a_find_obsolete_call_sites.ipynb. Run from the repo root, then execute the notebook.
 
 This script only writes the cells. It never writes outputs: the outputs come
 from a real kernel run via `jupyter nbconvert --execute`. See notebooks/README.md
@@ -12,9 +12,9 @@ code = lambda t: nbf.v4.new_code_cell(t)
 
 nb.cells = [
 md("""\
-# 05 — Refactoring: let the compiler find the call sites
+# 01a — Find every use of an obsolete type
 
-**Proves:** claims 2 and 3 of [../THESIS.md](../THESIS.md), and the limits of claim 2.
+**Proves:** claims 2 and 3 of [../CLAIMS.md](../CLAIMS.md), and the limits of claim 2.
 **Skill:** [`call-site-exhaustiveness`](../../../skills/call-site-exhaustiveness/SKILL.md), [`oracle-first-refactor`](../../../skills/oracle-first-refactor/SKILL.md)
 **Needs:** .NET SDK, `rg` (ripgrep), git, and the fo-dicom specimen from `00_setup`. No model API. No network after the first restore.
 **Run time:** about 1 minute.
@@ -24,7 +24,7 @@ md("""\
 
 ## The reason for this change
 
-Reason 3 of [../THESIS.md](../THESIS.md#why-refactor-legacy-code): **the library forces it.**
+Reason 3 of [../CLAIMS.md](../CLAIMS.md#why-refactor-legacy-code): **the library forces it.**
 
 fo-dicom marks `FellowOakDicom.Network.AsyncManualResetEvent` as obsolete. The
 maintainers wrote the migration message themselves. A team that upgrades must
@@ -455,6 +455,6 @@ nb.metadata = {
     "language_info": {"name": "python"},
 }
 
-out = "workshops/legacy-refactor/notebooks/05_refactoring.ipynb"
+out = "workshops/legacy-refactor/notebooks/01a_find_obsolete_call_sites.ipynb"
 nbf.write(nb, out)
 print("wrote", out, "with", len(nb.cells), "cells (no outputs; execute next)")
