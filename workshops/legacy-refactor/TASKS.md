@@ -59,7 +59,7 @@ name.
 | A1 | Publish the branch and open the pull request. | **Done.** PR #39. |
 | A2 | Choose the target and count the call sites. | **Done.** fo-dicom 4.0.8, `AsyncManualResetEvent`, counts 62 / 8 / 6. No reflective call site exists for this target, and the notebook says so instead of inventing one. |
 | A3 | Prove the C# build works with no network. | **Done.** Proved by configuration rather than by network state: a local feed with `<clear />` removes nuget.org, and the restore still succeeds into a cold package folder in under half a second, then builds green in about two seconds. A negative control with no feed fails with 6 × `NU1101`, so the pass was not an accident. See `00_setup`, step 6. **Still to do on the demo laptop:** the same run with the adapter physically off (task A9/A11). |
-| A4 | Run `05_refactoring`. | **Done.** 9 of 9 cells, no errors. |
+| A4 | Run `01a_find_obsolete_call_sites`. | **Done.** 9 of 9 cells, no errors. |
 | A5 | Write `legacy-build-container` with its learned-environments file. | **Done.** Two verified rows, both from real runs. |
 | A6 | Run `00_setup`. | **Done.** 17 of 17 cells, seven stations. g++ 4.9.4, pinned by digest. |
 | A7 | Write `call-site-exhaustiveness`. | **Done.** Validates. |
@@ -85,9 +85,9 @@ clearly; a stored build log; a screenshot.
 
 | # | Task | Gate |
 | --- | --- | --- |
-| C1 | `02_requirements_engineering`. It is the only evidence for claim 5, so the claim stays an opinion until this exists. | Executed, or marked `PLANNED`. |
-| C2 | `04_bug_investigation` | Executed, or marked `PLANNED`. |
-| C3 | `06_transfer`: the pinned install command with its verify output. | Cheap. Do it together with A10. |
+| C1 | A requirements-engineering notebook. It is the only evidence for claim 5, so the claim stays an opinion until this exists. | Executed, or marked `PLANNED`. |
+| C2 | A bug-investigation notebook. | Executed, or marked `PLANNED`. |
+| C3 | A transfer notebook: the pinned install command with its verify output. | Cheap. Do it together with A10. |
 | C4 | Verify the install in a clean user profile. | The verify output lists the skills. |
 | C5 | Add a minimal `.pre-commit-config.yaml`: whitespace and end-of-file hooks, plus the skills validation that CI already runs. Leave `nbstripout` commented out, with the reason beside it. | `pre-commit run --all-files` passes, and `grep -n nbstripout .pre-commit-config.yaml` shows only comment lines. |
 
@@ -113,7 +113,7 @@ the notebooks. That still works, because the output is stored.
 | `dotnet restore` needs a network. | Vendor the packages, use `--no-restore`, and test with the adapter switched **off**, not merely idle. This is task A3. |
 | Old Linux distributions moved their package servers. | Avoid the problem rather than working around it: use an image that already holds the compiler, such as `gcc:4.9`. Verified. |
 | A tool that strips notebook output deletes the offline fallback. | `pre-commit` is fine; `nbstripout` is not. Keep it absent, or exclude `workshops/`. See [notebooks/README.md](notebooks/README.md) and task C5. |
-| `error: true` under-reports call sites in C#. | Measured: 3 against 6. Promote the warning instead. See `05_refactoring`, step 4. |
+| `error: true` under-reports call sites in C#. | Measured: 3 against 6. Promote the warning instead. See `01a_find_obsolete_call_sites`, step 4. |
 | A new skill must pass CI. | Run `npx --yes skills-ref validate skills/<name>` before the commit. |
 | A new skill must be registered twice. | In `skills/SKILL_TREE.md` and in `.claude-plugin/marketplace.json`. |
 

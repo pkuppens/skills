@@ -10,27 +10,30 @@ code = lambda t: nbf.v4.new_code_cell(t)
 
 nb.cells = [
 md("""\
-# 00 — Setup: the build environment is an artifact
-
-**Proves:** claim 1 of [../THESIS.md](../THESIS.md) — step 1 of the ladder must exist before anything else.
-**Skill:** [`legacy-build-container`](../../../skills/legacy-build-container/SKILL.md)
-**Needs:** git, Docker, and the .NET SDK. Network for the first run only.
-**Run time:** 20 seconds warm, measured. The first run takes several minutes, because it pulls two images and restores packages.
-**State:** EXECUTED
-
----
+# 00 — Setup: a build that works the same for everyone
 
 ## In short
 
-A team must change a large code base that it did not write. Before anybody
-changes one line, somebody must answer one question: **does this code build?**
+**Goal.** Before anybody changes one line of legacy code, the team needs a
+build environment that is:
 
-This notebook is a guided tour of that first step. It visits the evidence for
-each claim. You can read it without a computer.
+- **working**: the code compiles, with zero errors;
+- **reproducible**: the same result on every machine, today and next year;
+- **unambiguous**: one written-down way to build, with every tool version
+  pinned. No "works on my PC".
 
-The work is not a build environment. The work is a **skill that builds one**.
-A Dockerfile solves one toolchain one time. A skill reads a project it has
-never seen, and writes the right Dockerfile for that project.
+**Why first.** An AI agent writes code quickly, but it cannot prove the code is
+correct. The compiler is the first and cheapest check. A check that gives
+different answers on different machines is no check at all.
+
+**How.** We do not hand-build one environment. We use a **skill**,
+[`legacy-build-container`](../../../skills/legacy-build-container/SKILL.md),
+that reads a project it has never seen and writes the right build container for
+it. A Dockerfile solves one project once. The skill solves the next project too.
+
+**Result.** The old C# code builds in a container: 0 errors, 11 warnings, the
+same output file on every run, with no network. A 2016 C++ compiler runs the
+same way. Every number below comes from a real run.
 
 ### What you will see
 
@@ -41,22 +44,62 @@ never seen, and writes the right Dockerfile for that project.
 | 3 | The tool needs | Which toolchain does the code ask for? |
 | 4 | The build | Does the code compile, in a container? |
 | 5 | The C++ case | What happens when the host has no compiler at all? |
-| 6 | The network | Does the demonstration work with no network? |
+| 6 | The network | Does the build work with no network? |
 | 7 | The record | What does the next team start from? |
 
 ### Two things to remember
 
-**1. Start from a working environment.** An AI agent writes code quickly. It
-cannot prove that the code is correct. A compiler can. So the compiler comes
-first, and every later claim depends on it.
+**1. Start from a build you can trust.** Working, reproducible, unambiguous.
+Every later step depends on it.
 
 **2. Never refactor without a reason.** A refactor costs money and adds risk.
 The reason does not have to be a new function. "Nobody understands this code"
-is a reason. "There are no tests" is a reason. "The documentation is wrong" is
-a reason. But write the reason down first. The five common reasons are in
-[../THESIS.md](../THESIS.md).
+is a reason. "There are no tests" is a reason. But write the reason down first.
+"""),
 
-Decisions behind this notebook: [ADR 002](../../../docs/decisions/002-workshop-container-environment.md).
+md("""\
+## Run this notebook yourself
+
+You can read this notebook without running it: every cell shows its stored
+result. To run it, you need Git, Docker Desktop (started), the .NET SDK, and
+[uv](https://docs.astral.sh/uv/). The Python version and every package are
+pinned in `pyproject.toml` and `uv.lock`, so your environment matches this one.
+
+```bash
+cd workshops/legacy-refactor
+uv sync                     # creates .venv with Python 3.12 and the locked packages
+uv run jupyter nbconvert --to notebook --execute notebooks/00_setup.ipynb --output my_00_setup.ipynb
+```
+
+`--output my_00_setup.ipynb` writes your run to a new file, so the stored
+results stay as they are. To open the notebook in a browser instead:
+`uv sync --group lab`, then `uv run jupyter lab`.
+
+The first run needs a network, about 3 GB of disk, and about 4 minutes: it
+clones fo-dicom and pulls two container images. Everything it downloads goes to
+`tmp/workshop-workspace/` at the repository root. Delete that folder to start
+clean.
+
+### Pitfalls
+
+| What you see | Cause | Fix |
+| --- | --- | --- |
+| The first code cell says `docker daemon: NOT RUNNING`, or a cell fails with `failed to connect to the docker API` | Docker Desktop is installed but not started. | Start Docker Desktop, wait until it says *Engine running*, and run again. |
+| `uv: command not found` | uv is not installed. | Install uv: see [docs.astral.sh/uv](https://docs.astral.sh/uv/getting-started/installation/). |
+| `the working directory 'C:/Program Files/Git/work' is invalid` | You typed a `docker run` command in Git Bash, which rewrites `/work`. | Put `MSYS_NO_PATHCONV=1` in front of the command, or use PowerShell. |
+| About 20 × `error CS0579: Duplicate ... attribute` | A host build and a container build shared one `obj/` folder. | The notebook cleans this itself. By hand: delete `obj/` and `bin/` first (station 4). |
+| Your image ID, image size or build times differ from the stored ones | Normal. They depend on the machine and on the Docker version. | Compare what must match: the image **digest**, 0 errors, the 5 warning codes, and the DLL size of 1540096 bytes. |
+| `Kernel is running over TCP without encryption` | A Jupyter warning on Windows. | Harmless for a local run. Ignore it. |
+
+### About this notebook
+
+| | |
+| --- | --- |
+| **Skill** | [`legacy-build-container`](../../../skills/legacy-build-container/SKILL.md) |
+| **Needs** | Git, Docker Desktop, the .NET SDK, uv. Network for the first run only. |
+| **Run time** | About 20 seconds warm. From scratch about 4 minutes, measured on 2026-10-06: it clones fo-dicom and pulls about 3 GB of images. |
+| **State** | EXECUTED |
+| **Supports** | Claim 1 in [../CLAIMS.md](../CLAIMS.md): without a working build there is no check. Decisions: [ADR 002](../../../docs/decisions/002-workshop-container-environment.md). |
 """),
 
 md("""\
@@ -135,7 +178,13 @@ print("evidence  :", os.path.relpath(EVIDENCE, ROOT), "(committed)")
 print("workspace :", os.path.relpath(WORKSPACE, ROOT), "(gitignored, built by this notebook)")
 print()
 for tool in ("git", "dotnet", "docker"):
-    print("%-8s %s" % (tool, shutil.which(tool) or "NOT FOUND"))"""),
+    print("%-8s %s" % (tool, shutil.which(tool) or "NOT FOUND"))
+
+# Docker installed is not Docker running. See the pitfalls above.
+rc_d, out_d = run(["docker", "version", "--format", "{{.Server.Version}}"])
+print()
+print("docker daemon:", out_d.strip() if rc_d == 0 else
+      "NOT RUNNING - start Docker Desktop, then run this notebook again")"""),
 
 md("""\
 ## Station 1 — A real run, on a project the skill had not seen
@@ -568,7 +617,7 @@ for line in vers.strip().splitlines():
 md("""\
 ### The second difference: a text search misses calls that no file contains
 
-In C#, a text search fails because it reports too much. See `05_refactoring`:
+In C#, a text search fails because it reports too much. See `01a_find_obsolete_call_sites`:
 62 matches, and 6 real call sites.
 
 In C++ it fails the other way, and that way is worse. A macro writes the call.
@@ -885,7 +934,8 @@ md("""\
 
 ## The two things to remember, again
 
-1. **Start from a working environment.** Everything later depends on it.
+1. **Start from a build you can trust**: working, reproducible, unambiguous.
+   Everything later depends on it.
 2. **Never refactor without a reason.** Write the reason down first. Better
    documentation, better understanding and a first test set are valid reasons,
    and they are results of this method rather than costs of it.

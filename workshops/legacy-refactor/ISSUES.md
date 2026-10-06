@@ -32,7 +32,7 @@ issue.
 | 5 | feat: skill `intent-layer-reconstruction` | P1 | Specification ready |
 | 6 | feat: skill `legacy-cpp-modernize` | P2 | Specification ready |
 | 7 | docs: notebooks `00` and `01` | P0 | To do |
-| 8 | docs: notebook `05`, the refactor demonstration | P0 | To do |
+| 8 | docs: notebook `01a`, the call-site comparison | P0 | To do |
 | 9 | docs: notebooks `02`, `03`, `04`, `06` | P1 | To do |
 | 10 | build: C++ container and the DCMTK subset build | P1 | To do |
 | 11 | fix: open the prepared pull request on fo-dicom | P2 | After the interview |

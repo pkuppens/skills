@@ -12,7 +12,7 @@ nb.cells = [
 md("""\
 # 01 — The build is green, and it is not clean
 
-**Proves:** claims 1 and 2 of [../THESIS.md](../THESIS.md) — the slow part is proof, and the compiler is what provides it.
+**Proves:** claims 1 and 2 of [../CLAIMS.md](../CLAIMS.md) — the slow part is proof, and the compiler is what provides it.
 **Skill:** [`call-site-exhaustiveness`](../../../skills/call-site-exhaustiveness/SKILL.md)
 **Needs:** git and Docker. The image from [`00_setup`](00_setup.ipynb). Network for the first run only.
 **Run time:** about 3 minutes warm, measured. Eight container builds.
@@ -310,7 +310,7 @@ Do not search for the name. Promote the warning to an error and let the build
 stop at every use. The list is then complete **because of the method**, not
 because somebody was careful. That is
 [`call-site-exhaustiveness`](../../../skills/call-site-exhaustiveness/SKILL.md),
-and [`05_refactoring`](05_refactoring.ipynb) measures it against a text search
+and [`01a_find_obsolete_call_sites`](01a_find_obsolete_call_sites.ipynb) measures it against a text search
 on this exact target: 62 text matches, 8 in files that are built, 6 real call
 sites.
 """),
@@ -345,7 +345,7 @@ work.
 only those.
 
 **Two classes with the same name, one obsolete and one not.** This is the trap
-that `05_refactoring` records from the other direction: a text search cannot
+that `01a_find_obsolete_call_sites` records from the other direction: a text search cannot
 tell them apart, and the compiler can.
 
 ### Attempt 1 — a `using` alias at the top of the file
@@ -581,7 +581,7 @@ md("""\
 - **Eleven warnings were four decisions**, and the difference between them was
   not the warning code. It was whether the fix changes behaviour.
 - **The compiler produced the complete list of obsolete uses**, and
-  `05_refactoring` measures that against a text search: 62 matches against 6
+  `01a_find_obsolete_call_sites` measures that against a text search: 62 matches against 6
   call sites.
 - **The oracle judged the fix, three times.** The file-scope alias changed the
   source and nothing else, the namespace-scope alias was rejected outright, and

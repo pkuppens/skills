@@ -1,0 +1,3 @@
+# Local Python environment and local notebook runs (SETUP.md, level C).
+.venv/
+notebooks/my_*.ipynb

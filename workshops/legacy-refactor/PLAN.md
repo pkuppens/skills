@@ -58,7 +58,7 @@ than C++.
 
 - `-warnaserror:CS0618` promotes the obsolete warning that the library already
   carries. One flag, and no source edit at all. The `[Obsolete(..., error: true)]`
-  attribute looks neater but reports fewer places, which `05_refactoring`
+  attribute looks neater but reports fewer places, which `01a_find_obsolete_call_sites`
   measured. Say that on stage: a correction found by running the thing is good
   material, not a weakness.
 - Roslyn is a semantic index. It needs no compilation database. Step 2 of the
@@ -104,7 +104,7 @@ difference clearly. It shows that you can read the notebooks in any order.
 | 0:25–0:40 | `00_setup`. I did not build an environment. I built the skill that builds it. A pinned toolchain is evidence under IEC 62304. | Image digest, toolchain versions, the learned-environments diff |
 | 0:40–1:10 | `01_build_warnings`. **The proof.** Eleven warnings are four decisions. Three fix attempts, all judged by the compiler. | The warning count falling 11 → 10 → 3, and the three rejected attempts |
 | 1:10–1:40 | `02_test_driven_development`. The three warnings that change behaviour. A failing test first for the defect, and no failing test allowed for the refactor. | The red test, then green. Coverage of the lines before the edit |
-| 1:40–1:50 | `05_refactoring`. **Spare block.** Remove this block first. The same call sites, counted by a text search and by the compiler. | Text-search count against compiler count. The diff. The miss. |
+| 1:40–1:50 | `01a_find_obsolete_call_sites`. **Spare block.** Remove this block first. The same call sites, counted by a text search and by the compiler. | Text-search count against compiler count. The diff. The miss. |
 | 1:50–1:57 | Transfer. The pinned installation. Subversion and ClearCase. The on-premises model. | [ADR 003](../../docs/decisions/003-ai-assistance-network-and-confidentiality.md) |
 | 1:57–2:00 | End. One URL. | The repository |
 
@@ -113,7 +113,7 @@ difference clearly. It shows that you can read the notebooks in any order.
 Questions use the end of a session, not the start. Therefore the proof runs
 early.
 
-Remove blocks in this order when time is short: `05`, then the transfer block.
+Remove blocks in this order when time is short: `01a`, then the transfer block.
 The session is complete if only the first five blocks run, which ends on `02`.
 Say early that all material is published. An interrupted demonstration then
 costs nothing.

@@ -1,0 +1,21 @@
+# Python environment for the workshop notebooks. Not a package.
+# Set up:  uv sync            (from workshops/legacy-refactor/)
+# Run:     uv run jupyter nbconvert --to notebook --execute notebooks/00_setup.ipynb --output my_00_setup.ipynb
+# See SETUP.md, level C.
+[project]
+name = "legacy-refactor-workshop"
+version = "0.1.0"
+description = "Notebooks for the AI-assisted legacy refactoring workshop"
+requires-python = ">=3.12"
+dependencies = [
+    "ipykernel",
+    "nbconvert",
+    "nbformat",
+]
+
+[dependency-groups]
+# Optional, for reading and editing notebooks in a browser: uv sync --group lab
+lab = ["jupyterlab"]
+
+[tool.uv]
+package = false
