@@ -22,7 +22,7 @@ attempt from home. Everything must work from the laptop that goes in the bag.
 
 About 20 hours. That is more than the earlier plan assumed, because the earlier
 plan read "2 days of effort" as "the interview is tomorrow". So
-`03_test_driven_development` and the DCMTK build move from "cut first" to
+the test-driven notebook and the DCMTK build move from "cut first" to
 "planned".
 
 **Freeze: Tuesday 22:00.** After that, no new cells, no new skills, no new
@@ -46,10 +46,11 @@ Ask these, and write the answers down.
 | Is there a guest network, and does it allow outbound HTTPS? | Decides whether anything runs live, or everything is replayed. |
 | May I run commands from my own laptop? | Some sites do not allow an unmanaged laptop on the projector. |
 | Which half of your code base hurts more today, C++ or C#? | Decides the running order. |
-| **May we run the precondition check against one of your own modules?** | The strongest possible close. It makes the workshop about them, not about fo-dicom. |
+| **May we read the warnings of one of your own builds?** | The strongest possible close. It makes the workshop about them, not about fo-dicom. |
 
 The last question is the one to prepare for. If they say yes, Tuesday evening
-goes on making `01_precondition_checks` run against a path they name.
+goes on running the warning triage of `01_build_warnings` against a path they
+name.
 
 ## Tier A — the workshop fails without these
 
@@ -60,10 +61,10 @@ goes on making `01_precondition_checks` run against a path they name.
 | A3 | Prove the C# build works with no network. | **Done.** Proved by configuration rather than by network state: a local feed with `<clear />` removes nuget.org, and the restore still succeeds into a cold package folder in under half a second, then builds green in about two seconds. A negative control with no feed fails with 6 × `NU1101`, so the pass was not an accident. See `00_setup`, step 6. **Still to do on the demo laptop:** the same run with the adapter physically off (task A9/A11). |
 | A4 | Run `05_refactoring`. | **Done.** 9 of 9 cells, no errors. |
 | A5 | Write `legacy-build-container` with its learned-environments file. | **Done.** Two verified rows, both from real runs. |
-| A6 | Run `00_setup`. | **Done.** 8 of 8 cells. g++ 4.9.4, pinned by digest. |
+| A6 | Run `00_setup`. | **Done.** 17 of 17 cells, seven stations. g++ 4.9.4, pinned by digest. |
 | A7 | Write `call-site-exhaustiveness`. | **Done.** Validates. |
 | A8 | Write the ADRs. | **Done.** 002, 003, and 004 for licensing. |
-| A9 | Write and run `01_precondition_checks`: which steps does a code base already have? | **To do. Sunday, 2 h.** The most reusable artifact for the audience. |
+| A9 | Write and run `01_build_warnings`: the build is green with 11 warnings, so what is the approach? | **Done.** 29 cells, no errors, 80 s. Warnings 11 → 10 → 3 on branch `feature/fix-build-warnings`, two commits. Replaces `01_precondition_checks`, which asked a vaguer question. |
 | A10 | Merge PR #39 into `main` and tag it. Both events then show one clean URL, and `/plugin install` resolves with no branch reference. | **To do. Tuesday morning, before the meeting.** |
 | A11 | Full dry run, timed, with the network off. | **To do. Wednesday morning.** |
 | A12 | Equipment check. See the list below. | **To do. Tuesday evening.** |
@@ -74,7 +75,7 @@ goes on making `01_precondition_checks` run against a path they name.
 | --- | --- | --- | --- |
 | B1 | Build the DCMTK `ofstd` and `dcmdata` targets in the `gcc:4.9` container. This proves scale, where the fixture proves only the mechanism. | Monday, hard stop 16:00 | A green subset build, or a stored log and a note. |
 | B2 | Write `oracle-first-refactor`. | — | **Done.** |
-| B3 | Run `03_test_driven_development`: build the output comparison first, then show one pass and one deliberate failure. | Monday | Both results stored. **Claim 4 has no evidence without this.** |
+| B3 | Write and run `02_test_driven_development`: the three warnings `01` left open. A failing test first for the defect, and no failing test allowed for the refactor. | Monday | The red test and the green test both stored. **Claim 4 has no evidence without this.** Specification: `tmp/02-refactor-under-test.md`, which is local and not committed. |
 
 B1 is still the only task that may fail without harming the session. Reduce it
 in this order: a smaller target; a newer compiler with the difference stated
@@ -84,7 +85,7 @@ clearly; a stored build log; a screenshot.
 
 | # | Task | Gate |
 | --- | --- | --- |
-| C1 | `02_requirements_engineering` | Executed, or marked `PLANNED`. |
+| C1 | `02_requirements_engineering`. It is the only evidence for claim 5, so the claim stays an opinion until this exists. | Executed, or marked `PLANNED`. |
 | C2 | `04_bug_investigation` | Executed, or marked `PLANNED`. |
 | C3 | `06_transfer`: the pinned install command with its verify output. | Cheap. Do it together with A10. |
 | C4 | Verify the install in a clean user profile. | The verify output lists the skills. |

@@ -13,11 +13,11 @@ command and no stored output does not go in the workshop.
 
 | Claim | Verified by | Where |
 | --- | --- | --- |
-| 1. The problem is proof, not search | The readiness table names the [test oracle](../../CONTEXT.md#language-legacy-refactoring) that each code base has, and the oracle it does not have. | `01_precondition_checks` |
+| 1. The problem is proof, not search | Three fix attempts for one warning group. Two were wrong, and only the [test oracle](../../CONTEXT.md#language-legacy-refactoring) said so: the first changed the source and not the result. | `01_build_warnings` |
 | 2. Let the compiler find the places | Two counts on one screen: the text-search count and the compiler count. The two lists differ. | `05_refactoring` |
 | 3. Static types help you | The compiler produces the list with no extra work. Nobody had to write an oracle first. | `05_refactoring` |
-| 4. Green tests are not proof | One deliberate failure of the output comparison, while the build and the unit tests stay green. | `03_test_driven_development` |
-| 5. Write down the intent first | A glossary and an invariant list exist, and each entry names the code that supports it. | `02_requirements_engineering` |
+| 4. Green tests are not proof | A green build with eleven warnings, two of which are a defect that a one-line test exposes. Then the suite that cannot run at all. | `01_build_warnings`, `02_test_driven_development` |
+| 5. Write down the intent first | **No evidence for this session.** `02_requirements_engineering` is dropped. By the rule above, say the claim as an opinion, or leave it out of the talk. | — |
 | 6. You can check the discipline | The stored transcript shows that no file was opened before a tool named the lines. | Every notebook |
 
 ## Acceptance checks
@@ -56,6 +56,7 @@ Both events are in person, so this list is not optional.
       refuses the laptop.
 - [ ] The saved images are on the laptop disk, not on removable media.
 - [ ] `00_setup` runs offline.
+- [ ] `01_build_warnings` runs offline.
 - [ ] `05_refactoring` runs offline.
 - [ ] The font size is readable from the back of the room.
 - [ ] The screen resolution works with the projector.
@@ -83,5 +84,5 @@ Both events are in person, so this list is not optional.
 | An image is missing | Restore it with `docker load` from the local file. |
 | A build fails on stage | Continue. Point at the stored output. Do not debug on stage. |
 | The agent is slow or unavailable | The compiler output alone proves claims 2 and 3. Read the stored diff. |
-| A question uses 20 minutes | Remove block `04`, then `02`, then `03`. |
+| A question uses 20 minutes | Remove block `05`, then the transfer block. |
 | The projector shows a wrong resolution | Use a large font. Show the terminal and the notebook only. |

@@ -61,15 +61,14 @@ header cell that tells you what it proves.
 | Notebook | Subject | Skill that it proves |
 | --- | --- | --- |
 | `00_setup` | The build environment is a file that you can version and share. **Executed.** | [`legacy-build-container`](../../skills/legacy-build-container/SKILL.md) |
-| `01_precondition_checks` | Which oracles does this code base already have? | [`call-site-exhaustiveness`](../../skills/call-site-exhaustiveness/SKILL.md) |
-| `02_requirements_engineering` | Write down what the code must do, before you change it. | `intent-layer-reconstruction` |
-| `03_test_driven_development` | Make the output comparison before you change the code. | `golden-output-regression` |
-| `04_bug_investigation` | Find the cause of a defect with an oracle, not with a text search. | [`oracle-first-refactor`](../../skills/oracle-first-refactor/SKILL.md) |
-| `05_refactoring` | Let the compiler find every place that calls the old function. **Executed — start here.** | [`call-site-exhaustiveness`](../../skills/call-site-exhaustiveness/SKILL.md) |
-| `06_transfer` | How to use this method in your own team. | [`skills-transfer`](../../skills/skills-transfer/SKILL.md) |
+| `01_build_warnings` | The build is green and not clean. Eleven warnings, four decisions, fixed on a branch. **Executed.** | [`call-site-exhaustiveness`](../../skills/call-site-exhaustiveness/SKILL.md) |
+| `02_test_driven_development` | Refactor under test: a runnable test project, coverage of the lines you touch, then the change. **Planned.** | `legacy-test-harness`, `refactor-under-test` |
+| `05_refactoring` | The full call-site comparison behind `01`: text search against compiler, on one deprecated member. **Executed. Appendix.** | [`call-site-exhaustiveness`](../../skills/call-site-exhaustiveness/SKILL.md) |
 
-See [notebooks/README.md](notebooks/README.md) for the rules that each notebook
-must obey.
+Three notebooks are dropped for this session: `02_requirements_engineering`,
+`04_bug_investigation` and `06_transfer`. The transfer subject becomes one
+slide. See [notebooks/README.md](notebooks/README.md) for the state of each
+notebook, and for the rules that each notebook must obey.
 
 ## The evidence
 
