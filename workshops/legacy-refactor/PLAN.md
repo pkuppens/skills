@@ -19,7 +19,8 @@ The attendees must be able to do two things after the session:
 
 1. Name the reason for a change that they plan, and name the
    [test oracle](../../CONTEXT.md#language-legacy-refactoring) that this reason needs.
-2. Run the precondition check against their own code base.
+2. Read the warnings of their own build, and say for each one whether fixing it
+   changes behaviour.
 
 The session does **not** teach the attendees to install and operate the full
 method in two hours. That is not possible. The repository remains available
@@ -86,10 +87,10 @@ result, and it gives a reason for steps 3 and 4 of the ladder.
 | Tuesday 2026-10-06, 13:00 | Preparation meeting. Show that the method is real, and ask what the room needs. The question list is in [TASKS.md](TASKS.md). |
 | Wednesday 2026-10-07, 14:00 | The workshop itself, in the order below. |
 
-The best outcome of Tuesday is permission to run `01_precondition_checks`
-against one of their own modules on Wednesday. That turns a demonstration on a
-public DICOM library into a reading of their own code base, which is a
-different kind of evidence.
+The best outcome of Tuesday is permission to run the warning triage of
+`01_build_warnings` against one of their own modules on Wednesday. That turns a
+demonstration on a public DICOM library into a reading of their own code base,
+which is a different kind of evidence.
 
 ## Order of the talk
 
@@ -101,12 +102,10 @@ difference clearly. It shows that you can read the notebooks in any order.
 | 0:00–0:15 | Introductions. Their code base. Their regulatory context. | — |
 | 0:15–0:25 | **Why you would refactor at all**, with the five reasons. Then the problem and the claims. The example code is a stand-in. Size does not change the method. | The five reasons, then the oracle ladder |
 | 0:25–0:40 | `00_setup`. I did not build an environment. I built the skill that builds it. A pinned toolchain is evidence under IEC 62304. | Image digest, toolchain versions, the learned-environments diff |
-| 0:40–0:55 | `01_precondition_checks`. The most reusable artifact of the session. | The readiness table, both languages |
-| 0:55–1:20 | `05_refactoring`. **The proof.** It ends on the call site that neither method found. | Text-search count against compiler count. The diff. The miss. |
-| 1:20–1:30 | `03_test_driven_development`. It compiles, the tests pass, and it is still not proof. | The deliberate failure |
-| 1:30–1:40 | `02_requirements_engineering`. The first AI deliverable is intent. | The glossary and the invariants |
-| 1:40–1:48 | `04_bug_investigation`. **Spare block.** Remove this block first. | The ladder on a real issue |
-| 1:48–1:57 | Transfer. The pinned installation. Subversion and ClearCase. The on-premises model. | [ADR 003](../../docs/decisions/003-ai-assistance-network-and-confidentiality.md) |
+| 0:40–1:10 | `01_build_warnings`. **The proof.** Eleven warnings are four decisions. Three fix attempts, all judged by the compiler. | The warning count falling 11 → 10 → 3, and the three rejected attempts |
+| 1:10–1:40 | `02_test_driven_development`. The three warnings that change behaviour. A failing test first for the defect, and no failing test allowed for the refactor. | The red test, then green. Coverage of the lines before the edit |
+| 1:40–1:50 | `05_refactoring`. **Spare block.** Remove this block first. The same call sites, counted by a text search and by the compiler. | Text-search count against compiler count. The diff. The miss. |
+| 1:50–1:57 | Transfer. The pinned installation. Subversion and ClearCase. The on-premises model. | [ADR 003](../../docs/decisions/003-ai-assistance-network-and-confidentiality.md) |
 | 1:57–2:00 | End. One URL. | The repository |
 
 ### Spare time
@@ -114,9 +113,10 @@ difference clearly. It shows that you can read the notebooks in any order.
 Questions use the end of a session, not the start. Therefore the proof runs
 early.
 
-Remove blocks in this order when time is short: `04`, then `02`, then `03`. The
-session is complete if only the first five blocks run. Say early that all
-material is published. An interrupted demonstration then costs nothing.
+Remove blocks in this order when time is short: `05`, then the transfer block.
+The session is complete if only the first five blocks run, which ends on `02`.
+Say early that all material is published. An interrupted demonstration then
+costs nothing.
 
 ## Version control
 

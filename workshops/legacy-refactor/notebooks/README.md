@@ -112,12 +112,17 @@ output for it, and that is visible.
 
 | Notebook | State |
 | --- | --- |
-| `00_setup.ipynb` | **EXECUTED.** Tier A. |
-| `01_precondition_checks.ipynb` | To do. Tier A. |
-| `02_requirements_engineering.ipynb` | To do. Tier C. |
-| `03_test_driven_development.ipynb` | To do. Tier B. |
-| `04_bug_investigation.ipynb` | To do. Tier C. |
-| `05_refactoring.ipynb` | **EXECUTED.** Tier A. The headline. |
-| `06_transfer.ipynb` | To do. Tier C. |
+| `00_setup.ipynb` | **EXECUTED.** Tier A. The build environment is a skill. |
+| `01_build_warnings.ipynb` | **EXECUTED.** Tier A. Eleven warnings, four decisions. |
+| `02_test_driven_development.ipynb` | To do. Tier A. The three warnings that change behaviour. |
+| `05_refactoring.ipynb` | **EXECUTED.** Appendix. The call-site count behind `01`, in full. |
+| `02_requirements_engineering.ipynb` | Dropped for this session. |
+| `04_bug_investigation.ipynb` | Dropped for this session. |
+| `06_transfer.ipynb` | Dropped for this session. One slide instead. |
+
+The session is three notebooks: `00`, `01`, `02`. `05` stays because it is
+executed and it measures the text-search comparison that `01` cites, but the
+talk can drop it when time is short. `01_precondition_checks` was specified and
+dropped: it asked a vaguer question than the warnings do.
 
 The tiers and the gates are in [../TASKS.md](../TASKS.md).

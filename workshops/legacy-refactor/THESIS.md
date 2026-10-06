@@ -30,13 +30,18 @@ That tool is the subject of this workshop.
 
 ### Which reason this workshop uses
 
-Reason 3, with reason 1 inside it. The team must leave the 1.x interface of
-fo-dicom. To do that, they must find every use of it. One of those uses holds
-a defect.
+Reason 3, with reason 1 inside it, and the build itself asks for both. The
+library compiles with eleven warnings. Seven of them are uses of an obsolete
+interface, which is reason 3. Two of them are a defect waiting in a hash, which
+is reason 1.
 
-Reasons 4 and 5 are not extra work. They are the output of
-`02_requirements_engineering` and `03_test_driven_development`. Better
-understanding, better documentation, and a first test set are results of this
+So this workshop does not have to invent the reason for the change. The
+compiler gives the reason, on the first build, before anybody opens a file.
+That is `01_build_warnings`.
+
+Reason 5 is not extra work either. A first test set is the output of
+`02_test_driven_development`, and it is what makes the last two warnings safe
+to fix. Better understanding and better documentation are results of this
 method, not costs of it.
 
 ---

@@ -134,6 +134,7 @@ One line for each failure that cost more than 15 minutes.
 | 2026-10-04 | The agent reports that `cmake` does not exist, and the build works in a terminal. | The agent runs on the host. The toolchain is in the container. Run the agent in the container, or use `docker exec`. |
 | 2026-10-05 | `docker run` in Git Bash on Windows fails with `the working directory 'C:/Program Files/Git/work' is invalid`. | Git Bash rewrites `-w /work` into a Windows path. Set `MSYS_NO_PATHCONV=1`, or write `//work`. |
 | 2026-10-05 | A container build fails with about 20 × `error CS0579: Duplicate ... attribute`, and the same project builds on the host. | A host build and a container build shared one working tree. Each SDK generated its own `AssemblyInfo.cs`, and the project compiled both. Redirect `BaseIntermediateOutputPath`, `BaseOutputPath` and `NUGET_PACKAGES`, and clean the other toolchain's `obj/` and `bin/` before you build. |
+| 2026-10-05 | With no network, `dotnet build` adds eleven `NU1900` warnings about package vulnerability data, and `-warnaserror` turns them into errors. The warning count then differs between an online and an offline machine. | The package audit cannot reach nuget.org. Pass `-p:NuGetAudit=false`, so the warning list is the compiler's own and the counts are identical with and without a network. Verified on fo-dicom 4.0.8: 11 warnings either way. |
 
 The first three traps come from the workshop preparation, not from a build run.
 They are recorded because the cost is known and documented. See

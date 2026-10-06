@@ -228,6 +228,12 @@ if not os.path.isdir(SPECIMEN):
 else:
     print("specimen already present, not re-cloned")
 
+# Start from the tag, every time. 01_build_warnings leaves this clone on a
+# feature branch with warnings fixed, and the numbers below must describe the
+# released code. Notebook rule 4: each notebook stands alone.
+run(["git", "reset", "-q", "--hard"], cwd=SPECIMEN)
+run(["git", "checkout", "-q", "--detach", SPECIMEN_TAG], cwd=SPECIMEN)
+
 PROJECT = os.path.join(SPECIMEN, *PROJECT_REL.split("/"))
 print("tag        :", run(["git", "describe", "--tags", "--always"], cwd=SPECIMEN)[1].strip())
 print("last commit:", run(["git", "log", "-1", "--date=short", "--format=%ad %h"], cwd=SPECIMEN)[1].strip())
@@ -884,9 +890,9 @@ md("""\
    documentation, better understanding and a first test set are valid reasons,
    and they are results of this method rather than costs of it.
 
-Next: [`05_refactoring`](05_refactoring.ipynb) uses oracle step 1 to list every
-call site in C#. `01_precondition_checks` (planned) asks which steps of the
-ladder a code base already has.
+Next: [`01_build_warnings`](01_build_warnings.ipynb) reads the eleven warnings
+that this build printed, and uses oracle step 1 to list every call site behind
+them.
 """),
 ]
 
