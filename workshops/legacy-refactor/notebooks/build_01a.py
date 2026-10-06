@@ -35,6 +35,18 @@ this type, and miss none.** That is a question about completeness, so the
 [test oracle](../../../CONTEXT.md#language-legacy-refactoring) is the compiler.
 """),
 
+md("""\
+### Before you run
+
+This notebook builds on the host with the .NET SDK, so it needs **no Docker**.
+It resets the fo-dicom clone to tag 4.0.8 first. `01` leaves the clone with
+its fixes applied, and on that state the compiler rightly finds 0 sites.
+
+If the next cell stops with `Specimen missing`, run
+[`00_setup`](00_setup.ipynb) first. The other pitfalls (kernel, Jupyter server,
+network change) are in the *Pitfalls* table of `00_setup`.
+"""),
+
 code("""\
 import os, subprocess, shlex, re, time, shutil, fnmatch
 
@@ -56,6 +68,12 @@ def run(cmd, cwd=SPECIMEN, check=False):
 
 if not os.path.isdir(SPECIMEN):
     raise SystemExit("Specimen missing. Run 00_setup.ipynb first.")
+
+# Start from the tag, every time, as 00_setup and 01 do. 01 leaves the clone on
+# its feature branch with the CS0618 fixes applied; measured there, the compiler
+# finds 0 sites and this notebook would prove nothing.
+run("git reset -q --hard")
+run("git checkout -q --detach 4.0.8", check=True)
 
 # The text search. Uses ripgrep when it is installed, and a plain Python scan
 # otherwise, so this notebook runs on a machine that has neither ripgrep nor a

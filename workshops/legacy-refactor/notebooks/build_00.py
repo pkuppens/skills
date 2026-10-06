@@ -84,9 +84,11 @@ clean.
 
 | What you see | Cause | Fix |
 | --- | --- | --- |
-| The first code cell says `docker daemon: NOT RUNNING`, or a cell fails with `failed to connect to the docker API` | Docker Desktop is installed but not started. | Start Docker Desktop, wait until it says *Engine running*, and run again. |
+| The first code cell stops with `docker daemon: NOT RUNNING`, or a cell fails with `failed to connect to the docker API` | Docker Desktop is installed but not started. Common right after a reboot. | Start Docker Desktop, wait until it says *Engine running*, and run again. |
 | `uv: command not found` | uv is not installed. | Install uv: see [docs.astral.sh/uv](https://docs.astral.sh/uv/getting-started/installation/). |
-| `the working directory 'C:/Program Files/Git/work' is invalid` | You typed a `docker run` command in Git Bash, which rewrites `/work`. | Put `MSYS_NO_PATHCONV=1` in front of the command, or use PowerShell. |
+| VS Code asks *Select Kernel*, or the kernel does not start | After a reboot no kernel is running, and VS Code may not have picked the workshop environment. | Run `uv sync` in `workshops/legacy-refactor`, then pick *Python Environments* → `.venv` (Python 3.12) in that folder. |
+| `jupyter lab` is not found, or the browser tab says the server is gone | A reboot stops the Jupyter server. JupyterLab is an optional group, so a plain `uv sync` does not install it. | `uv sync --group lab`, then `uv run jupyter lab` again from `workshops/legacy-refactor`. |
+| After a network change (another Wi-Fi, a phone hotspot) the clone or an image pull fails with a DNS or timeout error | The first run downloads; later runs use `tmp/workshop-workspace/` and the local images. | Check `git ls-remote https://github.com/fo-dicom/fo-dicom.git` in a terminal. If that works and `docker pull` does not, restart Docker Desktop: it can keep the DNS of the old network. Once the workspace and images exist, the notebooks are built to need no network (station 6 proves it for the build). All three ran on a phone hotspot on 2026-10-06. || `the working directory 'C:/Program Files/Git/work' is invalid` | You typed a `docker run` command in Git Bash, which rewrites `/work`. | Put `MSYS_NO_PATHCONV=1` in front of the command, or use PowerShell. |
 | About 20 × `error CS0579: Duplicate ... attribute` | A host build and a container build shared one `obj/` folder. | The notebook cleans this itself. By hand: delete `obj/` and `bin/` first (station 4). |
 | Your image ID, image size or build times differ from the stored ones | Normal. They depend on the machine and on the Docker version. | Compare what must match: the image **digest**, 0 errors, the 5 warning codes, and the DLL size of 1540096 bytes. |
 | `Kernel is running over TCP without encryption` | A Jupyter warning on Windows. | Harmless for a local run. Ignore it. |
@@ -150,6 +152,22 @@ the same result. That is deliberate: a command you cannot run by hand is a
 command you cannot check.
 """),
 
+md("""\
+### If the next cell stops
+
+The next cell checks the tools and then the Docker engine. When the engine is
+not running, the cell stops with:
+
+```text
+SystemExit: docker daemon: NOT RUNNING - start Docker Desktop, ...
+```
+
+This is normal after a reboot: Docker Desktop does not always start by itself.
+**To continue:** start Docker Desktop, wait until it shows *Engine running*
+(`docker version` in a terminal then shows a *Server* part), and run the
+notebook again from this cell. Nothing before this cell depends on Docker.
+"""),
+
 code("""\
 import os, subprocess, shlex, re, time, shutil, json
 
@@ -180,11 +198,14 @@ print()
 for tool in ("git", "dotnet", "docker"):
     print("%-8s %s" % (tool, shutil.which(tool) or "NOT FOUND"))
 
-# Docker installed is not Docker running. See the pitfalls above.
+# Docker installed is not Docker running. See the pitfalls above. Stop here,
+# not thirty cells later with an error that does not name the cause.
 rc_d, out_d = run(["docker", "version", "--format", "{{.Server.Version}}"])
 print()
-print("docker daemon:", out_d.strip() if rc_d == 0 else
-      "NOT RUNNING - start Docker Desktop, then run this notebook again")"""),
+if rc_d != 0:
+    raise SystemExit("docker daemon: NOT RUNNING - start Docker Desktop, wait for "
+                     "'Engine running', then run this notebook again")
+print("docker daemon:", out_d.strip())"""),
 
 md("""\
 ## Station 1 — A real run, on a project the skill had not seen
