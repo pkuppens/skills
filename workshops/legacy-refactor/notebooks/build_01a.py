@@ -1,4 +1,4 @@
-"""Author 05_refactoring.ipynb. Run from the repo root, then execute the notebook.
+"""Author 01a_find_obsolete_call_sites.ipynb. Run from the repo root, then execute the notebook.
 
 This script only writes the cells. It never writes outputs: the outputs come
 from a real kernel run via `jupyter nbconvert --execute`. See notebooks/README.md
@@ -12,9 +12,9 @@ code = lambda t: nbf.v4.new_code_cell(t)
 
 nb.cells = [
 md("""\
-# 05 — Refactoring: let the compiler find the call sites
+# 01a — Find every use of an obsolete type
 
-**Proves:** claims 2 and 3 of [../THESIS.md](../THESIS.md), and the limits of claim 2.
+**Proves:** claims 2 and 3 of [../CLAIMS.md](../CLAIMS.md), and the limits of claim 2.
 **Skill:** [`call-site-exhaustiveness`](../../../skills/call-site-exhaustiveness/SKILL.md), [`oracle-first-refactor`](../../../skills/oracle-first-refactor/SKILL.md)
 **Needs:** .NET SDK, `rg` (ripgrep), git, and the fo-dicom specimen from `00_setup`. No model API. No network after the first restore.
 **Run time:** about 1 minute.
@@ -24,7 +24,7 @@ md("""\
 
 ## The reason for this change
 
-Reason 3 of [../THESIS.md](../THESIS.md#why-refactor-legacy-code): **the library forces it.**
+Reason 3 of [../CLAIMS.md](../CLAIMS.md#why-refactor-legacy-code): **the library forces it.**
 
 fo-dicom marks `FellowOakDicom.Network.AsyncManualResetEvent` as obsolete. The
 maintainers wrote the migration message themselves. A team that upgrades must
@@ -33,6 +33,18 @@ stop using the type.
 The task is not "improve the code". The task is: **find every place that uses
 this type, and miss none.** That is a question about completeness, so the
 [test oracle](../../../CONTEXT.md#language-legacy-refactoring) is the compiler.
+"""),
+
+md("""\
+### Before you run
+
+This notebook builds on the host with the .NET SDK, so it needs **no Docker**.
+It resets the fo-dicom clone to tag 4.0.8 first. `01` leaves the clone with
+its fixes applied, and on that state the compiler rightly finds 0 sites.
+
+If the next cell stops with `Specimen missing`, run
+[`00_setup`](00_setup.ipynb) first. The other pitfalls (kernel, Jupyter server,
+network change) are in the *Pitfalls* table of `00_setup`.
 """),
 
 code("""\
@@ -56,6 +68,12 @@ def run(cmd, cwd=SPECIMEN, check=False):
 
 if not os.path.isdir(SPECIMEN):
     raise SystemExit("Specimen missing. Run 00_setup.ipynb first.")
+
+# Start from the tag, every time, as 00_setup and 01 do. 01 leaves the clone on
+# its feature branch with the CS0618 fixes applied; measured there, the compiler
+# finds 0 sites and this notebook would prove nothing.
+run("git reset -q --hard")
+run("git checkout -q --detach 4.0.8", check=True)
 
 # The text search. Uses ripgrep when it is installed, and a plain Python scan
 # otherwise, so this notebook runs on a machine that has neither ripgrep nor a
@@ -443,8 +461,8 @@ md("""\
   lie outside the one-entry build matrix.
 
 What this notebook did **not** prove: that a green build means the behavior did
-not change. It does not. See
-[`03_test_driven_development`](03_test_driven_development.ipynb).
+not change. It does not. That is the job of `02_test_driven_development`, which
+is planned and not yet written.
 
 The specimen is left unmodified — step 4 restores the file it patched.
 """),
@@ -455,6 +473,6 @@ nb.metadata = {
     "language_info": {"name": "python"},
 }
 
-out = "workshops/legacy-refactor/notebooks/05_refactoring.ipynb"
+out = "workshops/legacy-refactor/notebooks/01a_find_obsolete_call_sites.ipynb"
 nbf.write(nb, out)
 print("wrote", out, "with", len(nb.cells), "cells (no outputs; execute next)")

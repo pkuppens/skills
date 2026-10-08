@@ -5,7 +5,7 @@ command. Do not assume an item.
 
 ## Rule
 
-Each claim in [THESIS.md](THESIS.md) must have one command that the audience
+Each claim in [CLAIMS.md](CLAIMS.md) must have one command that the audience
 watches, or one stored cell output that the audience can read. A claim with no
 command and no stored output does not go in the workshop.
 
@@ -13,11 +13,11 @@ command and no stored output does not go in the workshop.
 
 | Claim | Verified by | Where |
 | --- | --- | --- |
-| 1. The problem is proof, not search | The readiness table names the [test oracle](../../CONTEXT.md#language-legacy-refactoring) that each code base has, and the oracle it does not have. | `01_precondition_checks` |
-| 2. Let the compiler find the places | Two counts on one screen: the text-search count and the compiler count. The two lists differ. | `05_refactoring` |
-| 3. Static types help you | The compiler produces the list with no extra work. Nobody had to write an oracle first. | `05_refactoring` |
-| 4. Green tests are not proof | One deliberate failure of the output comparison, while the build and the unit tests stay green. | `03_test_driven_development` |
-| 5. Write down the intent first | A glossary and an invariant list exist, and each entry names the code that supports it. | `02_requirements_engineering` |
+| 1. The problem is proof, not search | Three fix attempts for one warning group. Two were wrong, and only the [test oracle](../../CONTEXT.md#language-legacy-refactoring) said so: the first changed the source and not the result. | `01_build_warnings` |
+| 2. Let the compiler find the places | Two counts on one screen: the text-search count and the compiler count. The two lists differ. | `01a_find_obsolete_call_sites` |
+| 3. Static types help you | The compiler produces the list with no extra work. Nobody had to write an oracle first. | `01a_find_obsolete_call_sites` |
+| 4. Green tests are not proof | A green build with eleven warnings, two of which are a defect that a one-line test exposes. Then the suite that cannot run at all. | `01_build_warnings`, `02_test_driven_development` |
+| 5. Write down the intent first | **No evidence for this session.** The requirements-engineering notebook is dropped. By the rule above, say the claim as an opinion, or leave it out of the talk. | — |
 | 6. You can check the discipline | The stored transcript shows that no file was opened before a tool named the lines. | Every notebook |
 
 ## Acceptance checks
@@ -47,17 +47,24 @@ Switch the network off. Then run these checks.
 
 ### The demonstration laptop
 
-- [ ] The repository is cloned to the laptop.
+Both events are in person, so this list is not optional.
+
+- [ ] The repository is cloned to the laptop, on `main`, not only on a branch.
+- [ ] HDMI, USB-C and DisplayPort adapters are in the bag.
+- [ ] The battery is full and the charger is in the bag.
+- [ ] A one-page command list is printed, for the case where the projector
+      refuses the laptop.
 - [ ] The saved images are on the laptop disk, not on removable media.
 - [ ] `00_setup` runs offline.
-- [ ] `05_refactoring` runs offline.
+- [ ] `01_build_warnings` runs offline.
+- [ ] `01a_find_obsolete_call_sites` runs offline.
 - [ ] The font size is readable from the back of the room.
 - [ ] The screen resolution works with the projector.
 
 ### Content
 
 - [ ] The reason for the refactor is stated before the first demonstration.
-      See [THESIS.md](THESIS.md#why-refactor-legacy-code). An audience that does
+      See [CLAIMS.md](CLAIMS.md#why-refactor-legacy-code). An audience that does
       not know why you would do this cannot judge whether the method is good.
 - [ ] The limits of claim 2 are written in the notebook, not only spoken.
 - [ ] The version-control limit is named: this method needs cheap branches and
@@ -77,5 +84,5 @@ Switch the network off. Then run these checks.
 | An image is missing | Restore it with `docker load` from the local file. |
 | A build fails on stage | Continue. Point at the stored output. Do not debug on stage. |
 | The agent is slow or unavailable | The compiler output alone proves claims 2 and 3. Read the stored diff. |
-| A question uses 20 minutes | Remove block `04`, then `02`, then `03`. |
+| A question uses 20 minutes | Remove block `01a`, then the transfer block. |
 | The projector shows a wrong resolution | Use a large font. Show the terminal and the notebook only. |

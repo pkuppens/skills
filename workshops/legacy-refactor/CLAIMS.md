@@ -1,6 +1,11 @@
-# The claims
+# Claims
 
-First: why you refactor at all. Then six claims. One command proves each claim.
+The working ideas behind the workshop, written down so you can check them.
+You do not need this file to follow the session. The
+[README](README.md) has the short version.
+
+First: why you refactor at all. Then six claims. Each claim says where in the
+notebooks you can see it work, or says that it is still an opinion.
 
 ## Why refactor legacy code?
 
@@ -30,13 +35,18 @@ That tool is the subject of this workshop.
 
 ### Which reason this workshop uses
 
-Reason 3, with reason 1 inside it. The team must leave the 1.x interface of
-fo-dicom. To do that, they must find every use of it. One of those uses holds
-a defect.
+Reason 3, with reason 1 inside it, and the build itself asks for both. The
+library compiles with eleven warnings. Seven of them are uses of an obsolete
+interface, which is reason 3. Two of them are a defect waiting in a hash, which
+is reason 1.
 
-Reasons 4 and 5 are not extra work. They are the output of
-`02_requirements_engineering` and `03_test_driven_development`. Better
-understanding, better documentation, and a first test set are results of this
+So this workshop does not have to invent the reason for the change. The
+compiler gives the reason, on the first build, before anybody opens a file.
+That is `01_build_warnings`.
+
+Reason 5 is not extra work either. A first test set is the output of
+`02_test_driven_development`, and it is what makes the last two warnings safe
+to fix. Better understanding and better documentation are results of this
 method, not costs of it.
 
 ---
@@ -52,9 +62,9 @@ proof of two things:
 1. The change is complete. No place was missed.
 2. The change does not change the behavior.
 
-A tool that gives such proof is called a **[test oracle](../../CONTEXT.md#language-legacy-refactoring)**. The term comes
-from software testing and is about 45 years old; it does not mean the database
-vendor. Four oracles exist, and they differ in strength:
+Call the tool that gives such proof the checker. Testers call it a
+**[test oracle](../../CONTEXT.md#language-legacy-refactoring)**. Four checkers
+exist, and they differ in strength:
 
 | Step | Oracle | Question that it answers |
 | --- | --- | --- |
@@ -125,23 +135,9 @@ see these changes, because they do not compare the produced image.
 
 Only a comparison of the output, byte for byte, answers the question.
 
-Under IEC 62304, this set of oracles **is** the record that an auditor checks.
-The same files that make the change safe also make it possible to audit. This
-is the reason why AI-assisted work is acceptable in a medical product.
-
-### Where the method comes from
-
-Say this out of honesty, and because it is stronger than claiming novelty.
-
-| Idea | Established name |
-| --- | --- |
-| Test oracle, and "the oracle problem" | Standard testing vocabulary. Weyuker, _On Testing Non-testable Programs_ (1982); Barr et al., _The Oracle Problem in Software Testing: A Survey_ (IEEE TSE, 2015). |
-| Breaking the old function on purpose | **"Leaning on the Compiler"** — Michael Feathers, _Working Effectively with Legacy Code_ (2004). |
-| Stored output files | **Characterization tests** (Feathers). Also golden-master or approval testing. |
-
-What is new here is the framing, not the technique: the four rungs as a named
-order, and the use of an oracle to prove that a change is **complete** where
-the literature uses one to prove that output is **correct**.
+Under IEC 62304, these checks are also the record that an auditor reads. The
+same files that make the change safe make it possible to audit. That is what
+makes AI-assisted work defensible in a medical product.
 
 ## 5. Write down the intent first
 
@@ -164,3 +160,16 @@ method works on a large code base" can be checked. It is not only an opinion.
 
 The record is a file in the repository. So this claim needs no network
 connection.
+
+---
+
+## Background: none of this is new
+
+The techniques are old and well known. This workshop only puts them in an
+order.
+
+| Idea | Where it comes from |
+| --- | --- |
+| Test oracle | Standard testing vocabulary. Weyuker (1982); Barr et al. (IEEE TSE, 2015). |
+| Breaking the old function on purpose | "Leaning on the Compiler", Michael Feathers, _Working Effectively with Legacy Code_ (2004). |
+| Stored output files | Characterization tests (Feathers). Also called golden-master or approval testing. |

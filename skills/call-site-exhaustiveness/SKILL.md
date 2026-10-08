@@ -13,10 +13,13 @@ description: >
 **Invoke:** `/call-site-exhaustiveness`
 **Use when:** you must change or remove a member, and you must know every place
 that uses it.
-**Status:** exercised on fo-dicom 4.0.8 (76 kLOC, 313 files). The recorded run
-is [`05_refactoring.ipynb`](../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb).
-It measured 62 text-search occurrences, 8 scoped text-search sites, and 6 true
+**Status:** exercised on fo-dicom 4.0.8 (76 kLOC, 313 files), twice.
+[`01a_find_obsolete_call_sites.ipynb`](../../workshops/legacy-refactor/notebooks/01a_find_obsolete_call_sites.ipynb)
+measured 62 text-search occurrences, 8 scoped text-search sites, and 6 true
 call sites, with the 2 extra caused by a second class of the same name.
+[`01_build_warnings.ipynb`](../../workshops/legacy-refactor/notebooks/01_build_warnings.ipynb)
+then applied the fix to those 6 sites and had **three attempts rejected by the
+compiler** — the traps below came from that run.
 
 Terms used here — [test oracle, sound, recall, call site](../../CONTEXT.md#language-legacy-refactoring) — have one
 definition for this library. Read it before you use them in a report.
@@ -178,6 +181,36 @@ what you did not prove.
 
 ---
 
+## After the list: the fix needs the oracle too
+
+The list of call sites is not the end. **Run the oracle again after each attempt
+at the fix.** An edit can look correct and change no count. Measured on
+fo-dicom 4.0.8, where 6 sites used an obsolete class, and a replacement class
+with the same name must take its place:
+
+| Attempt | What happened | Why |
+| --- | --- | --- |
+| A `using X = Replacement;` alias at file scope | The source changed. **The warning count did not.** | C# looks for a simple name in the innermost namespace first, then further out. A type in that namespace comes before an alias at file scope. The obsolete class continued to win. |
+| The same alias, moved inside the namespace | `CS0576`: an alias must not hide a type of the same namespace. | The language closes this door on purpose. |
+| The replacement named in full at each site | 4 of 6 sites compiled. The other 2 had to go back, because the field they share gave `CS0052`, inconsistent accessibility. | The replacement was `internal`, and the field was `protected` on a public class. To swap it would leak an internal type. To remove the field is a breaking change. |
+
+Two rules follow. Both are free.
+
+1. **A fix is not done when you save the edit. It is done when the count
+   falls.** A text search reports the first attempt above as finished.
+2. **A complete list is not one uniform job.** The compiler gave every site, and
+   it was correct. Then it showed that two sites need a different kind of
+   change. Completeness is free. Uniformity is not.
+
+### Trap: a red build hides warnings
+
+If the build has an error, the compiler can stop before the stage that reports
+some warnings. In the run above, `CS0675` left the output while an unrelated
+`CS0052` was in it. Nobody had fixed `CS0675`.
+
+**Triage warnings only on a green build.** On a red build, your list is not the
+list.
+
 ## Rules for the agent
 
 1. Do not report a refactor as complete after a text search alone.
@@ -187,6 +220,8 @@ what you did not prove.
 5. List the blind spots that remain, even when the list is empty. Say that it is
    empty, and say why.
 6. Write a test for each call site that no tool can see.
+7. Run the oracle again after each attempt at the fix. Report the count, not
+   the edit.
 
 ## Related skills
 

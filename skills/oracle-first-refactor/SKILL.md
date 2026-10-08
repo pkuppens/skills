@@ -15,7 +15,7 @@ description: >
 **Use when:** you plan a refactor **or a bug fix** in a large or legacy code
 base, and you must be able to prove what changed and what did not.
 **Status:** exercised on fo-dicom 4.0.8. The recorded run is
-[`05_refactoring.ipynb`](../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb),
+[`01a_find_obsolete_call_sites.ipynb`](../../workshops/legacy-refactor/notebooks/01a_find_obsolete_call_sites.ipynb),
 which produced the counts quoted below. The C++ half is not yet run.
 
 A [test oracle](../../CONTEXT.md#language-legacy-refactoring) is a tool that decides whether a result is correct. The
@@ -75,7 +75,7 @@ step 1. Match the oracle to the change, and say which step you chose.
 
 ---
 
-## Refactor and bug fix need the same ladder, from a different rung
+## Refactor and bug fix need the same ladder, from a different step
 
 The two jobs look similar and they use opposite tests for success. Decide which
 one you are doing before you choose the oracle.
@@ -85,7 +85,7 @@ one you are doing before you choose the oracle.
 | What must happen to the behavior | Nothing changes. | Exactly one thing changes. |
 | What the oracle must prove | Every stored output file is identical. | One stored output file changes on purpose. Every other file is identical. |
 | A changed output file means | **Failure.** You broke something. | **Success**, for that one file only. Any second change is a defect. |
-| Where you start on the ladder | Rung 1. The compiler proves that you reached every call site. | Rung 3. A defect is rarely a type error, so the compiler cannot see it. |
+| Where you start on the ladder | Step 1. The compiler proves that you reached every call site. | Step 3. A defect is rarely a type error, so the compiler cannot see it. |
 | What you write first | The stored output of the current behavior. | A test that fails because of the defect. |
 
 ### Worked example, both ways
@@ -150,7 +150,7 @@ list is complete because of the method, not because somebody was careful.
    So in C#: promote the warning to enumerate. If you must use `error: true`,
    fix and rebuild until the count reaches zero, and never report the first
    count as the total. Evidence:
-   [`05_refactoring.ipynb`](../../workshops/legacy-refactor/notebooks/05_refactoring.ipynb),
+   [`01a_find_obsolete_call_sites.ipynb`](../../workshops/legacy-refactor/notebooks/01a_find_obsolete_call_sites.ipynb),
    step 4.
 
 3. **Build every configuration that you intend to claim.**
@@ -247,8 +247,8 @@ claiming otherwise is the one thing that damages your credibility.
 | Sequencing a large refactor | The **Mikado Method** is the closest established treatment. |
 
 **What this library adds.** Two things, and they are framing rather than
-discovery. First, the four-rung ladder as a named order with the rule to build
-the missing rung first. Second, using an oracle to judge **completeness** —
+discovery. First, the four-step ladder as a named order with the rule to build
+the missing step first. Second, using an oracle to judge **completeness** —
 the compiler as the answer to "did I find every call site" — where the
 literature uses an oracle to judge whether output is **correct**.
 

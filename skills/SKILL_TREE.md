@@ -55,10 +55,10 @@ For code bases that are too large for an agent to read at one time. The shared i
 |-------|------|---------|
 | oracle-first-refactor | [oracle-first-refactor/SKILL.md](oracle-first-refactor/SKILL.md) | The four-step oracle ladder and the deliberate-breakage technique that makes the compiler enumerate every call site |
 | call-site-exhaustiveness | [call-site-exhaustiveness/SKILL.md](call-site-exhaustiveness/SKILL.md) | Did I find every call site? Method ladder by soundness, the three-way comparison procedure, and the recall-reporting rule |
-| legacy-build-container | [legacy-build-container/SKILL.md](legacy-build-container/SKILL.md) | Docker container with a period-correct toolchain for an old code base, plus a reviewed record of environments that built |
+| legacy-build-container | [legacy-build-container/SKILL.md](legacy-build-container/SKILL.md) | Run it in any project root: it works out the toolchain, writes a Docker container with a period-correct one and the instructions to use it, and keeps a reviewed record of environments that built |
 
 ```text
-legacy-build-container        # oracle 1 exists at all
+legacy-build-container        # oracle step 1 exists at all
           |
           v
 oracle-first-refactor         # name the oracle, break the API on a branch

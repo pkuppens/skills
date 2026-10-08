@@ -14,7 +14,7 @@ runbook, the recording, and the handout. A reader needs only a browser.
 output, and the workshop then has no offline fallback.
 
 `pre-commit` itself is welcome in this repository, and a minimal configuration
-is wanted later — see task C5 in [../TASKS.md](../TASKS.md). The rule is not
+is wanted later. The rule is not
 "no pre-commit". The rule is that this directory keeps its cell output.
 
 When somebody adds the configuration, `nbstripout` must be absent or excluded:
@@ -45,19 +45,28 @@ becomes evidence, and false evidence has no value.
 
 Mark an unfinished notebook in its header cell. Use the word `PLANNED`.
 
-## 3. Use the standard header cell
+## 3. Start with the summary, then the details
 
-Each notebook starts with one Markdown cell. The cell has these five lines:
+A reader decides in the first screen whether to read on. So each notebook
+starts with plain words, and the bookkeeping comes after.
 
-```markdown
-# NN — Title
+1. **The first cell: `# NN — Title`, then `## In short`.** The goal, why it
+   comes first, how, and the result, in a few sentences each. Then the stations
+   and the things to remember.
+2. **The second cell: how to run it.** The `uv` commands, and a table of
+   pitfalls that a real run hit.
+3. **At the end of that cell: `### About this notebook`**, a small table:
 
-**Proves:** which claim from ../THESIS.md
-**Skill:** which skill in ../../../skills/ this notebook exercises
-**Needs:** the tools, the images, and the network state
-**Run time:** the measured time of a full run
-**State:** EXECUTED or PLANNED
-```
+| | |
+| --- | --- |
+| **Skill** | which skill in ../../../skills/ this notebook exercises |
+| **Needs** | the tools, the images, and the network state |
+| **Run time** | the measured time of a full run |
+| **State** | EXECUTED or PLANNED |
+| **Supports** | which claim from ../CLAIMS.md, in one line |
+
+`00_setup` follows this layout. `01` and `01a` still use the older five-line
+header, and change when they are next rebuilt.
 
 ## 4. Each notebook stands alone
 
@@ -89,7 +98,7 @@ Current ADRs:
 
 ## 7. Show the [test oracle](../../../CONTEXT.md#language-legacy-refactoring), not the tool
 
-A cell must answer a question from [THESIS.md](../THESIS.md). A cell that only
+A cell must answer a question from [CLAIMS.md](../CLAIMS.md). A cell that only
 shows a tool version is setup, not content. Keep the setup cells together at
 the start.
 
@@ -99,10 +108,20 @@ A notebook's cells are written by a small `build_NN.py` script next to it, and
 the outputs come from a real kernel run:
 
 ```bash
-python workshops/legacy-refactor/notebooks/build_05.py      # writes cells, no outputs
-cd workshops/legacy-refactor/notebooks
-jupyter nbconvert --to notebook --execute --inplace 05_refactoring.ipynb
+cd workshops/legacy-refactor
+uv sync        # once: Python and packages from uv.lock
+cd ../..       # build scripts run from the repo root
+
+# 1. write the cells, no outputs
+uv run --project workshops/legacy-refactor python workshops/legacy-refactor/notebooks/build_00.py
+
+# 2. run every cell, and store the outputs
+uv run --project workshops/legacy-refactor jupyter nbconvert --to notebook --execute --inplace workshops/legacy-refactor/notebooks/00_setup.ipynb
 ```
+
+`--inplace` replaces the stored results. Use it only to update the committed
+notebook. To try a notebook, write to `--output my_NN.ipynb` instead (see
+[../SETUP.md](../SETUP.md)).
 
 The script never writes an output value. That is deliberate: it makes rule 2
 structural rather than a promise. If a cell did not run, the notebook has no
@@ -112,12 +131,22 @@ output for it, and that is visible.
 
 | Notebook | State |
 | --- | --- |
-| `00_setup.ipynb` | To do. Tier A. |
-| `01_precondition_checks.ipynb` | To do. Tier A. |
-| `02_requirements_engineering.ipynb` | To do. Tier C. |
-| `03_test_driven_development.ipynb` | To do. Tier B. |
-| `04_bug_investigation.ipynb` | To do. Tier C. |
-| `05_refactoring.ipynb` | **EXECUTED.** Tier A. The headline. |
-| `06_transfer.ipynb` | To do. Tier C. |
+| `00_setup.ipynb` | **EXECUTED.** Tier A. The build environment is a skill. |
+| `01_build_warnings.ipynb` | **EXECUTED.** Tier A. Eleven warnings, four decisions. |
+| `02_test_driven_development.ipynb` | To do. Tier A. The three warnings that change behaviour. |
+| `01a_find_obsolete_call_sites.ipynb` | **EXECUTED.** Appendix to `01`. The full text-search against compiler count for one obsolete type. |
 
-The tiers and the gates are in [../TASKS.md](../TASKS.md).
+The session is three notebooks: `00`, `01`, `02`. `01a` stays because it is
+executed and it measures the text-search comparison that `01` cites, but the
+talk can drop it when time is short.
+
+**Why `01a` and not `05`.** The first plan (commit `751a960`) had seven
+notebooks, numbered by lifecycle: `00_setup`, `01_precondition_checks`,
+`02_requirements_engineering`, `03_test_driven_development`,
+`04_bug_investigation`, `05_refactoring`, `06_transfer`. Four were dropped for
+this session (precondition checks, requirements engineering, bug
+investigation, transfer), and test-driven development moved up to `02`. The
+call-site notebook was renamed `01a` because it is the deep dive behind
+station 5 of `01`. The dropped subjects get a number only when they are
+written.
+
