@@ -53,6 +53,8 @@ Every skill is one `skills/<name>/SKILL.md`. Categories below mirror [SKILL_TREE
 
 > [!TIP]
 > The legacy-refactoring skills have a worked example with stored output: [`workshops/legacy-refactor/`](workshops/legacy-refactor/README.md) — refactoring a code base larger than any context window, on a public healthcare C#/C++ specimen.
+>
+> New to test-driven development? [`workshops/test-driven-development/`](workshops/test-driven-development/README.md) shows red, green, refactor step by step on the Bowling Game Kata, in Python.
 
 ## Getting the code
 
@@ -227,7 +229,8 @@ pkuppens/skills/
 ├── LICENSE                   # MIT — covers skills/, tooling, docs outside workshops/
 ├── workshops/
 │   ├── LICENSE               # CC BY-NC-ND 4.0 — covers workshops/ only
-│   └── legacy-refactor/      # worked example: notebooks with stored output
+│   ├── legacy-refactor/      # worked example: notebooks with stored output
+│   └── test-driven-development/  # TDD primer: Bowling Game Kata notebook
 ├── skills/
 │   ├── README.md             # Pointer / conventions (see migration issues)
 │   ├── skills-transfer/      # meta: install, sources, derivatives, catalog
