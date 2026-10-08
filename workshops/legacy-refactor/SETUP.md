@@ -115,5 +115,4 @@ Tested on Windows 11, 2026-10-06:
   every checked number matched the earlier run on another machine.
 
 Not yet tested from a clean machine: option 1 (plugin) for these three skills,
-and a from-scratch run of `01` and `01a`. That check is task C4 in
-[TASKS.md](TASKS.md).
+and a from-scratch run of `01` and `01a`. That check is still open.

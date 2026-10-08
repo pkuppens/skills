@@ -100,9 +100,8 @@ You do not need these files to follow the session.
 | File | Contents |
 | --- | --- |
 | [CLAIMS.md](CLAIMS.md) | The reasons to refactor, and the six claims, each with a way to check it. |
-| [PLAN.md](PLAN.md) | Audience, timing, and the order of the talk. |
 | [notebooks/README.md](notebooks/README.md) | How the notebooks are built and run. |
-| [TASKS.md](TASKS.md), [VERIFICATION.md](VERIFICATION.md), [ISSUES.md](ISSUES.md) | Preparation and open work. |
+| [VERIFICATION.md](VERIFICATION.md) | Acceptance checks, including the offline block. |
 
 ## Licence
 

@@ -137,5 +137,4 @@ One line for each failure that cost more than 15 minutes.
 | 2026-10-05 | With no network, `dotnet build` adds eleven `NU1900` warnings about package vulnerability data, and `-warnaserror` turns them into errors. The warning count then differs between an online and an offline machine. | The package audit cannot reach nuget.org. Pass `-p:NuGetAudit=false`, so the warning list is the compiler's own and the counts are identical with and without a network. Verified on fo-dicom 4.0.8: 11 warnings either way. |
 
 The first three traps come from the workshop preparation, not from a build run.
-They are recorded because the cost is known and documented. See
-[`workshops/legacy-refactor/TASKS.md`](../../../workshops/legacy-refactor/TASKS.md).
+They are recorded because the cost is known and documented.

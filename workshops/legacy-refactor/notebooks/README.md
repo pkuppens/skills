@@ -14,7 +14,7 @@ runbook, the recording, and the handout. A reader needs only a browser.
 output, and the workshop then has no offline fallback.
 
 `pre-commit` itself is welcome in this repository, and a minimal configuration
-is wanted later — see task C5 in [../TASKS.md](../TASKS.md). The rule is not
+is wanted later. The rule is not
 "no pre-commit". The rule is that this directory keeps its cell output.
 
 When somebody adds the configuration, `nbstripout` must be absent or excluded:
@@ -150,4 +150,3 @@ call-site notebook was renamed `01a` because it is the deep dive behind
 station 5 of `01`. The dropped subjects get a number only when they are
 written.
 
-The tiers and the gates are in [../TASKS.md](../TASKS.md).
