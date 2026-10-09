@@ -133,7 +133,7 @@ output for it, and that is visible.
 | --- | --- |
 | `00_setup.ipynb` | **EXECUTED.** Tier A. The build environment is a skill. |
 | `01_build_warnings.ipynb` | **EXECUTED.** Tier A. Eleven warnings, four decisions. |
-| `02_test_driven_development.ipynb` | To do. Tier A. The three warnings that change behaviour. |
+| `02_test_driven_development.ipynb` | To do. Tier A. The three warnings that change behaviour. The method itself is shown in the [TDD primer](../../test-driven-development/README.md). |
 | `01a_find_obsolete_call_sites.ipynb` | **EXECUTED.** Appendix to `01`. The full text-search against compiler count for one obsolete type. |
 
 The session is three notebooks: `00`, `01`, `02`. `01a` stays because it is
