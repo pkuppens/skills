@@ -48,7 +48,7 @@ to be migrated, just like legacy code at work.
 | [`00_setup`](notebooks/00_setup.ipynb) | Can we build this old code, the same way on every machine? An AI skill writes the build container. | Done |
 | [`01_build_warnings`](notebooks/01_build_warnings.ipynb) | The build works but shows 11 warnings. Which ones matter? We fix them with the compiler as the checker. | Done |
 | [`01a_find_obsolete_call_sites`](notebooks/01a_find_obsolete_call_sites.ipynb) | Optional deep dive into `01`: how many uses does a text search find, and how many does the compiler find? | Done |
-| `02_test_driven_development` | Some fixes change behavior. Write a test first, then make the change. | Planned |
+| `02_test_driven_development` | Some fixes change behavior. Write a test first, then make the change. New to this? See the [TDD primer](../test-driven-development/README.md). | Planned |
 
 Each notebook stands on its own and starts with a short summary. You can open
 them in a browser on GitHub, with the results already shown. You do not need to

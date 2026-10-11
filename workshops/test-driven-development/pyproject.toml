@@ -1,0 +1,22 @@
+# Python environment for the TDD workshop notebook. Not a package.
+# Set up:  uv sync            (from workshops/test-driven-development/)
+# Run:     uv run jupyter nbconvert --to notebook --execute notebooks/bowling_kata.ipynb --output my_bowling_kata.ipynb
+[project]
+name = "test-driven-development-workshop"
+version = "0.1.0"
+description = "Notebook for the test-driven development workshop (Bowling Game Kata)"
+requires-python = ">=3.12"
+dependencies = [
+    "ipykernel",
+    "ipytest",
+    "nbconvert",
+    "nbformat",
+    "pytest",
+]
+
+[dependency-groups]
+# Optional, for reading and editing the notebook in a browser: uv sync --group lab
+lab = ["jupyterlab"]
+
+[tool.uv]
+package = false

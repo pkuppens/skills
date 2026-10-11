@@ -1,0 +1,3 @@
+# Local Python environment, and your own copies of the notebooks (my_*.ipynb).
+.venv/
+notebooks/my_*.ipynb
