@@ -23,8 +23,12 @@ CORRECTION = re.compile(
 )
 CORRECTION_ANY = re.compile(
     r"\b(you forgot|you missed|you didn'?t|still (broken|failing|wrong)|again\?|i told you|"
-    r"as i said|not (correct|right)|that is wrong|doesn'?t work|didn'?t work)\b",
+    r"as i said|not (correct|right)|that is wrong|doesn'?t work|didn'?t work|instead)\b",
     re.IGNORECASE,
+)
+# Optional intent prefixes a user can type to label a prompt (see docs/research/session-learning.md).
+INTENT_PREFIX = re.compile(
+    r"^\s*(question|correction|task|feedback)\s*:", re.IGNORECASE
 )
 
 
@@ -179,6 +183,9 @@ def main() -> None:
                         examples["prompt"].append(
                             {"project": project, "text": clean[:500]}
                         )
+                    prefix = INTENT_PREFIX.match(clean)
+                    if prefix:
+                        totals["intent_prefix_" + prefix.group(1).lower()] += 1
                     if CORRECTION.search(clean) or CORRECTION_ANY.search(clean):
                         totals["corrections"] += 1
                         per_project[project]["corrections"] += 1
