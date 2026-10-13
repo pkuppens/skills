@@ -5,7 +5,12 @@ to stdout. With --examples PATH it also writes raw snippets for manual reading; 
 that file under the gitignored tmp/, because raw transcript content must never be
 committed (ADR 003).
 
+Claude Code-specific: the record shape (type, message.content, tool_use/tool_result
+blocks, isMeta/isSidechain, compact_boundary) is Claude Code's JSONL format. Another
+agent's transcripts would need their own reader feeding the same counters.
+
 Usage: python -I docs/research/scripts/mine_sessions.py [--examples tmp/skills/session-learning/examples.json]
+Doctests: python -I -m doctest docs/research/scripts/mine_sessions.py
 """
 
 import collections
@@ -13,6 +18,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path.home() / ".claude" / "projects"
 
@@ -27,12 +33,26 @@ CORRECTION_ANY = re.compile(
     re.IGNORECASE,
 )
 # Optional intent prefixes a user can type to label a prompt (see docs/research/session-learning.md).
+# `Q:` is the only shorthand; `check:` means "verify earlier work, change nothing if it holds".
 INTENT_PREFIX = re.compile(
-    r"^\s*(question|correction|task|feedback)\s*:", re.IGNORECASE
+    r"^\s*(question|q|correction|task|feedback|check)\s*:", re.IGNORECASE
+)
+INTENT_ALIASES = {"q": "question"}
+
+TAG_BLOCK = re.compile(
+    r"<(ide_\w+|system-reminder|local-command-[\w-]+|command-[\w-]+)>.*?</\1>",
+    re.DOTALL,
 )
 
 
 def error_class(text: str) -> str:
+    """Bucket a tool-error message into a coarse class by keyword; first match wins.
+
+    >>> error_class("String to replace not found in file.")
+    'edit-string-not-found'
+    >>> error_class("something odd")
+    'other'
+    """
     t = text.lower()
     rules = [
         (
@@ -71,34 +91,69 @@ def error_class(text: str) -> str:
     return "other"
 
 
-def text_of(content) -> str:
+def join_block_texts(content: Any, block_type: str | None = None) -> str:
+    """Join the `text` of dict blocks in a message content field, skipping the rest.
+
+    A plain string is returned as is. With `block_type`, only blocks of that type count.
+
+    >>> blocks = [{"type": "text", "text": "a"}, {"type": "image"}, "x", {"type": "text", "text": "b"}]
+    >>> join_block_texts(blocks, "text").splitlines()
+    ['a', 'b']
+    >>> join_block_texts(None)
+    ''
+    """
     if isinstance(content, str):
         return content
-    if isinstance(content, list):
-        return "\n".join(
-            b.get("text", "") if isinstance(b, dict) and b.get("type") == "text" else ""
-            for b in content
-        )
-    return ""
+    if not isinstance(content, list):
+        return ""
+    return "\n".join(
+        b["text"]
+        for b in content
+        if isinstance(b, dict)
+        and "text" in b
+        and (block_type is None or b.get("type") == block_type)
+    )
 
 
-def result_text(block) -> str:
+def text_of(content: Any) -> str:
+    """Return the text blocks of a message's content (a string or a list of blocks)."""
+    return join_block_texts(content, "text")
+
+
+def result_text(block: dict[str, Any]) -> str:
+    """Return the text of a tool_result block, whose content is a string or blocks."""
     c = block.get("content")
-    if isinstance(c, list):
-        return "\n".join(x.get("text", "") for x in c if isinstance(x, dict))
-    return str(c or "")
-
-
-TAG_BLOCK = re.compile(
-    r"<(ide_[\w]+|system-reminder|local-command-[\w]+|command-[\w]+)>.*?</>", re.DOTALL
-)
+    return join_block_texts(c) if isinstance(c, list) else str(c or "")
 
 
 def strip_tags(text: str) -> str:
+    """Remove harness-injected tag blocks (IDE context, reminders, slash-command echo).
+
+    >>> strip_tags("<ide_selection>code</ide_selection> fix this")
+    'fix this'
+    """
     return TAG_BLOCK.sub("", text).strip()
 
 
-def is_human_prompt(rec, text: str) -> bool:
+def intent_of(prompt: str) -> str | None:
+    """Return the normalised intent prefix of a prompt, or None when it has none.
+
+    >>> intent_of("Q: can you add authentication?")
+    'question'
+    >>> intent_of("check: is the deploy still green?")
+    'check'
+    >>> intent_of("quick fix: typo") is None
+    True
+    """
+    m = INTENT_PREFIX.match(prompt)
+    if not m:
+        return None
+    word = m.group(1).lower()
+    return INTENT_ALIASES.get(word, word)
+
+
+def is_human_prompt(rec: dict[str, Any], text: str) -> bool:
+    """Tell a prompt the user typed apart from meta, compaction, sidechain or interrupt records."""
     if rec.get("isMeta") or rec.get("isCompactSummary") or rec.get("isSidechain"):
         return False
     s = strip_tags(text)
@@ -108,6 +163,7 @@ def is_human_prompt(rec, text: str) -> bool:
 
 
 def main() -> None:
+    """Scan every transcript under ROOT and print the aggregate report as JSON."""
     files = sorted(ROOT.rglob("*.jsonl"))
     totals = collections.Counter()
     err_by_class = collections.Counter()
@@ -129,6 +185,8 @@ def main() -> None:
             try:
                 rec = json.loads(line)
             except json.JSONDecodeError:
+                continue
+            if not isinstance(rec, dict):
                 continue
             typ = rec.get("type")
             if typ == "system" and rec.get("subtype") == "compact_boundary":
@@ -183,9 +241,9 @@ def main() -> None:
                         examples["prompt"].append(
                             {"project": project, "text": clean[:500]}
                         )
-                    prefix = INTENT_PREFIX.match(clean)
-                    if prefix:
-                        totals["intent_prefix_" + prefix.group(1).lower()] += 1
+                    intent = intent_of(clean)
+                    if intent:
+                        totals["intent_prefix_" + intent] += 1
                     if CORRECTION.search(clean) or CORRECTION_ANY.search(clean):
                         totals["corrections"] += 1
                         per_project[project]["corrections"] += 1

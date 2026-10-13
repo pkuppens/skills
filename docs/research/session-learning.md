@@ -13,7 +13,7 @@ This document contains no raw transcript text. Quotes from prompts are short par
 ## Summary
 
 - **The most important finding: finishing work is one repeated procedure.** About 15 prompts across 6 repos ask for the same "I think I'm done, now finish it" sequence: an in-depth AI review, tool and CI checks, a simple AI judgement for trivial items, a formal review, rebase-merge, branch cleanup, and watching main. The two most-used skills (`branch-cleanup`: 21 uses, `dependabot`: 11) are parts of it. Not every step applies to every repo: `dependabot` applies only where Dependabot is configured. → F4.
-- **Keyword detection of corrections does not work for this user.** It finds 3 corrections in 112 prompts (with "instead" counted); reading by hand finds about 8. The user phrases corrections positively and folds them into the next instruction ("do this on the branch you left open"). Some questions are real questions, and some are polite requests for a correction. Classification needs an LLM, and it can be helped by optional intent prefixes (`Question:`, `Correction:`, `Task:`). The user already used `question:` once. → F7.
+- **Keyword detection of corrections does not work for this user.** It finds 4 corrections in about 145 prompts (with "instead" counted); reading the first 112 by hand found about 8. The user phrases corrections positively and folds them into the next instruction ("do this on the branch you left open"). Some questions are real questions, and some are polite requests for a correction. Classification needs an LLM, and it can be helped by optional intent prefixes (`Question:`, `Correction:`, `Task:`). The user already used `question:` once. → F7.
 - **User-level preferences are stuck in project memory.** Five preferences that apply everywhere are each saved in only one project's memory. Example: "draft issues in `tmp/` before filing" lives in `context-smith` memory, so this session filed #43 directly, against that preference. → F2.
 - **WikiSkill overlaps with this approach, but the two are not the same.** WikiSkill improves *task skills* through a gated proposer loop. This approach also targets procedures, human habits and cross-project preferences. See [WikiSkill compared with this approach](#wikiskill-compared-with-this-approach). A WikiSkill loop already runs in `job_hunt` ([ADR 003](https://github.com/pkuppens/job_hunt/blob/main/docs/adr/003-wikiskill-persistent-knowledge.md), [job_hunt#71](https://github.com/pkuppens/job_hunt/issues/71)).
 - Tool errors are rare (121 of 3,213 calls, 3.8%) and mostly harmless exploration, such as probing for files that do not exist. They are not the main source of rework.
@@ -30,18 +30,18 @@ This document contains no raw transcript text. Quotes from prompts are short par
 
 ## R1: Session archaeology
 
-Method: [scripts/mine_sessions.py](scripts/mine_sessions.py) parses `~/.claude/projects/**/*.jsonl` on one machine and prints counts only. Raw snippets go to the gitignored `tmp/` when `--examples` is passed. After that, the 112 prompts were read by hand.
+Method: [scripts/mine_sessions.py](scripts/mine_sessions.py) parses `~/.claude/projects/**/*.jsonl` on one machine and prints counts only. Raw snippets go to the gitignored `tmp/` when `--examples` is passed. After that, the 112 prompts the first run counted were read by hand. That run missed about 30 prompts: a broken regex in `strip_tags` left `<ide_selection>` and `<system-reminder>` blocks in place, so prompts sent with an IDE selection were dropped as non-human. Fixed in review round 2; the extra prompts have not been read by hand yet.
 
 ### Counts (one machine)
 
 | Signal | Count |
 |---|---|
 | Sessions (incl. 8 subagent files) | 58 (57 on the second run) |
-| Human prompts | 112 |
+| Human prompts | 112 (about 145 after the round-2 tag fix; same data: 117 → 147) |
 | Tool calls | 3,213 |
 | Tool errors | 121 (3.8%; 99 of them Bash) |
 | User interrupts | 3 |
-| Keyword-detected corrections | 3 (manual reading: about 8) |
+| Keyword-detected corrections | 3, 4 after the tag fix (manual reading of the first 112: about 8) |
 | Prompts with an intent prefix | 1 (`question:`) |
 | Files edited 5+ times in one session | 14 |
 | Date range | 2026-06-17 to 2026-10-11; over 95% of records are from Sep–Oct |
@@ -67,7 +67,8 @@ Restate the branch (×3) · don't fix with retries · write a prototype first ·
 
 The same words can be a question or a task. With "Question: can you add authentication?" the user wants an answer, for example "no: requests are anonymous, and this needs a new layer with accounts and logins". With "Task: can you add authentication?" the user wants the work done. Proposal (F7):
 
-- The user may start a prompt with `Question:`, `Correction:`, `Task:` or `Feedback:`. It is optional, never required.
+- The user may start a prompt with `Question:` (shorthand `Q:`, the only shorthand), `Correction:`, `Task:`, `Feedback:` or `Check:`. It is optional, never required.
+- `Check:` means the user is not confident about earlier work, theirs or the agent's. A check that holds makes no functional changes and returns a short, reassuring finding. If the same check is likely to be asked again, the agent proposes or adds an automated test or check for it.
 - When the intent of a prompt is unclear *and* the difference matters, the agent asks once which one was meant, and may suggest the prefix for next time.
 - Prefixed prompts give the retro labelled examples to check its classifier against. `mine_sessions.py` counts them already.
 
@@ -187,7 +188,7 @@ Filing waits for review, per the user's preference to see issue drafts first (R6
 | F4 | `[FEAT]: finish-work skill (land-pr)` | M | N1 and N4. Runs when the user says "I think I'm done". Preflight (branch, folder, concurrent session) → in-depth AI review (`brutally-honest-code-review` / `code-review`) → tool and CI checks → simple AI judgement for trivial items → formal review (F1) → rebase-merge → `branch-cleanup` → watch main with `gh pr checks --watch`, never sleep loops. Each step is conditional on the repo: for example, only run the `dependabot` step where Dependabot is configured. Needs a "how it was tested" section (R2 theme 1). |
 | F5 | `[FEAT]: session-retro skill` | M | Ideas 1 and 6. Blocked by F3. LLM-classified corrections, recurrence across ≥2 sessions, a two-column digest (agent errors / human inputs that caused rework). If built, it absorbs `mine_sessions.py` as its bundled script. |
 | F6 | `[FEAT]: Backlog triage-closer` | M | Idea 4. Extends the external `triage` skill with "already done?" detection (git log, merged PRs) and close-with-rationale. |
-| F7 | `[FEAT]: Intent prefixes (Question:/Correction:/Task:) + ask on ambiguity` | S | N5. Add the convention to the user-level working agreements (F2). The agent asks once when intent is unclear and the difference matters. The retro uses prefixed prompts as labels. |
+| F7 | `[FEAT]: Intent prefixes (Question:/Q:, Correction:, Task:, Feedback:, Check:) + ask on ambiguity` | S | N5. `Check:` verifies without changing anything, and adds an automated check when the question will recur. Add the convention to the user-level working agreements (F2). The agent asks once when intent is unclear and the difference matters. The retro uses prefixed prompts as labels. |
 
 Human action, no issue: set `cleanupPeriodDays` on both machines (N3).
 
