@@ -38,6 +38,7 @@ no evidence yet of how the ritual works in practice.
 | Aspect | Paper | `job_hunt` | This library |
 | --- | --- | --- | --- |
 | Where skills run | A rollout harness | The same repo | **Other repos.** Failures show up in consumer sessions, not here. |
+| Failure scope | One environment | One repo | **Per consumer project.** The same skill can fail in one repo and work in another, because projects differ: pre-commit hooks or none, different CI checks, Dependabot configured or not. |
 | Performance signal | Validation-split score | Tests, metrics, rubric | **None per skill.** CI checks structure only (ADR 001). |
 | Usage volume | Full splits per iteration | Per session | **Thin.** One machine, ~6 weeks: 14 skills invoked, most once; `branch-cleanup` 21×, `dependabot` 11× (#43 R1). |
 | Main failure kinds | Task errors | Task errors | Task errors **and triggering** (a skill fires when it should not, or never fires) — the part the paper does not evaluate. |
@@ -52,8 +53,9 @@ the [evidence rules](../research/session-learning.md), missing evidence proves n
 ## Decision
 
 **Adopt partially:** keep the wiki, atomic proposals, the proposal record, and the
-"wiki survives a rollback" rule. Replace the numeric gate with a tiered gate. Defer
-any automated gate until a skill has a real signal.
+"wiki survives a rollback" rule. Replace the numeric gate with a tiered gate. Scope
+every pattern per consumer project: generic, conditional, or project-local (D6).
+Defer any automated gate until a skill has a real signal.
 
 ### D1 — Three layers, mapped onto this repo
 
@@ -74,10 +76,13 @@ A person, or an agent the person asks, runs the proposer when a canonical skill
 fails in use or when a retro finds a pattern (#43 F5). Steps:
 
 1. Add or update the pattern on the skill's wiki page: what happened, the root
-   cause, the evidence (paraphrased, with machine and date), and the strategy.
-2. Propose **one** change to **one** skill, which can be the `description`
+   cause, the evidence (paraphrased, with machine, date, consumer repo and the
+   project properties that matter), and the strategy.
+2. Decide the pattern's scope (D6). If it is project-local, stop here: the lesson
+   stays in the consumer repo.
+3. Propose **one** change to **one** skill, which can be the `description`
    (triggering), a step, or a script. Add a `PENDING` row to `skill-impact.md`.
-3. Run the gate (D3), then set the row to `ACCEPT` or `REVERT`.
+4. Run the gate (D3), then set the row to `ACCEPT` or `REVERT`.
 
 This replaces the one-line "Self-improvement" bullet in `_meta/skill-creation`.
 
@@ -86,8 +91,8 @@ This replaces the one-line "Self-improvement" bullet in `_meta/skill-creation`.
 | Tier | Applies to | Passes when |
 | --- | --- | --- |
 | G0 | Every proposal | The CI `validate` job is green (ADR 001). Structure only: it says nothing about the effect. |
-| G1 | A change to a skill with a script | The skill's self-test passes, and a fix for a scripted failure first adds a test case that reproduces it. This is the bug-fix use of a [test oracle](../../CONTEXT.md): exactly one expected thing changes. |
-| G2 | A prose-only change | The PR reviewer checks a short rubric: it cites a wiki pattern with at least one observed failure; it changes one skill; it states the expected observable difference; the skill's other steps still read correctly; `SKILL.md` stays within ~300 lines. Merging the PR means `ACCEPT`. |
+| G1 | A change to a skill with a script | The skill's self-test passes, and a fix for a scripted failure first adds a test case that reproduces it. This is the bug-fix use of a [test oracle](../../CONTEXT.md): exactly one expected thing changes. A conditional change (D6) tests both cases: condition present and condition absent. |
+| G2 | A prose-only change | The PR reviewer checks a short rubric: it cites a wiki pattern with at least one observed failure; it states the scope (D6) and, if conditional, names the condition and how the skill detects it; it changes one skill; it states the expected observable difference; projects without the condition see no change; the skill's other steps still read correctly; `SKILL.md` stays within ~300 lines. Merging the PR means `ACCEPT`. |
 
 No tier claims that a skill *improved* — only that the change is justified and
 broke nothing that can be checked. That is the honest limit with today's data.
@@ -105,6 +110,35 @@ This ADR covers edits to **canonical skills**. #43 covers procedures, working
 agreements, preferences and human habits (F1–F7); those are not skill edits a gate
 can judge. A finding goes to the wiki when its target is a skill, and to #43's
 follow-ups otherwise.
+
+### D6 — Scope every pattern: generic, conditional, or project-local
+
+A canonical skill runs in many consumer repos, and a failure in one repo can be a
+non-issue in another. A skill about pre-commit hooks or CI checks, for example,
+behaves differently in a repo that has neither. Before proposing a change, classify
+the pattern:
+
+| Scope | When | Where the lesson goes |
+| --- | --- | --- |
+| Generic | The root cause is in the skill itself, whatever the project. | A normal canonical skill edit (D2). |
+| Conditional | The failure depends on a project property that can be detected, such as `.pre-commit-config.yaml`, `.github/workflows/`, `.github/dependabot.yml`, the OS and shell, or the toolchain. | A canonical skill edit that detects the property and branches on it. Projects without the property see no change. Detect it the way the [`terminal`](../../skills/terminal/SKILL.md) skill does: project docs, then probe files, then ask when they conflict. |
+| Project-local | The failure depends on one repo's own conventions, not on a general property. | It stays in the consumer repo: its `CLAUDE.md`/`AGENTS.md`, or a **derivative skill** ([CONTEXT.md](../../CONTEXT.md)). It is not propagated here. |
+
+Rules:
+
+- **Start narrow.** With one observed project, choose the narrowest scope that
+  explains the failure, usually conditional. Widen it to generic only when the root
+  cause plainly sits in the skill text, or when a second project with different
+  properties shows the same failure. A skill that worked elsewhere proves nothing
+  either, per the evidence rules.
+- **Lessons travel back as issues.** When a canonical skill fails in a consumer
+  session, file an issue in this repo that names the skill, the symptom, and the
+  project properties that matter, with a link to a public PR thread or a paraphrase
+  of a private one. The proposer (D2) runs here. Consumers get the fix on their next
+  **consumer install** update; a project-local fix never comes upstream.
+- **Cap the branches.** When one skill collects more than about three conditions,
+  split it into sub-skills, like the terminal skill tree, or into derivative skills,
+  instead of adding a fourth branch.
 
 ## Alternatives considered
 
@@ -125,7 +159,8 @@ actually fails, and one table row per proposal.
 
 **Bad.** G2 is human judgement, so a plausible but useless edit can pass. The wiki
 can grow stale; like the paper, this ADR has no automated pruning. Evidence from one
-machine stays partial.
+machine stays partial. Conditional branches make a skill longer and harder to read;
+the cap in D6 limits this, but does not remove it.
 
 **Important.** G1 is the strongest tier, and it is cheap to extend: each scripted
 failure leaves a regression test. Moving a fragile step from prose into a script
@@ -138,16 +173,17 @@ Suggested order: W1 → W2 → W4; W3 can run at any time.
 
 | ID | Title | Size | Scope |
 | --- | --- | --- | --- |
-| W1 | `[FEAT]: Scaffold docs/skill-wiki/ (page template + skill-impact.md)` | S | A README with the page template and the D2 steps, and an empty `skill-impact.md` table (`date`, `skill`, `pattern`, `change`, `tier`, `result`, `PR`). |
+| W1 | `[FEAT]: Scaffold docs/skill-wiki/ (page template + skill-impact.md)` | S | A README with the page template (evidence entries record the consumer repo and its relevant properties), the D2 steps, the D6 scope rules, and how to report a skill failure from another repo. An empty `skill-impact.md` table (`date`, `skill`, `pattern`, `scope`, `change`, `tier`, `result`, `PR`). |
 | W2 | `[FEAT]: Replace the self-improvement bullet in _meta/skill-creation with the D2 proposer steps` | S | The steps and the D3 tiers, linking to `docs/skill-wiki/README.md` rather than copying it. |
 | W3 | `[FEAT]: Run skill self-tests in CI` | S | Add `classify_bump.py --self-test` and `tests/test-cleanup.sh` to the `validate` workflow, so that G1 runs on every PR. Extends ADR 001; no conflict. |
-| W4 | `[TASK]: Seed the wiki for branch-cleanup and dependabot, and run one proposal end to end` | S/M | Patterns from #43 R1 that #43 F1–F7 do not already own. Check D4 against a real squash-merged PR. |
+| W4 | `[TASK]: Seed the wiki for branch-cleanup and dependabot, and run one proposal end to end` | S/M | Patterns from #43 R1 that #43 F1–F7 do not already own. `dependabot` is the first conditional example: it applies only where Dependabot is configured. Check D4 against a real squash-merged PR. |
 
 ## Revisit when
 
 - A canonical skill reaches **at least 20 recorded uses in 30 days**, counted across
   both machines, with an outcome per use (accepted, corrected or reverted). Then
-  consider a measured gate for that skill.
+  consider a measured gate for that skill. Count a conditional branch only over the
+  uses where its condition holds.
 - An eval suite runs for a skill in CI (for example `claude plugin eval`, not
   evaluated here). Then it becomes that skill's G1.
 - `skill-impact.md` shows **three or more prose-only edits reverted after merge**.
