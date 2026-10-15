@@ -220,11 +220,13 @@ pkuppens/skills/
 │   └── marketplace.json      # Claude Code plugin marketplace (one plugin per skill)
 ├── docs/
 │   ├── agents/               # issue tracker, triage labels, domain-doc rules for agents
-│   └── decisions/
-│       ├── 001-skill-validation-and-tooling.md
-│       ├── 002-workshop-container-environment.md
-│       ├── 003-ai-assistance-network-and-confidentiality.md
-│       └── 004-licensing-split.md
+│   ├── decisions/
+│   │   ├── 001-skill-validation-and-tooling.md
+│   │   ├── 002-workshop-container-environment.md
+│   │   ├── 003-ai-assistance-network-and-confidentiality.md
+│   │   ├── 004-licensing-split.md
+│   │   └── 005-wikiskill-failure-learning.md
+│   └── research/             # distilled findings that feed skill decisions (no raw transcripts)
 ├── CONTEXT.md                # Domain glossary
 ├── LICENSE                   # MIT — covers skills/, tooling, docs outside workshops/
 ├── workshops/
