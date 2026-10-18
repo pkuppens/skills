@@ -12,7 +12,8 @@
 #   squashlive  squash-merged, upstream still exists         -> deleted local + remote
 #   wipgone     squash-merged, then an extra unpushed commit, upstream deleted
 #                                                            -> kept + unresolved
-#   wiplive     unmerged work, upstream exists               -> kept
+#   wiplive     unmerged work, upstream exists, up to date   -> kept, never reported
+#                                                               as fast-forwarded
 #   squashedit  squash-merged via PR, then main edited the same file,
 #               upstream deleted                             -> deleted (PR evidence)
 #   rewritten   local commits rewritten after pushing; the PR merged a rebased
@@ -104,6 +105,7 @@ check "dry-run leaves local branches and checkout unchanged" '[ "$before" = "$af
 check "dry-run leaves remote squashlive in place" 'has_remote squashlive'
 check "dry-run does not plan deleting stale (its upstream has new work)" '! printf "%s" "$out" | grep -q "Would delete local: stale"'
 check "dry-run plans deleting squashedit (merged PR)" 'printf "%s" "$out" | grep -q "Would delete local: squashedit"'
+check "dry-run does not plan fast-forwarding up-to-date wiplive" '! printf "%s" "$out" | grep -Eq "[Ff]ast-forward(ed)?: wiplive"'
 
 # --- run 2: execute with a dirty current branch ----------------------------
 echo "Run 2: --execute, current branch 'squashed' is dirty"
@@ -122,6 +124,7 @@ check "stacked (PR merged into a non-main branch) kept" 'has_local stacked'
 check "wipgone not matched to its PR (commit added after merge)" '! printf "%s" "$out" | grep -q "Deleted local: wipgone"'
 check "stale fast-forwarded and kept" 'has_local stale && [ "$(git rev-parse stale)" = "$(git rev-parse origin/stale)" ]'
 check "wiplive kept" 'has_local wiplive && has_remote wiplive'
+check "up-to-date wiplive not reported as fast-forwarded" '! printf "%s" "$out" | grep -Eq "[Ff]ast-forward(ed)?: wiplive"'
 check "behind fast-forwarded" '[ "$(git rev-parse behind)" = "$(git rev-parse origin/behind)" ]'
 check "main fast-forwarded" '[ "$(git rev-parse main)" = "$(git rev-parse origin/main)" ]'
 check "report lists restore command" 'printf "%s" "$out" | grep -q "restore: git branch merged"'

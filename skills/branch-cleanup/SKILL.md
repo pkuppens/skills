@@ -11,6 +11,11 @@ delete local and remote branches that carry nothing main doesn't already
 have. Ends on a fresh main and reports what it did, what it kept, and the
 final state. Never forces past anything it can't verify.
 
+**Status:** exercised by the end-to-end fixture suite
+[tests/test-cleanup.sh](tests/test-cleanup.sh). No recorded run
+of this version on a real repo yet: the 2026-10-18 cleanup of
+`pkuppens/pkuppens` used a stale pre-#26 copy, which is how #48 was found.
+
 For GitHub Actions workflow-run cleanup, use the separate `clean-ci-runs`
 skill — this skill only touches branches.
 
