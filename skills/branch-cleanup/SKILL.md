@@ -12,9 +12,11 @@ have. Ends on a fresh main and reports what it did, what it kept, and the
 final state. Never forces past anything it can't verify.
 
 **Status:** exercised by the end-to-end fixture suite
-[tests/test-cleanup.sh](tests/test-cleanup.sh). No recorded run
-of this version on a real repo yet: the 2026-10-18 cleanup of
-`pkuppens/pkuppens` used a stale pre-#26 copy, which is how #48 was found.
+[tests/test-cleanup.sh](tests/test-cleanup.sh), and by real runs on
+2026-10-18 ([recorded on #49](https://github.com/pkuppens/skills/pull/49#issuecomment-6247141023)):
+a dry-run on an already clean `pkuppens/pkuppens` planned nothing, and an
+`--execute` on `pkuppens/skills` deleted a squash-merged branch whose remote
+still existed, kept two unmerged branches, and ended on a fresh main.
 
 For GitHub Actions workflow-run cleanup, use the separate `clean-ci-runs`
 skill — this skill only touches branches.
