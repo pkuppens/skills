@@ -11,8 +11,11 @@ the repo's branch protection does not enforce it:
 
 > **approval and green CI on the same head commit**
 
-A review of another kind (a comment review, a chat message saying "looks good")
-does not satisfy it, and neither does an approval given before the last push.
+The approval is a formal `APPROVE` review. The one exception is a PR the
+user's own login opened, where GitHub forbids `APPROVE`: there, the user's
+positive comment review on the head commit counts (step 5). A chat message
+does not count, nor does anything the agent posted, nor an approval given
+before the last push.
 The commands that check the gate are in
 [references/merge-gate.md](references/merge-gate.md).
 
@@ -21,7 +24,7 @@ The commands that check the gate are in
 adds this skill), went through steps 0–4 and stopped at step 5: the agent's
 `gh` login is the PR author, so it cannot approve its own PR, and #45 (bot
 identity) is still open. That stop is the self-approval rule working as
-intended.
+intended; the run continues once the user posts a positive comment review.
 
 If invoked with a PR number or URL, use it. Otherwise use the PR for the
 current branch (`gh pr view --json number`), and create one in step 0 if none
@@ -139,17 +142,27 @@ user (`gh api user --jq .login`), GitHub rejects the approval. Then:
 1. use the bot flow from [#45](https://github.com/pkuppens/skills/issues/45)
    when it exists, so that the bot is the author and the user's login can
    approve; otherwise
-2. leave the PR open and ask the user to approve it.
+2. post the step-4 findings and verified SHA as a PR comment, and ask the user
+   for a review. A **comment review by the user on the head SHA whose body
+   clearly approves** ("LGTM", "approved", "looks good, merge it") counts as
+   the approval. The check is in
+   [references/merge-gate.md](references/merge-gate.md#2-self-authored-prs-a-positive-comment-review).
 
-Never post a comment review instead and merge anyway. Never merge with an
-admin override to get past a missing approval.
+Because the agent and the user share one login, the agent can tell them apart
+only by what it posted: every comment or review the agent posts ends with the
+marker `<!-- finish-work:agent -->`, and a review with that marker never
+counts. The agent never posts a comment review meant as an approval. A review
+that asks a question, requests a change, or reads as mixed is not an approval:
+ask the user. Never merge with an admin override to get past a missing
+approval.
 
 ### 6. Merge gate
 
 Merge only when all of these hold on **one** head SHA (check them with
 [references/merge-gate.md](references/merge-gate.md)):
 
-- an `APPROVE` whose `commit_id` is the head SHA, and no later
+- an `APPROVE` whose `commit_id` is the head SHA (on a self-authored PR: the
+  user's positive comment review on the head SHA, see step 5), and no later
   `CHANGES_REQUESTED` from any reviewer;
 - every required check `SUCCESS` on the head SHA;
 - no unresolved review threads;
@@ -206,5 +219,6 @@ Only in these cases. Everything else, decide and go on:
 - a human has requested changes;
 - CI is red and you cannot reproduce it within the timebox;
 - a conflict changes behaviour on both sides;
-- the gate would need an admin override, or the only possible approver is the
-  PR author.
+- the gate would need an admin override;
+- a self-authored PR has no clearly positive user comment review on the head
+  SHA yet.

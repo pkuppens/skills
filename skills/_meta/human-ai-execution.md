@@ -36,9 +36,9 @@ Some workflow steps rely on skills **not in this repo**. Install them separately
 
 ## Approval rule for merging
 
-A PR merges only with **approval and green CI on the same head commit**. The approval is a formal `APPROVE` review, never a comment review or a chat message. It may come from the user or from the agent; an agent approves only after the chores are done (review findings fixed or filed, CI checked) and names the SHA it verified. Any push after the approval needs a new one.
+A PR merges only with **approval and green CI on the same head commit**. The approval is a formal `APPROVE` review, never a chat message. It may come from the user or from the agent; an agent approves only after the chores are done (review findings fixed or filed, CI checked) and names the SHA it verified. Any push after the approval needs a new one.
 
-The agent cannot approve a PR its own `gh` login opened: GitHub rejects self-approval. Until agent PRs are opened by a bot identity ([#45](https://github.com/pkuppens/skills/issues/45)), such a PR waits for the user's approval; it is never merged without one. The commands that check the rule: [finish-work/references/merge-gate.md](../finish-work/references/merge-gate.md).
+The agent cannot approve a PR its own `gh` login opened: GitHub rejects self-approval. Until agent PRs are opened by a bot identity ([#45](https://github.com/pkuppens/skills/issues/45)), such a PR waits for the user: a comment review by the user on the head commit whose body clearly approves counts as the approval. The agent shares the user's login, so anything it posts carries a marker and never counts, and it never posts an approving comment review itself. Without such a review the PR is not merged. The commands that check the rule: [finish-work/references/merge-gate.md](../finish-work/references/merge-gate.md).
 
 ## Relation to skills in this library
 

@@ -32,17 +32,33 @@ Pass when at least one reviewer's latest state is `APPROVED` with
 An approval with another `commit_id` is stale: approve again after checking
 the new commits.
 
-## 2. Self-approval
+## 2. Self-authored PRs: a positive comment review
 
 ```bash
 ME=$(gh api user --jq .login)
 AUTHOR=$(gh pr view <pr> --json author --jq .author.login)
-[ "$ME" = "$AUTHOR" ] && echo "self-approval impossible: $ME authored this PR"
+[ "$ME" = "$AUTHOR" ] && echo "self-authored: $ME opened this PR, APPROVE is impossible"
 ```
 
 When they match, `gh pr review --approve` fails with *"Can not approve your
-own pull request"*. That is the end of the agent's part: use the bot flow
-(#45) or ask the user. It never turns into a merge without an approval.
+own pull request"*. Without the bot flow (#45), the approval is then the
+user's comment review on the head SHA. List the candidates, leaving out
+everything the agent posted (marker `<!-- finish-work:agent -->`):
+
+```bash
+gh api repos/{owner}/{repo}/pulls/<pr>/reviews --paginate \
+  --jq '[.[] | select(.user.login == "'"$ME"'" and .commit_id == "'"$SHA"'"
+        and (.body | contains("<!-- finish-work:agent -->") | not))]
+        | max_by(.submitted_at) // empty | {id, state, submitted_at, body}'
+```
+
+Read the body of the latest one. It counts as approval when its state is
+`COMMENTED` or `APPROVED` and its body clearly approves the change ("LGTM",
+"approved", "looks good, merge it", "ship it"). It does not count when it is
+empty, asks a question, requests a change, or mixes praise with a "but". In
+that case, ask the user; never infer approval. A review on an older
+`commit_id` is stale, the same as a stale `APPROVE`. Quote the review body
+and its id in the report.
 
 ## 3. Green CI on the head SHA
 
