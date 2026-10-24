@@ -17,6 +17,11 @@ merge turns the base branch red — reverts that merge through a PR (Step 9):
 never edit source, test, or config files to chase a green build — investigate
 and report the finding instead (Step 5).
 
+**Status:** exercised on real PRs. Merge path: pkuppens.github.io #124/#125
+(merged, main green). Hold path with red CI that predated the PRs: babblr
+#341–#343. Revert path: rehearsed in a local clone, not yet run against a
+remote. Evidence: [pkuppens/skills#52](https://github.com/pkuppens/skills/pull/52).
+
 If invoked with a repo (`owner/name`) or a PR number, use it as the target.
 Otherwise default to the current directory's repo (`gh repo view --json
 nameWithOwner`).
@@ -157,6 +162,12 @@ Never edit files to fix it — only find out why, for the comment:
 - Compare against the base branch's latest run: `gh run list --branch
   <base> --limit 1 --json conclusion` — same failure there means it
   **predates** this PR, not caused by it.
+- A green base run is only evidence if it is recent enough to have seen the
+  same inputs. Audit and scanning jobs depend on an advisory database that
+  changes daily, so an old green run proves nothing about today. When the
+  failing job is one of those, or the base run is older than a day, rerun
+  that base workflow once (`gh run rerun <base-run-id>`) and compare against
+  the fresh result.
 - If it's not present on the base branch, skim the failing job's log tail
   (`gh run view <run-id> --log-failed`) for a one-line cause.
 - A failure that disappears on a single rerun (`gh run rerun <run-id>
@@ -176,6 +187,7 @@ All three gates must pass to merge. Any one failing holds the PR:
 | HOLD — unchanged | any | any | **Comment**, hold (Template B) — nothing effective to approve |
 | HOLD — conflict | any | any | **Comment**, hold (Template B) — the manifest diff and the PR body disagree about a version, so the real change is unclear |
 | HOLD — unclassifiable | any | any | **Comment**, hold (Template B) |
+| AUTO with a count-mismatch `WARN:` | any | any | **Comment**, hold (Template B) — the package list in an approval would be incomplete |
 | any | red or none | any | **Comment** with the Step 5 finding (Template C) |
 
 Every severity `classify_bump.py` can emit has a row here; if you extend the
@@ -200,15 +212,15 @@ gh run list --repo <repo> --branch <base> --limit 5 \
 
 **The default is to go ahead**: post the reviews and merge without waiting
 for the user. The gates in Steps 2–6 are what make that safe, and Step 9
-catches the rest. Stop and ask only on a blocker:
+catches the rest. Two things change that:
 
-- the base branch's latest completed run of a CI workflow is `failure` —
-  merging onto a red base makes a post-merge failure unattributable, and
-  the revert in Step 9 depends on that attribution;
-- a `WARN:` line from `classify_bump.py` that Step 6 did not already turn
-  into a hold;
-- the user asked to confirm first, for this run or in standing
-  instructions.
+- **Base branch red → no merges.** If the base branch's latest completed
+  run of a CI workflow is `failure` (including a fresh rerun from Step 5),
+  skip every merge and ask before merging anything: on a red base a
+  post-merge failure can't be attributed, and the revert in Step 9 depends
+  on that attribution. Reviews and hold comments still post.
+- **The user asked to confirm first**, for this run or in standing
+  instructions → pause before posting anything.
 
 A held PR (Templates B/C/D) is not a blocker: posting its comment is the
 routine outcome, and it proceeds with the rest. `skipped` and `success` on

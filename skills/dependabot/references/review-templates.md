@@ -95,6 +95,20 @@ classify {and the title's wording was ambiguous}, so the severity is unknown
 rather than low.
 ```
 
+**Count mismatch — the body claims more updates than were resolved:**
+
+```
+Holding this one for manual review: the PR body says {n_claimed} updates,
+but only {n_resolved} could be matched to a version pair ({package list}).
+CI status: {green | red | pending | no checks ran}.
+Not auto-approving because an approval naming {n_resolved} of {n_claimed}
+packages would be an incomplete review.
+```
+
+When more than one hold applies (for example red CI *and* a count
+mismatch), post one review that covers each reason, not one review per
+reason.
+
 ## C — Comment, CI investigation (red or missing CI)
 
 Used for `gh pr review <n> --comment --body "..."`. Report the finding;
