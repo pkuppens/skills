@@ -52,6 +52,14 @@ VERSION_LINE = re.compile(
 BODY_UPDATE_LINE = re.compile(
     r'Updates\s+`([^`]+)`\s+from\s+([0-9][^\s]*)\s+to\s+([0-9][^\s]*)'
 )
+# A group PR body opens with a "| Package | From | To |" table naming every
+# package. GitHub truncates long bodies, which can cut off the trailing
+# "Updates" lines (babblr#343: 13 in the table, 9 "Updates" lines), but the
+# table comes first and survives.
+BODY_TABLE_ROW = re.compile(
+    r'^\|\s*(?:\[([^\]]+)\]\([^)]*\)|([^|\s]+))\s*\|\s*`([0-9][^`]*)`\s*\|\s*`([0-9][^`]*)`\s*\|',
+    re.M,
+)
 # The "with N updates" claim in a group PR's opening sentence.
 BODY_GROUP_COUNT = re.compile(r'with\s+(\d+)\s+updates?')
 
@@ -136,7 +144,8 @@ def parse_diff(text: str) -> dict[str, tuple[str, str]]:
 
 def parse_body(text: str) -> tuple[dict[str, tuple[str, str]], int | None]:
     """Extract {package: (old, new)} and the claimed update count from a PR body."""
-    found = {m.group(1): (m.group(2), m.group(3)) for m in BODY_UPDATE_LINE.finditer(text)}
+    found = {(m.group(1) or m.group(2)): (m.group(3), m.group(4)) for m in BODY_TABLE_ROW.finditer(text)}
+    found.update({m.group(1): (m.group(2), m.group(3)) for m in BODY_UPDATE_LINE.finditer(text)})
     claim = BODY_GROUP_COUNT.search(text)
     return found, int(claim.group(1)) if claim else None
 
@@ -250,7 +259,21 @@ def self_test() -> int:
     print(f"{'PASS' if conflict_ok else 'FAIL'} reconcile: source disagreement raises a conflict")
     print(f"{'PASS' if gate_ok else 'FAIL'} reconcile: a conflict gates to HOLD")
 
-    total = len(cases) + len(recon_checks) + 2
+    # Truncated body (babblr#343 shape): vitest is in the opening table but
+    # its "Updates" line was cut off, and it is lock-only in the diff.
+    body = (
+        "Bumps the monthly-updates group in /frontend with 2 updates:\n\n"
+        "| Package | From | To |\n| --- | --- | --- |\n"
+        "| [jsdom](https://github.com/jsdom/jsdom) | `30.1.2` | `30.1.3` |\n"
+        "| [vitest](https://github.com/vitest-dev/vitest) | `5.0.4` | `5.0.5` |\n\n"
+        "Updates `jsdom` from 30.1.2 to 30.1.3\n"
+    )
+    body_pkgs, claim = parse_body(body)
+    table_ok = body_pkgs.get("vitest") == ("5.0.4", "5.0.5") and len(body_pkgs) == claim == 2
+    failures += not table_ok
+    print(f"{'PASS' if table_ok else 'FAIL'} parse_body: table row recovers a truncated 'Updates' line")
+
+    total = len(cases) + len(recon_checks) + 3
     print(f"\n{total} checks, {failures} failure(s)")
     return 1 if failures else 0
 
@@ -296,7 +319,7 @@ def main() -> None:
     if body_path and claimed is not None and claimed != len(rows):
         warnings.append(
             f"PR body claims {claimed} updates but {len(rows)} were resolved -- "
-            "some package was named in neither the manifest nor an 'Updates' line"
+            "some package was named in neither the manifest nor the PR body's table or 'Updates' lines"
         )
     if body_path and not body_pkgs:
         warnings.append(

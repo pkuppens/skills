@@ -7,7 +7,8 @@ a formal review.
 
 Which template to use is decided by the table in SKILL.md Step 6. The short
 version: A is the only one that approves, and the only one followed by a
-merge; B, C, and D all post `--comment` and leave the PR for a human.
+merge; B, C, and D all post `--comment` and leave the PR for a human. E is
+posted after the fact, on a PR that was merged and then reverted (Step 9).
 
 ## A — Approve (gate AUTO, CI green, rebase clean)
 
@@ -94,6 +95,20 @@ classify {and the title's wording was ambiguous}, so the severity is unknown
 rather than low.
 ```
 
+**Count mismatch — the body claims more updates than were resolved:**
+
+```
+Holding this one for manual review: the PR body says {n_claimed} updates,
+but only {n_resolved} could be matched to a version pair ({package list}).
+CI status: {green | red | pending | no checks ran}.
+Not auto-approving because an approval naming {n_resolved} of {n_claimed}
+packages would be an incomplete review.
+```
+
+When more than one hold applies (for example red CI *and* a count
+mismatch), post one review that covers each reason, not one review per
+reason.
+
 ## C — Comment, CI investigation (red or missing CI)
 
 Used for `gh pr review <n> --comment --body "..."`. Report the finding;
@@ -130,3 +145,20 @@ Not merging while the rebase isn't a clean replay — holding until it is.
 Only include the literal `@dependabot rebase` line when conflicts are the
 actual cause; it is a command the bot acts on, so don't post it speculatively
 for an `UNKNOWN` or `BLOCKED` state where a rebase wouldn't help.
+
+## E — Comment, merged then reverted (base branch went red)
+
+Used for `gh pr review <n> --comment --body "..."` on the original, already
+merged PR once the revert PR exists. It records the cause where the next
+reader of this bump will look.
+
+```
+Reverted in #{revert_pr}: {base_branch} went red after this merged.
+Failing run: {base_run_url} — {failing job}: {one-line cause}.
+Rerun once: still failing, so not transient. The pre-merge baseline
+({baseline_run_url}) was green.
+{Isolated to this merge by its own base run | Reverted together with
+ #{other_prs} — the base runs couldn't separate them}.
+Not attempting a fix here — Dependabot will offer this update again; it
+needs someone to look at {failing job} first.
+```

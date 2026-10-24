@@ -1,6 +1,6 @@
 ---
 name: dependabot
-description: Run the daily Dependabot check — find the open Dependabot PRs assigned to you (by bot author, dependencies label, or dependabot/** branch), classify each version bump as patch/minor/major from the diff rather than the title, require green CI and a clean no-conflict rebase, post a formal GitHub review (not a plain comment) approving only same-major increases, rebase-merge those, then babysit the base branch run afterwards. Use when the user wants their daily or routine dependency check, or wants to review, triage, clear out, or work through Dependabot PRs, dependency-update PRs, or version-bump PRs.
+description: Run the daily Dependabot check — find the open Dependabot PRs assigned to you (by bot author, dependencies label, or dependabot/** branch), classify each version bump as patch/minor/major from the diff rather than the title, require green CI and a clean no-conflict rebase, post a formal GitHub review (not a plain comment) approving only same-major increases, rebase-merge those without waiting for a go-ahead unless something blocks, then babysit the base branch run afterwards and revert the responsible merge through a PR if it goes red. Use when the user wants their daily or routine dependency check, or wants to review, triage, clear out, or work through Dependabot PRs, dependency-update PRs, or version-bump PRs.
 compatibility: Requires the gh CLI authenticated with read, pull-request-review, and merge access to the target repository, plus Python 3.9+ for scripts/classify_bump.py.
 allowed-tools: Bash(gh pr list*) Bash(gh pr view*) Bash(gh pr diff*) Bash(gh pr checks*) Bash(gh run list*) Bash(gh run view*) Bash(gh run watch*) Bash(gh repo view*) Bash(gh api*)
 ---
@@ -11,9 +11,16 @@ Reviews the Dependabot PRs assigned to you and posts a **formal GitHub
 review** for each — `gh pr review`, which counts as a review contribution —
 never a bare `gh pr comment`. PRs that clear all three gates (version, CI,
 rebase) are rebase-merged, and the resulting base-branch run is watched to a
-conclusion. This skill only ever identifies, reviews, and merges: never edit
-source, test, or config files to chase a green build — investigate and report
-the finding instead (Step 5).
+conclusion. With no blocker (Step 7) it runs end to end without pausing for
+a go-ahead. This skill only ever identifies, reviews, merges, and — when a
+merge turns the base branch red — reverts that merge through a PR (Step 9):
+never edit source, test, or config files to chase a green build — investigate
+and report the finding instead (Step 5).
+
+**Status:** exercised on real PRs. Merge path: pkuppens.github.io #124/#125
+(merged, main green). Hold path with red CI that predated the PRs: babblr
+#341–#343. Revert path: rehearsed in a local clone, not yet run against a
+remote. Evidence: [pkuppens/skills#52](https://github.com/pkuppens/skills/pull/52).
 
 If invoked with a repo (`owner/name`) or a PR number, use it as the target.
 Otherwise default to the current directory's repo (`gh repo view --json
@@ -155,6 +162,12 @@ Never edit files to fix it — only find out why, for the comment:
 - Compare against the base branch's latest run: `gh run list --branch
   <base> --limit 1 --json conclusion` — same failure there means it
   **predates** this PR, not caused by it.
+- A green base run is only evidence if it is recent enough to have seen the
+  same inputs. Audit and scanning jobs depend on an advisory database that
+  changes daily, so an old green run proves nothing about today. When the
+  failing job is one of those, or the base run is older than a day, rerun
+  that base workflow once (`gh run rerun <base-run-id>`) and compare against
+  the fresh result.
 - If it's not present on the base branch, skim the failing job's log tail
   (`gh run view <run-id> --log-failed`) for a one-line cause.
 - A failure that disappears on a single rerun (`gh run rerun <run-id>
@@ -174,6 +187,7 @@ All three gates must pass to merge. Any one failing holds the PR:
 | HOLD — unchanged | any | any | **Comment**, hold (Template B) — nothing effective to approve |
 | HOLD — conflict | any | any | **Comment**, hold (Template B) — the manifest diff and the PR body disagree about a version, so the real change is unclear |
 | HOLD — unclassifiable | any | any | **Comment**, hold (Template B) |
+| AUTO with a count-mismatch `WARN:` | any | any | **Comment**, hold (Template B) — the package list in an approval would be incomplete |
 | any | red or none | any | **Comment** with the Step 5 finding (Template C) |
 
 Every severity `classify_bump.py` can emit has a row here; if you extend the
@@ -181,16 +195,36 @@ classifier, extend this table in the same change.
 
 Templates: [references/review-templates.md](references/review-templates.md).
 
-### 7. Show the plan, then confirm before writing anything
+### 7. Show the plan, then proceed unless something blocks
 
 Before any `gh pr review` or `gh pr merge` call, print a table of every PR in
 scope with its package(s), severity, gate verdict, CI status, rebase state,
 and proposed action — stating explicitly which ones will be rebase-merged.
-`gh pr review` and `gh pr merge` are both visible on GitHub, and a merge to
-the default branch is not reversible by deleting a comment — get the user's
-go-ahead on the plan before posting or merging any of them. Only skip this
-pause if the invoking context already explicitly authorized an unattended
-run.
+
+Then record the base branch's current state, the baseline Step 9 compares
+against:
+
+```bash
+git ls-remote origin refs/heads/<base>        # pre-merge base SHA
+gh run list --repo <repo> --branch <base> --limit 5 \
+  --json databaseId,headSha,workflowName,status,conclusion
+```
+
+**The default is to go ahead**: post the reviews and merge without waiting
+for the user. The gates in Steps 2–6 are what make that safe, and Step 9
+catches the rest. Two things change that:
+
+- **Base branch red → no merges.** If the base branch's latest completed
+  run of a CI workflow is `failure` (including a fresh rerun from Step 5),
+  skip every merge and ask before merging anything: on a red base a
+  post-merge failure can't be attributed, and the revert in Step 9 depends
+  on that attribution. Reviews and hold comments still post.
+- **The user asked to confirm first**, for this run or in standing
+  instructions → pause before posting anything.
+
+A held PR (Templates B/C/D) is not a blocker: posting its comment is the
+routine outcome, and it proceeds with the rest. `skipped` and `success` on
+the base branch both count as not red.
 
 ### 8. Post the reviews, rebase-merge the eligible ones
 
@@ -240,18 +274,25 @@ merged), then watch the base-branch run it triggered to a terminal
 conclusion. If several PRs merged in one pass, watch the run after the last
 one — it contains all of them.
 
-If the base branch goes red after merging, report it immediately and
-prominently, with the failing job and the merge commit, and name reverting
-the merge as the available option. Do **not** push a fix to the base branch
-to chase green: that converts a clean, revertible dependency merge into an
-unreviewed direct commit on a protected branch.
+#### If the base branch goes red: revert
+
+Report it immediately and prominently, with the failing job and the merge
+commit, then start reverting — don't wait to be asked. Do **not** push a fix
+to the base branch to chase green: that converts a clean, revertible
+dependency merge into an unreviewed direct commit on a protected branch.
+
+In short: rerun once to rule out flake, match base runs to merge commits by
+`headSha` to find the culprit, revert it through a PR, merge the revert once
+its CI is green, and post Template E on the original PR. The full procedure,
+commands included, is in
+[references/revert-procedure.md](references/revert-procedure.md).
 
 ### 10. Report
 
 Summarize: how many approved and merged, how many approved but left unmerged
 (and why), how many held (and which gate held them), how many needed CI
-investigation (and the finding), and the post-merge base-branch status.
-Link each PR.
+investigation (and the finding), the post-merge base-branch status, and any
+revert PR with its state. Link each PR.
 
 ## Notes
 
@@ -262,6 +303,6 @@ never auto-invoked), `disallowed-tools: Edit Write NotebookEdit` (a
 tool-level guardrail backing up the "never edit files" instruction above),
 and named `repo`/`pr_number` arguments on top. Those fields aren't part of
 the Agent Skills spec this repo's `skills-ref` validates, so they can't
-travel with the portable copy — this copy relies on Step 7's confirmation
-gate and the body's instructions for the same safety properties on every
-host (Cursor, Codex, Claude).
+travel with the portable copy — this copy relies on Step 7's blocker list
+and the body's instructions for the same safety properties on every host
+(Cursor, Codex, Claude).
