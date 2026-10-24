@@ -106,6 +106,15 @@
       "strict": false
     },
     {
+      "name": "finish-work",
+      "source": "./",
+      "description": "Take a pull request from \"I think I'm done\" to merged code on a verified, green main. Preflight the branch and worktree, rebase onto main, run the repo's own local gate, wait for CI on the head commit with a blocking watch, review in depth, require a formal APPROVE, merge only when approval and green CI are on the same head commit, then watch main, fix forward or revert, clean up branches, and report. Use when the user says finish this, land the PR, complete the PR, wrap this up, ship it, or merge on my behalf.",
+      "skills": [
+        "./skills/finish-work"
+      ],
+      "strict": false
+    },
+    {
       "name": "legacy-build-container",
       "source": "./",
       "description": "Build a Docker container that compiles an old code base with a period-correct toolchain, then record the result so the next attempt is faster. Use when a C++, C#, or other compiled project does not build with the current compiler, when a legacy build must be reproducible for an audit, or when an AI agent needs a working build as its oracle before it changes legacy code.",

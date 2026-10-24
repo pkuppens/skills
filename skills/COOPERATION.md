@@ -38,11 +38,15 @@ Any skill that emits shell commands should follow [terminal](terminal/SKILL.md),
 ## Repo maintenance (after merges)
 
 ```text
+"finish this" → finish-work ─┬─ Dependabot PR? → dependabot (hand off, stop here)
+                             ├─ step 4 review → brutally-honest-code-review
+                             └─ step 8 cleanup → branch-cleanup
 PR merged → branch-cleanup (dry-run → confirm → --execute)
 Dependabot PRs open → dependabot → branch-cleanup
 ```
 
-- [dependabot](dependabot/SKILL.md) reviews and squash-merges CI-verified patch/minor bumps; majors go to a human.
+- [finish-work](finish-work/SKILL.md) lands one PR. It hands Dependabot PRs to `dependabot` instead of running them itself, calls [brutally-honest-code-review](brutally-honest-code-review/SKILL.md) for its review step, and ends with `branch-cleanup`. Its revert path reuses `dependabot`'s [revert procedure](dependabot/references/revert-procedure.md) by reference.
+- [dependabot](dependabot/SKILL.md) reviews and rebase-merges CI-verified patch/minor bumps; majors go to a human.
 - [branch-cleanup](branch-cleanup/SKILL.md) then removes the merged branches, local and remote.
 
 ## Documentation
@@ -75,6 +79,7 @@ need a skill → search public skills first → skills-transfer (install/adapt)
 | Reviewing code | brutally-honest-code-review |
 | Emitting shell commands or scripts | terminal |
 | Writing or auditing a README | readme-authoring |
+| "Finish this", "land the PR" | finish-work |
 | Dependabot PRs open | dependabot |
 | After a PR merge | branch-cleanup |
 | Need a new skill | skills-transfer or skill-creation |

@@ -34,8 +34,15 @@ Some workflow steps rely on skills **not in this repo**. Install them separately
 | **triage** | Classify issues, post an agent brief, apply `ready-for-agent` / `ready-for-human` | <https://www.skills.sh/mattpocock/skills/triage> |
 | **grill-with-docs** | Sharpen vague requirements against `CONTEXT.md`; produce acceptance criteria before coding | <https://www.skills.sh/mattpocock/skills/grill-with-docs> |
 
+## Approval rule for merging
+
+A PR merges only with **approval and green CI on the same head commit**. The approval is a formal `APPROVE` review, never a chat message. It may come from the user or from the agent; an agent approves only after the chores are done (review findings fixed or filed, CI checked) and names the SHA it verified. Any push after the approval needs a new one.
+
+The agent cannot approve a PR its own `gh` login opened: GitHub rejects self-approval. Until agent PRs are opened by a bot identity ([#45](https://github.com/pkuppens/skills/issues/45)), such a PR waits for the user: a comment review by the user on the head commit whose body clearly approves counts as the approval. The agent shares the user's login, so anything it posts carries a marker and never counts, and it never posts an approving comment review itself. Without such a review the PR is not merged. The commands that check the rule: [finish-work/references/merge-gate.md](../finish-work/references/merge-gate.md).
+
 ## Relation to skills in this library
 
 - [validation-report-generator](../validation-report-generator/SKILL.md) and [brutally-honest-code-review](../brutally-honest-code-review/SKILL.md) produce **human-review** artefacts: verdicts a human signs off on.
-- [dependabot](../dependabot/SKILL.md) reviews and squash-merges only CI-verified patch/minor bumps; major bumps stay with a human.
+- [finish-work](../finish-work/SKILL.md) applies the approval rule above to one PR, end to end.
+- [dependabot](../dependabot/SKILL.md) reviews and rebase-merges only CI-verified patch/minor bumps; major bumps stay with a human.
 - [branch-cleanup](../branch-cleanup/SKILL.md) dry-runs first and needs explicit confirmation before `--execute`.
