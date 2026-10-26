@@ -24,7 +24,9 @@ The commands that check the gate are in
 adds this skill), went through steps 0–4 and stopped at step 5: the agent's
 `gh` login is the PR author, so it cannot approve its own PR, and #45 (bot
 identity) is still open. That stop is the self-approval rule working as
-intended; the run continues once the user posts a positive comment review.
+intended. The user then squash-merged it by hand without a comment review
+(`6365ee4`), and the agent ran steps 7–8 afterwards: `main` CI green, the
+issue closed, branches removed. Steps 5–6 have still not run end to end.
 
 If invoked with a PR number or URL, use it. Otherwise use the PR for the
 current branch (`gh pr view --json number`), and create one in step 0 if none
