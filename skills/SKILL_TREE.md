@@ -23,6 +23,7 @@ Also in `_meta/`: [human-ai-execution.md](_meta/human-ai-execution.md) (which st
 | Skill | Path | Purpose |
 |-------|------|---------|
 | branch-cleanup | [branch-cleanup/SKILL.md](branch-cleanup/SKILL.md) | Fetch/prune, fast-forward, verify content, and delete merged (incl. squash-merged) local+remote git branches |
+| finish-work | [finish-work/SKILL.md](finish-work/SKILL.md) | Land one PR: preflight, rebase, local gate, CI watch, review, formal APPROVE, merge only with approval and green CI on the same head commit, watch main, cleanup |
 | dependabot | [dependabot/SKILL.md](dependabot/SKILL.md) | Daily check of Dependabot PRs assigned to you: classify semver severity, require green CI and a clean rebase, post formal reviews, rebase-merge same-major bumps, then watch the base branch |
 
 ## Language and framework skills
