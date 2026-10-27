@@ -68,15 +68,27 @@ Protected branches, never touched: `main`, `master`, `develop`,
 
 ## Usage
 
-Run [cleanup-branches.sh](cleanup-branches.sh) from within the target repo
-(Git Bash on Windows, or bash/zsh elsewhere):
+[cleanup-branches.sh](cleanup-branches.sh) lives in this skill's directory,
+not in the target repo. Call it by that path, with the **target repo as the
+working directory**: the script acts on the repo it is run from. The examples
+assume a user-wide install at `~/.claude/skills/branch-cleanup`. Substitute
+your install location, or the skill base directory your agent reports.
 
 ```bash
-./cleanup-branches.sh              # dry-run (default) - plan only
-./cleanup-branches.sh --execute    # perform the cleanup
-./cleanup-branches.sh --local-only # skip remote branch deletion
-./cleanup-branches.sh --stay       # don't switch to main at the end
-./cleanup-branches.sh --help
+S=~/.claude/skills/branch-cleanup/cleanup-branches.sh
+bash "$S"              # dry-run (default) - plan only
+bash "$S" --execute    # perform the cleanup
+bash "$S" --local-only # skip remote branch deletion
+bash "$S" --stay       # don't switch to main at the end
+bash "$S" --help
+```
+
+From PowerShell, call it through Git Bash's `bash`. WSL's `bash` sees a
+different filesystem and git config.
+
+```powershell
+bash "$HOME/.claude/skills/branch-cleanup/cleanup-branches.sh"            # dry-run
+bash "$HOME/.claude/skills/branch-cleanup/cleanup-branches.sh" --execute
 ```
 
 **Always dry-run first** and read the plan before passing `--execute`. The
@@ -117,6 +129,17 @@ check.
   or push first if you want to keep the name.
 - A remote branch is deleted on the same content rule, so a squash-merged
   PR branch GitHub didn't auto-delete is cleaned up too.
+- Don't improvise the classic one-liners in place of the script.
+  `git branch --merged main` misses squash and rebase merges, because those
+  rewrite commits. A `[gone]` upstream (`git branch -vv | grep ': gone]'`)
+  only means the remote branch was deleted. That also happens to branches
+  that were never merged, so it is not proof of a merge. And `git branch -d`
+  refuses a squash-merged branch whose upstream is gone. Step 3's content
+  checks exist to close exactly these gaps.
 - This skill supersedes ad hoc per-repo copies of a branch-cleanup script
-  (e.g. `scripts/cleanup-merged-branches.sh` in `pkuppens/babblr`) — prefer
-  installing this skill over maintaining a project-local fork.
+  (e.g. `scripts/cleanup-merged-branches.sh` in `pkuppens/babblr` and
+  `pkuppens/on_prem_rag`). Prefer installing this skill over maintaining a
+  project-local fork. A project skill also named `branch-cleanup`
+  (`<repo>/.claude/skills/branch-cleanup/`) appears next to this one as a
+  second, different `/branch-cleanup`. Delete it rather than keeping the two
+  in sync.
