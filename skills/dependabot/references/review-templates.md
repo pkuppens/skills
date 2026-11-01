@@ -22,7 +22,7 @@ Rebase state: {CLEAN | BEHIND} — merges without conflicts.
 Approving as a routine, low-risk dependency update; rebase-merging.
 ```
 
-For a single-level tag bump (`actions/checkout@v5` → `@v7`), name it as such —
+For a GitHub Actions tag bump (`actions/checkout@v5` → `@v7`), name it as such —
 the level is `tag`, and the reason is that no semver applies, so green CI is
 the gate:
 

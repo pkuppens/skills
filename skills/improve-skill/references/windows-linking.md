@@ -5,9 +5,9 @@ Goal: `~/.claude/skills/<name>` always reflects the canonical `skills/<name>` in
 | Mode | How | Needs | Use when |
 |---|---|---|---|
 | Junction | `New-Item -ItemType Junction` (same as `mklink /J`) | nothing special; local NTFS volume | default; canonical frontmatter is fine for Claude Code |
-| Symlink | `New-Item -ItemType SymbolicLink` | Developer Mode or admin | the target is on another volume or a network path |
-| Overlay | real dir; generated `SKILL.md`, junctions/hard links for the rest | nothing special; same volume as the clone | the skill needs Claude-only frontmatter the validator rejects |
-| Copy | `Copy-Item -Recurse` | nothing | last resort; drifts, so always follow with `-Mode Check` |
+| Symlink | `New-Item -ItemType SymbolicLink` | Developer Mode or admin | the clone is on a network path (junctions work across local volumes) |
+| Overlay | real dir; generated `SKILL.md`, junctions for folders, hard links for loose files | nothing special; loose files need the same volume as the clone | the skill needs Claude-only frontmatter the validator rejects |
+| Copy | `Copy-Item -Recurse` (manual; not a script mode) | nothing | last resort; drifts, so check with `diff -rq --strip-trailing-cr` |
 
 ## Overlay file
 
@@ -28,4 +28,4 @@ On Windows the clone is checked out with CRLF (`core.autocrlf=true`). The script
 
 ## Migrating an existing copy
 
-`link-skill.ps1` renames a real directory to `<name>.bak-<timestamp>` before linking. Delete the backup yourself once `-Mode Check` is clean.
+`link-skill.ps1` moves a real directory to `~/.claude/skill-backups/<name>.<timestamp>` before linking (outside `skills/`, so the backup is not loaded as a duplicate skill). Delete the backup yourself once `-Mode Check` is clean.

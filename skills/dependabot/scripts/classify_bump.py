@@ -46,6 +46,10 @@ VERSION_LINE = re.compile(
     r'^([+-])\s*"([^"]+)"\s*:\s*"[\^~]?([0-9]+(?:\.[0-9]+){0,2}[^"]*)"'
 )
 
+# `uses: owner/repo@v5` in a workflow or composite-action file.
+ACTION_USES = re.compile(r'^([+-])\s*(?:-\s*)?uses:\s*([^@\s]+)@(v?[0-9][^\s#]*)')
+WORKFLOW_FILE = re.compile(r'(^|/)\.github/(workflows/[^/]+\.ya?ml|actions/.+\.ya?ml)$|(^|/)action\.ya?ml$')
+
 # Dependabot writes one of these per package in every PR body it opens,
 # for single and group PRs alike. It is generated from the update metadata
 # rather than from the diff, which is what makes it a usable cross-check.
@@ -63,14 +67,17 @@ BODY_TABLE_ROW = re.compile(
 # The "with N updates" claim in a group PR's opening sentence.
 BODY_GROUP_COUNT = re.compile(r'with\s+(\d+)\s+updates?')
 
-SEVERITY_ORDER = {"major": 3, "minor": 2, "patch": 1, "tag": 1, "unchanged": 0, "downgrade": -1}
+SEVERITY_ORDER = {"major": 4, "minor": 3, "tag": 2, "patch": 1, "unchanged": 0, "downgrade": -1}
 
 # The only severities that may be approved and merged without a human
-# looking. Keep this in sync with the decision table in SKILL.md -- every
+# looking (patch, minor, and the GitHub-Actions-only "tag"). Keep this in sync with the decision table in SKILL.md -- every
 # key in SEVERITY_ORDER needs a row there, which is what makes "downgrade"
 # and "unchanged" defined outcomes rather than silent fall-throughs.
-# "tag" is an increase of a single-level version (GitHub Actions `@v5` -> `@v7`):
-# there is no major.minor.patch to read a risk level from, so CI decides.
+# "tag" is an increase of a single-level version of a GitHub Action
+# (`@v5` -> `@v7`): there is no major.minor.patch to read a risk level from,
+# so CI decides. It is deliberately limited to Actions seen in workflow files
+# -- Docker tags (`node:20` -> `22`) and calver (`2024` -> `2025`) are single
+# integers too, but a runtime or schema change there is not exercised by PR CI.
 AUTO_MERGEABLE = {"patch", "minor", "tag"}
 
 # A version with one numeric component and nothing else ("5", "v7"). Semver
@@ -86,14 +93,15 @@ def single_level(v: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
-def classify_versions(old: str, new: str) -> str:
+def classify_versions(old: str, new: str, is_action: bool = False) -> str:
     """Classify an old -> new pair of version strings.
 
-    Both sides single-level -> compare as integers and report "tag" for an
-    increase instead of "major". Anything else goes through semver.
+    Both sides single-level AND the package is a GitHub Action -> compare as
+    integers and report "tag" for an increase. Anything else goes through
+    semver, so a single-level Docker/calver bump reads as "major" and holds.
     """
     o, n = single_level(old), single_level(new)
-    if o is not None and n is not None:
+    if is_action and o is not None and n is not None:
         return "tag" if n > o else "downgrade" if n < o else "unchanged"
     return classify(parse_version(old), parse_version(new))
 
@@ -170,6 +178,30 @@ def parse_diff(text: str) -> dict[str, tuple[str, str]]:
     return found
 
 
+def parse_actions(text: str) -> dict[str, tuple[str, str]]:
+    """Extract {action: (old, new)} from `uses:` lines in workflow files of a diff."""
+    removed: dict[str, str] = {}
+    found: dict[str, tuple[str, str]] = {}
+    in_workflow = False
+    for line in text.splitlines():
+        header = FILE_HEADER.match(line)
+        if header:
+            in_workflow = bool(WORKFLOW_FILE.search(header.group(1)))
+            removed.clear()
+            continue
+        if not in_workflow:
+            continue
+        m = ACTION_USES.match(line)
+        if not m:
+            continue
+        sign, action, ver = m.groups()
+        if sign == "-":
+            removed[action] = ver
+        elif action in removed:
+            found[action] = (removed.pop(action).lstrip("v"), ver.lstrip("v"))  # body writes "5", not "v5"
+    return found
+
+
 def parse_body(text: str) -> tuple[dict[str, tuple[str, str]], int | None]:
     """Extract {package: (old, new)} and the claimed update count from a PR body."""
     found = {(m.group(1) or m.group(2)): (m.group(3), m.group(4)) for m in BODY_TABLE_ROW.finditer(text)}
@@ -181,6 +213,7 @@ def parse_body(text: str) -> tuple[dict[str, tuple[str, str]], int | None]:
 def reconcile(
     diff_pkgs: dict[str, tuple[str, str]],
     body_pkgs: dict[str, tuple[str, str]],
+    actions: frozenset[str] = frozenset(),
 ) -> tuple[list[tuple[str, str, str, str, str]], list[str]]:
     """Merge diff and body findings into one package list, plus any warnings.
 
@@ -208,7 +241,7 @@ def reconcile(
         # only in the body = dependabot bumped the lock file because the
         # existing range already covered the new version.
         source = "manifest" if in_diff else "lock-only"
-        rows.append((pkg, old, new, classify_versions(old, new), source))
+        rows.append((pkg, old, new, classify_versions(old, new, pkg in actions), source))
 
     return rows, warnings
 
@@ -233,15 +266,20 @@ def self_test() -> int:
         ("1.9.0", "1.11.0", "minor", "AUTO"),     # numeric, not lexicographic
         ("1.2.3", "1.2.3", "unchanged", "HOLD"),  # no-op
         ("0.9.0", "0.10.0", "minor", "AUTO"),     # 0.x still compares on major=0
-        ("5", "7", "tag", "AUTO"),                # actions/checkout@v5 -> @v7: single level, no semver
-        ("v5", "v7", "tag", "AUTO"),              # same with a v prefix
-        ("7", "5", "downgrade", "HOLD"),          # a tag going backwards still holds
-        ("7", "7", "unchanged", "HOLD"),          # no-op tag
-        ("5", "6.0.0", "major", "HOLD"),          # mixed shapes fall back to semver
+        # Single-level versions: AUTO only for a GitHub Action seen in a workflow file.
+        ("5", "7", "tag", "AUTO", "action"),          # actions/checkout@v5 -> @v7
+        ("v5", "v7", "tag", "AUTO", "action"),        # same with a v prefix
+        ("7", "5", "downgrade", "HOLD", "action"),    # a tag going backwards still holds
+        ("7", "7", "unchanged", "HOLD", "action"),    # no-op tag
+        ("5", "6.0.0", "major", "HOLD", "action"),    # mixed shapes fall back to semver
+        ("5", "5.0.1", "patch", "AUTO", "action"),    # mixed shapes fall back to semver
+        ("20", "22", "major", "HOLD"),                # Docker-style tag: not an action, so semver major
+        ("2024", "2025", "major", "HOLD"),            # calver: not an action, so semver major
     ]
     failures = 0
-    for old, new, want_sev, want_verdict in cases:
-        got_sev = classify_versions(old, new)
+    for old, new, want_sev, want_verdict, *rest in cases:
+        is_action = bool(rest and rest[0] == "action")
+        got_sev = classify_versions(old, new, is_action)
         got_verdict, _ = gate(got_sev)
         ok = got_sev == want_sev and got_verdict == want_verdict
         failures += not ok
@@ -306,7 +344,29 @@ def self_test() -> int:
     failures += not table_ok
     print(f"{'PASS' if table_ok else 'FAIL'} parse_body: table row recovers a truncated 'Updates' line")
 
-    total = len(cases) + len(recon_checks) + 3
+    # Group PR: a tag bump alongside a patch bump reports as tag (ranked above patch),
+    # and alongside a major it still reports major.
+    rows, _ = reconcile({"a/x": ("5", "7"), "p": ("1.0.0", "1.0.1")}, {}, frozenset({"a/x"}))
+    group_ok = max(rows, key=lambda r: SEVERITY_ORDER[r[3]])[3] == "tag"
+    rows, _ = reconcile({"a/x": ("5", "7"), "p": ("1.0.0", "2.0.0")}, {}, frozenset({"a/x"}))
+    group_ok = group_ok and max(rows, key=lambda r: SEVERITY_ORDER[r[3]])[3] == "major"
+    failures += not group_ok
+    print(f"{'PASS' if group_ok else 'FAIL'} reconcile: group ordering tag > patch, major > tag")
+
+    # Workflow-file parsing: only `uses:` lines under .github/workflows count.
+    wf = chr(10).join([
+        "+++ b/.github/workflows/ci.yml",
+        "-      - uses: actions/checkout@v5",
+        "+      - uses: actions/checkout@v7",
+        "+++ b/docker/Dockerfile",
+        "-uses: node@20",
+        "+uses: node@22",
+    ])
+    wf_ok = parse_actions(wf) == {"actions/checkout": ("5", "7")}
+    failures += not wf_ok
+    print(f"{'PASS' if wf_ok else 'FAIL'} parse_actions: workflow `uses:` lines only")
+
+    total = len(cases) + len(recon_checks) + 5
     print(f"\n{total} checks, {failures} failure(s)")
     return 1 if failures else 0
 
@@ -327,7 +387,8 @@ def main() -> None:
         del args[i : i + 2]
 
     text = open(args[0], encoding="utf-8").read() if args else sys.stdin.read()
-    diff_pkgs = parse_diff(text)
+    action_pkgs = parse_actions(text)
+    diff_pkgs = {**parse_diff(text), **action_pkgs}
 
     body_pkgs: dict[str, tuple[str, str]] = {}
     claimed: int | None = None
@@ -340,7 +401,7 @@ def main() -> None:
         print("fall back to parsing the PR title's 'from X to Y' wording by hand.", file=sys.stderr)
         return
 
-    rows, warnings = reconcile(diff_pkgs, body_pkgs)
+    rows, warnings = reconcile(diff_pkgs, body_pkgs, frozenset(action_pkgs))
     overall = max(rows, key=lambda r: SEVERITY_ORDER.get(r[3], 99))[3]
 
     for pkg, old_v, new_v, level, source in rows:

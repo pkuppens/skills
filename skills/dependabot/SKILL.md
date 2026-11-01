@@ -118,15 +118,19 @@ reset patch digit as a decrease. `python scripts/classify_bump.py
 --self-test` asserts every row here, so the rule is verified by running it
 rather than by re-reading this table; run it if you change the gate.
 
-**Single-level versions (`@v5` → `@v7`).** GitHub Actions tags and similar
-identifiers have one numeric component and no minor/patch, so "major" says
-nothing about breakage risk — the maintainer's version number is the only
-signal, and CI exercising the new version is the real check. When *both*
-old and new are single-level (`5`, `v7`), the classifier reports severity
-`tag` and the gate is `AUTO` for an increase; a decrease or no-op still
-HOLDs, and a mix of shapes (`5` → `6.0.0`) falls back to semver. CI must be
-green and the rebase clean as always — a `tag` bump with red or missing CI
-is held like any other (Template C).
+**GitHub Actions tags (`@v5` → `@v7`).** An Action's tag has one numeric
+component and no minor/patch, so "major" says nothing about breakage risk
+and CI exercising the new version is the real check. When the package is an
+Action seen in a workflow file (`uses: owner/repo@vN` under
+`.github/workflows/` or an `action.yml`) and *both* versions are
+single-level, the classifier reports severity `tag` and the gate is `AUTO`
+for an increase. A decrease or no-op still HOLDs, a mix of shapes
+(`5` → `6.0.0`) falls back to semver, and single-level versions that are
+*not* Actions (Docker `node:20` → `22`, calver `2024` → `2025`) are read as
+semver majors and HOLD — PR CI does not exercise a runtime or schema change.
+Before approving a `tag` bump, glance at the touched workflow's triggers:
+if it only runs on release, tag, or deploy events, PR CI did not exercise
+the new version, so hold it (Template B).
 
 **Done when:** every PR in scope has a severity and an AUTO/HOLD verdict
 backed by the specific old→new pair(s), not a guess from the title.
@@ -190,9 +194,9 @@ All three gates must pass to merge. Any one failing holds the PR:
 
 | Gate verdict | CI | Rebase | Verdict |
 |---|---|---|---|
-| AUTO (patch, minor, or single-level tag) | green | clean (`CLEAN`/`BEHIND`) | **Approve + rebase-merge** (Template A) |
+| AUTO (patch, minor, or Actions `tag`) | green | clean (`CLEAN`/`BEHIND`) | **Approve + rebase-merge** (Template A) |
 | AUTO | green | `DIRTY`/`UNKNOWN` after re-poll | **Comment**, hold (Template D) |
-| HOLD — major | any | any | **Comment**, hold (Template B) — a major bump can break even with green CI |
+| HOLD — major | any | any | **Comment**, hold (Template B) — a semver major bump (or a single-level non-Action version) can break even with green CI |
 | HOLD — downgrade | any | any | **Comment**, hold (Template B) — a version going backwards is never an expected Dependabot bump |
 | HOLD — unchanged | any | any | **Comment**, hold (Template B) — nothing effective to approve |
 | HOLD — conflict | any | any | **Comment**, hold (Template B) — the manifest diff and the PR body disagree about a version, so the real change is unclear |

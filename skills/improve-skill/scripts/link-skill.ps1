@@ -34,15 +34,15 @@ function Build-OverlaySkillMd {
     $head + $rest
 }
 
-function Test-IsLink($item) { $item.LinkType -in 'Junction', 'SymbolicLink', 'HardLink' }
+function Resolve-LinkTarget($item) { try { (Resolve-Path -LiteralPath @($item.Target)[0] -ErrorAction Stop).Path } catch { $null } }
 
 if ($Mode -eq 'Check') {
     if (-not (Test-Path $dst)) { Write-Output "DRIFT: $dst does not exist"; exit 1 }
     $item = Get-Item $dst -Force
     if ($item.LinkType -in 'Junction', 'SymbolicLink') {
-        $target = @($item.Target)[0]
-        if ((Resolve-Path $target).Path -eq (Resolve-Path $src).Path) { Write-Output "OK: $dst -> $src ($($item.LinkType))"; exit 0 }
-        Write-Output "DRIFT: $dst points at $target, not $src"; exit 1
+        $target = Resolve-LinkTarget $item
+        if ($target -eq (Resolve-Path $src).Path) { Write-Output "OK: $dst -> $src ($($item.LinkType))"; exit 0 }
+        Write-Output "DRIFT: $dst points at $(if ($target) { $target } else { 'a missing target' }), not $src"; exit 1
     }
     $bad = 0
     if ((Get-Norm (Join-Path $dst 'SKILL.md')) -ne (Build-OverlaySkillMd)) { Write-Output 'DRIFT: SKILL.md differs from canonical+overlay'; $bad = 1 }
@@ -51,36 +51,57 @@ if ($Mode -eq 'Check') {
         if (-not (Test-Path $t)) { Write-Output "DRIFT: missing $($d.Name)"; $bad = 1; continue }
         $ti = Get-Item $t -Force
         if ($ti.LinkType -in 'Junction', 'SymbolicLink') {
-            if ((Resolve-Path @($ti.Target)[0]).Path -ne $d.FullName) { Write-Output "DRIFT: $($d.Name) links elsewhere"; $bad = 1 }
+            if ((Resolve-LinkTarget $ti) -ne $d.FullName) { Write-Output "DRIFT: $($d.Name) links elsewhere"; $bad = 1 }
         } else { Write-Output "DRIFT: $($d.Name) is a plain copy, not a link"; $bad = 1 }
     }
     foreach ($f in Get-ChildItem $src -File | Where-Object Name -ne 'SKILL.md') {
         $t = Join-Path $dst $f.Name
         if (-not (Test-Path $t) -or (Get-Norm $t) -ne (Get-Norm $f.FullName)) { Write-Output "DRIFT: $($f.Name) missing or different"; $bad = 1 }
     }
+    foreach ($e in Get-ChildItem $dst -Force) {
+        if ($e.Name -ne 'SKILL.md' -and -not (Test-Path (Join-Path $src $e.Name))) { Write-Output "DRIFT: stale extra entry $($e.Name)"; $bad = 1 }
+    }
     if (-not $bad) { Write-Output "OK: $dst (overlay) matches canonical" }
     exit $bad
 }
 
 New-Item -ItemType Directory -Force $TargetRoot | Out-Null
+$srcFull = (Resolve-Path $src).Path
+$new = "$dst.new"
+if (Test-Path $new) { throw "$new exists from an interrupted run; inspect and remove it" }
+
+# Build the replacement beside the old copy first, so a failure (no Developer Mode for
+# symlinks, hard link across volumes) leaves the existing skill untouched.
+try {
+    switch ($Mode) {
+        'Junction' { New-Item -ItemType Junction -Path $new -Target $srcFull | Out-Null }
+        'Symlink' { New-Item -ItemType SymbolicLink -Path $new -Target $srcFull | Out-Null }
+        'Overlay' {
+            New-Item -ItemType Directory $new | Out-Null
+            foreach ($d in Get-ChildItem $src -Directory) {
+                New-Item -ItemType Junction -Path (Join-Path $new $d.Name) -Target $d.FullName | Out-Null
+            }
+            foreach ($f in Get-ChildItem $src -File | Where-Object Name -ne 'SKILL.md') {
+                New-Item -ItemType HardLink -Path (Join-Path $new $f.Name) -Target $f.FullName | Out-Null
+            }
+            $skillMd = Join-Path (Resolve-Path $new).Path 'SKILL.md'
+            [IO.File]::WriteAllText($skillMd, (Build-OverlaySkillMd))
+        }
+    }
+} catch {
+    if (Test-Path $new) { (Get-Item $new -Force).Delete() 2>$null; if (Test-Path $new) { Remove-Item $new -Recurse -Force } }
+    throw
+}
+
 if (Test-Path $dst) {
     $it = Get-Item $dst -Force
     if ($it.LinkType -in 'Junction', 'SymbolicLink') { $it.Delete() }   # removes the link only, never the target contents
-    else { Move-Item $dst "$dst.bak-$(Get-Date -Format yyyyMMddHHmmss)" }
-}
-
-switch ($Mode) {
-    'Junction' { New-Item -ItemType Junction -Path $dst -Target (Resolve-Path $src).Path | Out-Null }
-    'Symlink' { New-Item -ItemType SymbolicLink -Path $dst -Target (Resolve-Path $src).Path | Out-Null }
-    'Overlay' {
-        New-Item -ItemType Directory $dst | Out-Null
-        foreach ($d in Get-ChildItem $src -Directory) {
-            New-Item -ItemType Junction -Path (Join-Path $dst $d.Name) -Target $d.FullName | Out-Null
-        }
-        foreach ($f in Get-ChildItem $src -File | Where-Object Name -ne 'SKILL.md') {
-            New-Item -ItemType HardLink -Path (Join-Path $dst $f.Name) -Target $f.FullName | Out-Null
-        }
-        [IO.File]::WriteAllText((Join-Path $dst 'SKILL.md'), (Build-OverlaySkillMd))
+    else {
+        # Backups live outside skills/ so Claude Code does not load them as a second skill.
+        $bk = Join-Path (Split-Path $TargetRoot) 'skill-backups'
+        New-Item -ItemType Directory -Force $bk | Out-Null
+        Move-Item $dst (Join-Path $bk "$Name.$(Get-Date -Format yyyyMMddHHmmss)")
     }
 }
+Move-Item $new $dst
 Write-Output "Linked ($Mode): $dst <- $src"
