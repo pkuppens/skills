@@ -118,6 +118,16 @@ reset patch digit as a decrease. `python scripts/classify_bump.py
 --self-test` asserts every row here, so the rule is verified by running it
 rather than by re-reading this table; run it if you change the gate.
 
+**Single-level versions (`@v5` → `@v7`).** GitHub Actions tags and similar
+identifiers have one numeric component and no minor/patch, so "major" says
+nothing about breakage risk — the maintainer's version number is the only
+signal, and CI exercising the new version is the real check. When *both*
+old and new are single-level (`5`, `v7`), the classifier reports severity
+`tag` and the gate is `AUTO` for an increase; a decrease or no-op still
+HOLDs, and a mix of shapes (`5` → `6.0.0`) falls back to semver. CI must be
+green and the rebase clean as always — a `tag` bump with red or missing CI
+is held like any other (Template C).
+
 **Done when:** every PR in scope has a severity and an AUTO/HOLD verdict
 backed by the specific old→new pair(s), not a guess from the title.
 
@@ -180,7 +190,7 @@ All three gates must pass to merge. Any one failing holds the PR:
 
 | Gate verdict | CI | Rebase | Verdict |
 |---|---|---|---|
-| AUTO (patch or minor) | green | clean (`CLEAN`/`BEHIND`) | **Approve + rebase-merge** (Template A) |
+| AUTO (patch, minor, or single-level tag) | green | clean (`CLEAN`/`BEHIND`) | **Approve + rebase-merge** (Template A) |
 | AUTO | green | `DIRTY`/`UNKNOWN` after re-poll | **Comment**, hold (Template D) |
 | HOLD — major | any | any | **Comment**, hold (Template B) — a major bump can break even with green CI |
 | HOLD — downgrade | any | any | **Comment**, hold (Template B) — a version going backwards is never an expected Dependabot bump |

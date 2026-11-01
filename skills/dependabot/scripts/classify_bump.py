@@ -63,13 +63,39 @@ BODY_TABLE_ROW = re.compile(
 # The "with N updates" claim in a group PR's opening sentence.
 BODY_GROUP_COUNT = re.compile(r'with\s+(\d+)\s+updates?')
 
-SEVERITY_ORDER = {"major": 3, "minor": 2, "patch": 1, "unchanged": 0, "downgrade": -1}
+SEVERITY_ORDER = {"major": 3, "minor": 2, "patch": 1, "tag": 1, "unchanged": 0, "downgrade": -1}
 
-# The only two severities that may be approved and merged without a human
+# The only severities that may be approved and merged without a human
 # looking. Keep this in sync with the decision table in SKILL.md -- every
 # key in SEVERITY_ORDER needs a row there, which is what makes "downgrade"
 # and "unchanged" defined outcomes rather than silent fall-throughs.
-AUTO_MERGEABLE = {"patch", "minor"}
+# "tag" is an increase of a single-level version (GitHub Actions `@v5` -> `@v7`):
+# there is no major.minor.patch to read a risk level from, so CI decides.
+AUTO_MERGEABLE = {"patch", "minor", "tag"}
+
+# A version with one numeric component and nothing else ("5", "v7"). Semver
+# needs three components, so these are tag-style identifiers (GitHub Actions
+# major tags, Docker major tags), where "major" carries no breaking-change
+# signal of its own.
+SINGLE_LEVEL = re.compile(r"^v?(\d+)$")
+
+
+def single_level(v: str) -> int | None:
+    """Return the integer for a single-level version like "5" or "v7", else None."""
+    m = SINGLE_LEVEL.match(v.strip())
+    return int(m.group(1)) if m else None
+
+
+def classify_versions(old: str, new: str) -> str:
+    """Classify an old -> new pair of version strings.
+
+    Both sides single-level -> compare as integers and report "tag" for an
+    increase instead of "major". Anything else goes through semver.
+    """
+    o, n = single_level(old), single_level(new)
+    if o is not None and n is not None:
+        return "tag" if n > o else "downgrade" if n < o else "unchanged"
+    return classify(parse_version(old), parse_version(new))
 
 
 def parse_version(v: str) -> tuple[int, int, int]:
@@ -106,6 +132,8 @@ def gate(severity: str) -> tuple[str, str]:
     tuples as a whole gets that right, where checking each component in
     isolation would wrongly read it as a decrease.
     """
+    if severity == "tag":
+        return "AUTO", "single-level tag increase (no semver) -- green CI and a clean rebase decide"
     if severity in AUTO_MERGEABLE:
         return "AUTO", f"{severity} bump, major unchanged and version increased"
     if severity == "major":
@@ -180,7 +208,7 @@ def reconcile(
         # only in the body = dependabot bumped the lock file because the
         # existing range already covered the new version.
         source = "manifest" if in_diff else "lock-only"
-        rows.append((pkg, old, new, classify(parse_version(old), parse_version(new)), source))
+        rows.append((pkg, old, new, classify_versions(old, new), source))
 
     return rows, warnings
 
@@ -205,10 +233,15 @@ def self_test() -> int:
         ("1.9.0", "1.11.0", "minor", "AUTO"),     # numeric, not lexicographic
         ("1.2.3", "1.2.3", "unchanged", "HOLD"),  # no-op
         ("0.9.0", "0.10.0", "minor", "AUTO"),     # 0.x still compares on major=0
+        ("5", "7", "tag", "AUTO"),                # actions/checkout@v5 -> @v7: single level, no semver
+        ("v5", "v7", "tag", "AUTO"),              # same with a v prefix
+        ("7", "5", "downgrade", "HOLD"),          # a tag going backwards still holds
+        ("7", "7", "unchanged", "HOLD"),          # no-op tag
+        ("5", "6.0.0", "major", "HOLD"),          # mixed shapes fall back to semver
     ]
     failures = 0
     for old, new, want_sev, want_verdict in cases:
-        got_sev = classify(parse_version(old), parse_version(new))
+        got_sev = classify_versions(old, new)
         got_verdict, _ = gate(got_sev)
         ok = got_sev == want_sev and got_verdict == want_verdict
         failures += not ok

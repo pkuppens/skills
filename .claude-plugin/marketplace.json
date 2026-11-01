@@ -115,6 +115,15 @@
       "strict": false
     },
     {
+      "name": "improve-skill",
+      "source": "./",
+      "description": "Improve an existing Agent Skill the repo-first way — open a GitHub issue in pkuppens/skills, change the skill on a branch in a clone of that repo, run the skill validator, collect before/after evidence, get a formal review from the user and from a fresh separate AI agent checked against the latest Claude skill best practices, and merge through a PR; then refresh the personal copy in ~/.claude/skills (Windows junction or overlay) so every project sees the change. Use when the user wants to tweak, fix, tighten, or extend a skill, says a skill got something wrong, or invokes /improve-skill.",
+      "skills": [
+        "./skills/improve-skill"
+      ],
+      "strict": false
+    },
+    {
       "name": "legacy-build-container",
       "source": "./",
       "description": "Build a Docker container that compiles an old code base with a period-correct toolchain, then record the result so the next attempt is faster. Use when a C++, C#, or other compiled project does not build with the current compiler, when a legacy build must be reproducible for an audit, or when an AI agent needs a working build as its oracle before it changes legacy code.",

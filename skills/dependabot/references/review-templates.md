@@ -22,6 +22,17 @@ Rebase state: {CLEAN | BEHIND} — merges without conflicts.
 Approving as a routine, low-risk dependency update; rebase-merging.
 ```
 
+For a single-level tag bump (`actions/checkout@v5` → `@v7`), name it as such —
+the level is `tag`, and the reason is that no semver applies, so green CI is
+the gate:
+
+```
+CI/CD verified — single-level tag bump (no semver): {package} {old} -> {new}.
+All checks passed: {ci_run_url}.
+Rebase state: {CLEAN | BEHIND} — merges without conflicts.
+Approving — version has no minor/patch to assess, and CI exercises the new version; rebase-merging.
+```
+
 For a group PR with mixed levels, list every package with its own level and
 state the overall as the worst one:
 
