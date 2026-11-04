@@ -15,7 +15,8 @@
 #                  worktree are never deleted.
 #   4. Switch    - check out the freshly fast-forwarded main (skipped when the
 #                  working tree has changes, or with --stay)
-#   5. Delete    - verified-merged local branches, then remote branches
+#   5. Delete    - verified-merged local branches, then remote branches (by
+#                  default only remote branches verifiably yours)
 #   6. Report    - actions taken (with restore commands), unresolved items,
 #                  final state
 #
@@ -23,13 +24,15 @@
 #   ./cleanup-branches.sh              # Dry-run (show what would happen)
 #   ./cleanup-branches.sh --execute    # Perform the cleanup
 #   ./cleanup-branches.sh --local-only # Skip remote branch deletion
+#   ./cleanup-branches.sh --remote-scope=all  # Also delete others' merged remote branches
 #   ./cleanup-branches.sh --stay       # Don't switch to main at the end
 #   ./cleanup-branches.sh --help
 #
 # Requirements: git (2.38+ for the fast squash-merge check; older versions
 # fall back to a patch-id check); gh CLI recommended (merged-PR lookup for
-# squash-merged branches that main has edited since, and fallback path for
-# remote deletion when a plain `git push --delete` is rejected for auth).
+# squash-merged branches that main has edited since, PR-author ownership of
+# remote branches, and fallback path for remote deletion when a plain
+# `git push --delete` is rejected for auth).
 # Works from Git Bash on Windows, and bash/zsh elsewhere.
 
 set -u
@@ -37,6 +40,7 @@ set -u
 DRY_RUN=true
 CLEAN_REMOTE=true
 SWITCH_TO_MAIN=true
+REMOTE_SCOPE=mine
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -59,12 +63,19 @@ remote branches whose content is fully in main. Reports actions and final
 state.
 
 Protected branches (never deleted): main, master, develop, development,
-staging, production, release/*, hotfix/*
+staging, production, release/*, hotfix/*, plus every glob in
+'git config --get-all branch-cleanup.protect'
+
+Remote branches are only deleted when verifiably yours: a PR merged into
+main from that branch was authored by you (gh user), or every commit on it
+is authored by your user.email / branch-cleanup.email.
 
 Usage:
   $0                  Dry-run (default) - report only, no changes
   $0 --execute        Perform the cleanup
   $0 --local-only     Skip remote branch deletion
+  $0 --remote-scope=mine|all
+                      Remote branches to consider (default: mine)
   $0 --stay           Don't switch to main at the end
   $0 --help           Show this help
 EOF
@@ -75,6 +86,7 @@ for arg in "$@"; do
   case $arg in
     --execute) DRY_RUN=false ;;
     --local-only) CLEAN_REMOTE=false ;;
+    --remote-scope=mine|--remote-scope=all) REMOTE_SCOPE=${arg#*=} ;;
     --stay) SWITCH_TO_MAIN=false ;;
     --help|-h) show_help ;;
     *) print_error "Unknown argument: $arg"; exit 1 ;;
@@ -96,12 +108,21 @@ if [ "$DRY_RUN" = true ]; then
   echo ""
 fi
 
+# Extra protected globs, one per line, from local or global git config.
+EXTRA_PROTECT=$(git config --get-all branch-cleanup.protect 2>/dev/null)
+
 is_protected_branch() {
   case "$1" in
     main|master|develop|development|staging|production) return 0 ;;
     release/*|hotfix/*) return 0 ;;
-    *) return 1 ;;
   esac
+  local p
+  while IFS= read -r p; do
+    [ -z "$p" ] && continue
+    # shellcheck disable=SC2254 # $p is a glob on purpose
+    case "$1" in $p) return 0 ;; esac
+  done <<< "$EXTRA_PROTECT"
+  return 1
 }
 
 # ---------------------------------------------------------------------------
@@ -233,12 +254,12 @@ else
   HAS_MERGE_TREE=false
 fi
 
-# Merged GitHub PRs as "headRefName<TAB>headRefOid<TAB>number<TAB>baseRefName"
+# Merged GitHub PRs as "headRefName<TAB>headRefOid<TAB>number<TAB>baseRefName<TAB>author"
 # lines. Empty without gh/auth/a GitHub remote - then only the git checks
 # above apply.
 MERGED_PRS=""
 if command -v gh >/dev/null 2>&1; then
-  MERGED_PRS=$(gh pr list --state merged --limit 1000 --json number,headRefName,headRefOid,baseRefName     --jq '.[] | [.headRefName, .headRefOid, (.number | tostring), .baseRefName] | @tsv' 2>/dev/null) || MERGED_PRS=""
+  MERGED_PRS=$(gh pr list --state merged --limit 1000 --json number,headRefName,headRefOid,baseRefName,author     --jq '.[] | [.headRefName, .headRefOid, (.number | tostring), .baseRefName, (.author.login // "")] | @tsv' 2>/dev/null) || MERGED_PRS=""
 fi
 
 # changes_id <commit>: patch-id of the lines <commit> adds/removes relative to
@@ -250,7 +271,7 @@ changes_id() {
   git diff -U0 "$base" "$1" | git patch-id --stable | cut -d' ' -f1
 }
 
-# merged_pr_of <ref> <branch-name>: prints the number of a PR merged into the
+# merged_pr_of <ref> <branch-name> [author]: prints the number of a PR merged into the
 # main branch whose head was <branch-name> and that carried everything on <ref>:
 #   - the PR head contains <ref>'s tip (every commit went through the PR), or
 #   - the PR was rebased/rewritten before merging, but makes exactly the same
@@ -258,11 +279,13 @@ changes_id() {
 # A commit added after the merge fails both checks, so that work is kept.
 # A PR merged into another branch (e.g. a stacked PR whose base was never
 # retargeted to main) doesn't count: its content need not be in main.
+# With [author], only PRs opened by that GitHub login count.
 merged_pr_of() {
-  local tip head oid num base mine
+  local tip head oid num base author mine want=${3:-}
   tip=$(git rev-parse "$1" 2>/dev/null) || return
-  while IFS=$'	' read -r head oid num base; do
+  while IFS=$'	' read -r head oid num base author; do
     [ "$head" = "$2" ] && [ "$base" = "$MAIN_BRANCH" ] || continue
+    [ -z "$want" ] || [ "$author" = "$want" ] || continue
     if [ "$oid" = "$tip" ] || git merge-base --is-ancestor "$tip" "$oid" 2>/dev/null; then
       echo "$num"; return
     fi
@@ -302,6 +325,44 @@ content_status() {
 stash_count_for() {
   git stash list --format='%gs' 2>/dev/null \
     | awk -v b="$1" 'index($0, "WIP on " b ":") == 1 || index($0, "On " b ":") == 1' | wc -l | tr -d ' '
+}
+
+# Who "you" are, for --remote-scope=mine: the gh login (PR authorship) and
+# commit author emails (user.email, branch-cleanup.email, GitHub noreply).
+MY_LOGIN=""
+MY_EMAILS=""
+if [ "$CLEAN_REMOTE" = true ] && [ "$REMOTE_SCOPE" = mine ]; then
+  if command -v gh >/dev/null 2>&1; then
+    MY_LOGIN=$(gh api user --jq .login 2>/dev/null) || MY_LOGIN=""
+  fi
+  MY_EMAILS=$( { git config --get-all user.email; git config --get-all branch-cleanup.email; } 2>/dev/null)
+fi
+
+is_my_email() {
+  if [ -n "$MY_LOGIN" ]; then
+    case "$1" in
+      "$MY_LOGIN@users.noreply.github.com"|*"+$MY_LOGIN@users.noreply.github.com") return 0 ;;
+    esac
+  fi
+  [ -n "$MY_EMAILS" ] && printf '%s\n' "$MY_EMAILS" | grep -qixF -- "$1"
+}
+
+# owned_by_me <ref> <branch-name>: prints the evidence and succeeds when the
+# branch is verifiably yours - a PR you authored merged it into main, or every
+# commit it has beyond main is authored by you. A branch with no commits of its
+# own (e.g. freshly created) only counts via a PR.
+owned_by_me() {
+  local pr emails e
+  if [ -n "$MY_LOGIN" ]; then
+    pr=$(merged_pr_of "$1" "$2" "$MY_LOGIN")
+    [ -n "$pr" ] && { echo "your PR #$pr"; return 0; }
+  fi
+  emails=$(git log --format='%ae' "$MAIN_REF..$1" 2>/dev/null)
+  [ -n "$emails" ] || return 1
+  while IFS= read -r e; do
+    is_my_email "$e" || return 1
+  done <<< "$emails"
+  echo "all commits yours"
 }
 
 print_info "STEP 3a: Verifying local branches against $MAIN_REF..."
@@ -349,7 +410,10 @@ echo ""
 
 DEL_REMOTE=()  # "branch<TAB>reason"
 if [ "$CLEAN_REMOTE" = true ] && git remote | grep -qx origin; then
-  print_info "STEP 3b: Verifying origin branches against $MAIN_REF..."
+  print_info "STEP 3b: Verifying origin branches against $MAIN_REF (scope: $REMOTE_SCOPE)..."
+  if [ "$REMOTE_SCOPE" = mine ] && [ -z "$MY_LOGIN" ]; then
+    print_warning "GitHub login unknown (gh missing or not authenticated): only remote branches whose commits are all by $(printf '%s' "$MY_EMAILS" | paste -sd, - | sed 's/^$/<no user.email>/') qualify"
+  fi
   while IFS= read -r ref; do
     branch=${ref#origin/}
     [ "$branch" = "HEAD" ] || [ "$branch" = "$ref" ] || [ "$branch" = "$MAIN_BRANCH" ] && continue
@@ -361,6 +425,14 @@ if [ "$CLEAN_REMOTE" = true ] && git remote | grep -qx origin; then
     case "$status" in
       unmerged:*) continue ;;
     esac
+    if [ "$REMOTE_SCOPE" = mine ]; then
+      if ! owner=$(owned_by_me "refs/remotes/$ref" "$branch"); then
+        print_info "Kept: origin/$branch ($status) - not verified as yours"
+        KEPT+=("origin/$branch: $status, but not verified as yours (no merged PR by you, no own commits, or commits by others) - include with --remote-scope=all")
+        continue
+      fi
+      status="$status, $owner"
+    fi
     print_warning "Delete candidate: origin/$branch ($status)"
     DEL_REMOTE+=("$branch"$'\t'"$status")
   done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin/)
