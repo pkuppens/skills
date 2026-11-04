@@ -56,11 +56,15 @@ skill — this skill only touches branches.
    worktree.
 
    An `origin` branch must also be **yours** (default `--remote-scope=mine`):
-   a PR merged into main from it was authored by your `gh` login, or every
-   commit it has beyond main is authored by your `user.email` (or a
-   `branch-cleanup.email`, or your GitHub noreply address). A branch with no
-   commits of its own, such as a colleague's freshly pushed one, only
-   qualifies via your PR. Other merged remote branches are kept and listed.
+   a PR you authored (your `gh` login) was merged into main from it at its
+   current tip, or every commit it has beyond main is authored by your
+   `user.email`, a `branch-cleanup.email`, or your GitHub noreply address.
+   A branch with no commits of its own only qualifies via your PR — so a
+   colleague's freshly pushed branch is kept, and without `gh` so are your
+   own merge-commit-merged branches. The email rule can't tell a colleague's
+   branch that holds only your commits from yours; the head of any open PR
+   is therefore never deleted, in either scope. Other merged remote branches
+   are kept and listed with the reason.
 4. **Switch** to the fresh main — skipped when the working tree has changes,
    or with `--stay` (unless the current branch is being deleted).
 5. **Delete** verified local branches (`git branch -D`: plain `-d` can't see
@@ -79,6 +83,7 @@ glob you add per repo or globally:
 ```bash
 git config --add branch-cleanup.protect 'env/*'          # this repo
 git config --global --add branch-cleanup.protect 'next'  # every repo
+git config --global --add branch-cleanup.email old@example.com  # another of your author emails
 ```
 
 ## Usage
@@ -143,12 +148,10 @@ PASS/FAIL per check.
   remote-tracking ref exists, else the local main branch.
 - A branch with no commits beyond main (e.g. just created for new work) is
   `merged` by definition. Locally it will be deleted — nothing is lost, but
-  commit or push first if you want to keep the name. On `origin` it is only
-  deleted when your merged PR came from it, or with `--remote-scope=all`.
-- A remote branch is deleted on the same content rule plus ownership, so a
-  squash-merged PR branch of yours that GitHub didn't auto-delete is cleaned
-  up too. Only pass `--remote-scope=all` when you are responsible for every
-  branch in the repo.
+  commit or push first if you want to keep the name. On `origin` the
+  ownership rule in step 3 applies.
+- Only pass `--remote-scope=all` when you are responsible for every branch
+  in the repo.
 - Don't improvise the classic one-liners in place of the script.
   `git branch --merged main` misses squash and rebase merges, because those
   rewrite commits. A `[gone]` upstream (`git branch -vv | grep ': gone]'`)

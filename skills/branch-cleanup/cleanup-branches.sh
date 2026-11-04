@@ -66,9 +66,11 @@ Protected branches (never deleted): main, master, develop, development,
 staging, production, release/*, hotfix/*, plus every glob in
 'git config --get-all branch-cleanup.protect'
 
-Remote branches are only deleted when verifiably yours: a PR merged into
-main from that branch was authored by you (gh user), or every commit on it
-is authored by your user.email / branch-cleanup.email.
+Remote branches are only deleted when they are verifiably yours: a PR you
+authored (gh user) was merged into main from that branch at its current tip,
+or every commit it has beyond main is authored by user.email,
+branch-cleanup.email or your GitHub noreply address. A branch with no commits
+of its own needs the PR. The head of an open PR is never deleted.
 
 Usage:
   $0                  Dry-run (default) - report only, no changes
@@ -271,7 +273,7 @@ changes_id() {
   git diff -U0 "$base" "$1" | git patch-id --stable | cut -d' ' -f1
 }
 
-# merged_pr_of <ref> <branch-name> [author]: prints the number of a PR merged into the
+# merged_pr_of <ref> <branch-name>: prints the number of a PR merged into the
 # main branch whose head was <branch-name> and that carried everything on <ref>:
 #   - the PR head contains <ref>'s tip (every commit went through the PR), or
 #   - the PR was rebased/rewritten before merging, but makes exactly the same
@@ -279,13 +281,11 @@ changes_id() {
 # A commit added after the merge fails both checks, so that work is kept.
 # A PR merged into another branch (e.g. a stacked PR whose base was never
 # retargeted to main) doesn't count: its content need not be in main.
-# With [author], only PRs opened by that GitHub login count.
 merged_pr_of() {
-  local tip head oid num base author mine want=${3:-}
+  local tip head oid num base _author mine
   tip=$(git rev-parse "$1" 2>/dev/null) || return
-  while IFS=$'	' read -r head oid num base author; do
+  while IFS=$'	' read -r head oid num base _author; do
     [ "$head" = "$2" ] && [ "$base" = "$MAIN_BRANCH" ] || continue
-    [ -z "$want" ] || [ "$author" = "$want" ] || continue
     if [ "$oid" = "$tip" ] || git merge-base --is-ancestor "$tip" "$oid" 2>/dev/null; then
       echo "$num"; return
     fi
@@ -331,14 +331,22 @@ stash_count_for() {
 # commit author emails (user.email, branch-cleanup.email, GitHub noreply).
 MY_LOGIN=""
 MY_EMAILS=""
-if [ "$CLEAN_REMOTE" = true ] && [ "$REMOTE_SCOPE" = mine ]; then
+OPEN_PR_HEADS=""
+if [ "$CLEAN_REMOTE" = true ]; then
   if command -v gh >/dev/null 2>&1; then
-    MY_LOGIN=$(gh api user --jq .login 2>/dev/null) || MY_LOGIN=""
+    # Deleting an open PR's head branch closes that PR: never do it.
+    OPEN_PR_HEADS=$(gh pr list --state open --limit 1000 --json headRefName --jq '.[].headRefName' 2>/dev/null) || OPEN_PR_HEADS=""
+    if [ "$REMOTE_SCOPE" = mine ]; then
+      MY_LOGIN=$(gh api user --jq .login 2>/dev/null) || MY_LOGIN=""
+    fi
   fi
-  MY_EMAILS=$( { git config --get-all user.email; git config --get-all branch-cleanup.email; } 2>/dev/null)
+  if [ "$REMOTE_SCOPE" = mine ]; then
+    MY_EMAILS=$( { git config --get-all user.email; git config --get-all branch-cleanup.email; } 2>/dev/null)
+  fi
 fi
 
 is_my_email() {
+  [ -n "$1" ] || return 1
   if [ -n "$MY_LOGIN" ]; then
     case "$1" in
       "$MY_LOGIN@users.noreply.github.com"|*"+$MY_LOGIN@users.noreply.github.com") return 0 ;;
@@ -348,14 +356,21 @@ is_my_email() {
 }
 
 # owned_by_me <ref> <branch-name>: prints the evidence and succeeds when the
-# branch is verifiably yours - a PR you authored merged it into main, or every
-# commit it has beyond main is authored by you. A branch with no commits of its
-# own (e.g. freshly created) only counts via a PR.
+# branch is yours - a PR you authored was merged into main from it at exactly
+# its current tip, or every commit it has beyond main is authored by you.
+# A branch with no commits of its own (e.g. freshly created) only counts via
+# a PR. The email rule can't tell your branch from a colleague's branch that
+# holds only your commits; the open-PR guard in step 3b covers the usual case.
 owned_by_me() {
-  local pr emails e
+  local tip head oid num base author emails e
   if [ -n "$MY_LOGIN" ]; then
-    pr=$(merged_pr_of "$1" "$2" "$MY_LOGIN")
-    [ -n "$pr" ] && { echo "your PR #$pr"; return 0; }
+    tip=$(git rev-parse "$1" 2>/dev/null) || return 1
+    while IFS=$'\t' read -r head oid num base author; do
+      if [ "$head" = "$2" ] && [ "$base" = "$MAIN_BRANCH" ] \
+        && [ "$author" = "$MY_LOGIN" ] && [ "$oid" = "$tip" ]; then
+        echo "your PR #$num"; return 0
+      fi
+    done <<< "$MERGED_PRS"
   fi
   emails=$(git log --format='%ae' "$MAIN_REF..$1" 2>/dev/null)
   [ -n "$emails" ] || return 1
@@ -412,7 +427,12 @@ DEL_REMOTE=()  # "branch<TAB>reason"
 if [ "$CLEAN_REMOTE" = true ] && git remote | grep -qx origin; then
   print_info "STEP 3b: Verifying origin branches against $MAIN_REF (scope: $REMOTE_SCOPE)..."
   if [ "$REMOTE_SCOPE" = mine ] && [ -z "$MY_LOGIN" ]; then
-    print_warning "GitHub login unknown (gh missing or not authenticated): only remote branches whose commits are all by $(printf '%s' "$MY_EMAILS" | paste -sd, - | sed 's/^$/<no user.email>/') qualify"
+    if [ -n "$MY_EMAILS" ]; then
+      who=$(printf '%s\n' "$MY_EMAILS" | paste -sd, -)
+    else
+      who="<no user.email set>"
+    fi
+    print_warning "GitHub login unknown (gh missing or not authenticated): only remote branches whose commits beyond $MAIN_REF are all by $who qualify; your merge-commit-merged branches will be kept"
   fi
   while IFS= read -r ref; do
     branch=${ref#origin/}
@@ -425,6 +445,11 @@ if [ "$CLEAN_REMOTE" = true ] && git remote | grep -qx origin; then
     case "$status" in
       unmerged:*) continue ;;
     esac
+    if [ -n "$OPEN_PR_HEADS" ] && printf '%s\n' "$OPEN_PR_HEADS" | grep -qxF -- "$branch"; then
+      print_info "Kept: origin/$branch ($status) - head of an open PR"
+      KEPT+=("origin/$branch: $status, but head of an open PR - deleting it would close that PR")
+      continue
+    fi
     if [ "$REMOTE_SCOPE" = mine ]; then
       if ! owner=$(owned_by_me "refs/remotes/$ref" "$branch"); then
         print_info "Kept: origin/$branch ($status) - not verified as yours"

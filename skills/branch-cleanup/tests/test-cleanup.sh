@@ -26,12 +26,18 @@
 #   behind      unmerged, behind its upstream                -> fast-forwarded, kept
 #   main        behind origin/main                           -> fast-forwarded
 #   mylive      merge-commit merged via my PR, remote only   -> remote deleted (PR evidence)
+#   noreplylive squash-merged, authored with my GitHub noreply address, remote only
+#                                                            -> remote deleted
 #   env/qa      at main, matches git config branch-cleanup.protect
 #                                                            -> kept, even with --remote-scope=all
-# Remote-only branches of a colleague ('o@o', not the gh user):
+# Remote-only branches of a colleague ('o@o', gh login 'other'):
 #   colleague-fresh  pushed at main, no commits yet         -> kept; deleted only with
 #                                                               --remote-scope=all
-#   colleague-done   squash-merged into main                -> kept (not mine)
+#   colleague-done   squash-merged via the colleague's PR   -> kept (not mine)
+#   colleague-stack  built on my squashlive commits, no own commits, open PR
+#                                                            -> kept, even with --remote-scope=all
+#   mixed            squash-merged, one commit theirs, one mine
+#                                                            -> kept (not all commits mine)
 
 set -u
 SCRIPT=${1:-"$(cd "$(dirname "$0")/.." && pwd)/cleanup-branches.sh"}
@@ -57,10 +63,14 @@ has_remote() { git ls-remote --exit-code --heads origin "$1" >/dev/null; }
     c "$b.txt" "$b 1" "$b 1"; c "$b.txt" "$b 2" "$b 2"
     git push -q -u origin "$b"
   done
+  git push -q origin squashlive:refs/heads/colleague-stack
   git switch -qc mylive main; c mylive.txt "mylive 1" "mylive 1"; git push -q origin mylive
   git switch -q main; git branch -qD mylive
   git merge -q --no-ff origin/mylive -m "merge mylive (PR 105)"
   git merge -q --no-ff merged -m "merge merged"
+  git switch -qc noreplylive main; echo n > noreply.txt; git add noreply.txt
+  git commit -q --author="Me <12345+me@users.noreply.github.com>" -m "noreply"; git push -q origin noreplylive
+  git switch -q main; git merge -q --squash noreplylive >/dev/null; git commit -qm "squash noreplylive"; git branch -qD noreplylive
   git switch -qc rewritten main; c rewritten.txt "rw 1" "rw 1"; git commit -q --amend -m "rw 1 (local rewrite)"
   git switch -q main
   for b in squashed squashlive wipgone squashedit; do git merge -q --squash "$b" >/dev/null; git commit -qm "squash $b"; done
@@ -80,6 +90,7 @@ rewritten	%s	103	main	me
 stacked	%s	104	wiplive	me
 mylive	%s	105	main	me
 '     "$(git rev-parse squashedit)" "$(git rev-parse wipgone)" "$pr_rw" "$(git rev-parse stacked)" "$(git rev-parse origin/mylive)" > ../merged-prs.tsv
+  printf 'colleague-stack\n' > ../open-prs.txt
   git push -q origin --delete merged squashed wipgone squashedit stacked
   git branch -q stale main; git push -q -u origin stale
   git branch -q env/qa main; git push -q -u origin env/qa
@@ -96,6 +107,10 @@ mylive	%s	105	main	me
   git commit -qm "colleague work"; git push -q -u origin colleague-done
   git switch -q main; git merge -q --squash colleague-done >/dev/null
   git commit -qm "squash colleague-done"; git push -q
+  printf 'colleague-done\t%s\t106\tmain\tother\n' "$(git rev-parse colleague-done)" >> ../merged-prs.tsv
+  git switch -qc mixed main; echo m1 > mixed.txt; git add mixed.txt; git commit -qm "mixed: colleague"
+  echo m2 >> mixed.txt; git commit -qam "mixed: mine" --author="t <t@t>"; git push -q -u origin mixed
+  git switch -q main; git merge -q --squash mixed >/dev/null; git commit -qm "squash mixed"; git push -q
   cd ../dev
   git switch -q squashed; echo dirty >> squashed.txt
 ) >/dev/null 2>&1
@@ -103,13 +118,16 @@ mylive	%s	105	main	me
 [ $? -eq 0 ] || { echo "fixture setup failed"; exit 1; }
 cd "$T/dev"
 
-# Fake `gh`: `gh pr list` returns the merged-PR fixture, `gh api user` the
-# login 'me'; everything else fails.
+# Fake `gh`: `gh pr list` returns the open or merged PR fixture, `gh api user`
+# the login 'me' (unless FAKE_GH_NO_LOGIN is set); everything else fails.
 mkdir -p "$T/bin"
 cat > "$T/bin/gh" <<GH
 #!/bin/bash
-[ "\$1 \$2" = "pr list" ] && exec cat "$T/merged-prs.tsv"
-[ "\$1 \$2" = "api user" ] && { echo me; exit 0; }
+case "\$*" in
+  "pr list --state open"*) exec cat "$T/open-prs.txt" ;;
+  "pr list"*) exec cat "$T/merged-prs.tsv" ;;
+  "api user"*) [ -z "\${FAKE_GH_NO_LOGIN:-}" ] && { echo me; exit 0; } ;;
+esac
 exit 1
 GH
 chmod +x "$T/bin/gh"
@@ -149,9 +167,13 @@ check "main fast-forwarded" '[ "$(git rev-parse main)" = "$(git rev-parse origin
 check "report lists restore command" 'printf "%s" "$out" | grep -q "restore: git branch merged"'
 check "report shows final state" 'printf "%s" "$out" | grep -q "^Final state:"'
 check "own PR-merged remote mylive deleted" '! has_remote mylive'
+check "own noreply-authored remote noreplylive deleted" '! has_remote noreplylive'
 check "colleague-fresh (no commits, not mine) kept on origin" 'has_remote colleague-fresh'
-check "colleague-done (squash-merged, not mine) kept on origin" 'has_remote colleague-done'
+check "colleague-done (squash-merged via their PR) kept on origin" 'has_remote colleague-done'
+check "colleague-stack (only my commits, open PR) kept on origin" 'has_remote colleague-stack'
+check "mixed (one commit not mine) kept on origin" 'has_remote mixed'
 check "colleague branches reported as not verified as yours" 'printf "%s" "$out" | grep -q "origin/colleague-done.*not verified as yours"'
+check "open-PR head reported" 'printf "%s" "$out" | grep -q "origin/colleague-stack.*open PR"'
 check "configured protected env/qa kept" 'has_local env/qa && has_remote env/qa'
 
 # --- run 3: execute after stashing -----------------------------------------
@@ -163,11 +185,18 @@ check "squashed deleted once clean" '! has_local squashed'
 check "stash survives and is reported" '[ "$(git stash list | wc -l | tr -d " ")" = 1 ] && printf "%s" "$out" | grep -q "made on '"'"'squashed'"'"'"'
 check "protected main kept" 'has_local main && has_remote main'
 
-# --- run 4: --remote-scope=all includes branches of others -----------------
-echo "Run 4: --execute --remote-scope=all"
+# --- run 4: without a gh login only commit authorship counts ----------------
+echo "Run 4: dry-run, gh login unavailable"
+out=$(FAKE_GH_NO_LOGIN=1 bash "$SCRIPT" 2>&1)
+check "missing gh login is warned about" 'printf "%s" "$out" | grep -q "GitHub login unknown"'
+check "without gh login, colleague branches still not planned" '! printf "%s" "$out" | grep -q "Would delete remote: origin/colleague"'
+
+# --- run 5: --remote-scope=all includes branches of others -----------------
+echo "Run 5: --execute --remote-scope=all"
 bash "$SCRIPT" --execute --remote-scope=all >/dev/null 2>&1
 check "remote-scope=all deletes colleague-fresh" '! has_remote colleague-fresh'
 check "remote-scope=all deletes colleague-done" '! has_remote colleague-done'
+check "remote-scope=all still keeps open-PR head colleague-stack" 'has_remote colleague-stack'
 check "configured protected env/qa still kept" 'has_local env/qa && has_remote env/qa'
 check "unknown --remote-scope value rejected" '! bash "$SCRIPT" --remote-scope=everyone >/dev/null 2>&1'
 
