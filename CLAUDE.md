@@ -15,6 +15,10 @@ _Why:_ issue #2 referenced `npx skills@1.5.6`, which never appeared anywhere in 
 **Reference other issues/docs instead of duplicating scope.** Before adding a checkbox or a doc section, check whether an existing issue or file already owns that work (`gh issue list --search ...`, grep the docs). Link to it rather than re-describing it in two places.
 _Why:_ `docs/curated-skill-selection.md` / `docs/bundles/` cross-linking was already the entire scope of issue #7 — issue #2 only needed to reference #7, not restate the task.
 
+**Search before you create.** Before creating an issue or a skill (or an issue to create a skill), look for an existing one and say what you found. Extend or link it instead of opening a second copy. Run:
+`gh issue list --state all --search "<keywords>"`, `ls skills/` plus `rg -i "<keyword>" skills/SKILL_TREE.md`, and, for a new skill, the install-before-authoring check in [skills/CLAUDE.md](skills/CLAUDE.md) (see `skills-transfer` for external registries).
+_Why:_ the check was only judgment, and it was skipped when #70 was filed; a duplicate issue or skill splits the discussion and the maintenance.
+
 ## Repo structure (high level)
 
 - `README.md` — GitHub landing page: usage, IDE setup, Skills CLI install.
