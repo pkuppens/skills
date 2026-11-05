@@ -133,6 +133,15 @@
       "strict": false
     },
     {
+      "name": "minor",
+      "source": "./",
+      "description": "Autonomously complete a minor GitHub issue end to end - validate it, decide the open questions yourself, record the decisions as issue comments, implement, open a PR with a session transcript, and merge. Use whenever the user wants an issue finished without being asked questions: \"/minor 42\", \"take issue 17 to a PR\", \"close out the open issues yourself\", \"complete these without me\", \"just make the call and ship it\", or any batch cleanup of a backlog they have deprioritised. Also use when the user says a task is minor, low-stakes, or revisitable, which is their signal that your judgment is enough and they do not want to be consulted.",
+      "skills": [
+        "./skills/minor"
+      ],
+      "strict": false
+    },
+    {
       "name": "ml-cv-specialist",
       "source": "./",
       "description": "Deep expertise in ML/CV model selection, training pipelines, and inference architecture. Use when designing machine learning systems, computer vision pipelines, or AI-powered features.",
