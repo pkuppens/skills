@@ -15,7 +15,8 @@ The approval is a formal `APPROVE` review. The one exception is a PR the
 user's own login opened, where GitHub forbids `APPROVE`: there, the user's
 positive comment review on the head commit counts (step 5). A chat message
 does not count, nor does anything the agent posted, nor an approval given
-before the last push.
+before the last push, unless that push left the PR's own diff unchanged (a
+trivial rebase, see step 5).
 The commands that check the gate are in
 [references/merge-gate.md](references/merge-gate.md).
 
@@ -26,7 +27,13 @@ adds this skill), went through steps 0–4 and stopped at step 5: the agent's
 identity) is still open. That stop is the self-approval rule working as
 intended. The user then squash-merged it by hand without a comment review
 (`6365ee4`), and the agent ran steps 7–8 afterwards: `main` CI green, the
-issue closed, branches removed. Steps 5–6 have still not run end to end.
+issue closed, branches removed. The second run, on #65 and #71, stopped at
+step 5 the same way, and caught that the user's "OK" comment reviews sat on
+SHAs the user had since rebased in the GitHub UI. The user re-approved and
+merged by hand (`fa03d48`, `3670df8`). That rebase changed nothing in either
+diff, which is what the carry-over rule
+([#76](https://github.com/pkuppens/skills/issues/76)) now covers. The carry-over
+itself and steps 5–6 (the agent running the merge) have not run end to end.
 
 If invoked with a PR number or URL, use it. Otherwise use the PR for the
 current branch (`gh pr view --json number`), and create one in step 0 if none
@@ -150,6 +157,14 @@ user (`gh api user --jq .login`), GitHub rejects the approval. Then:
    the approval. The check is in
    [references/merge-gate.md](references/merge-gate.md#2-self-authored-prs-a-positive-comment-review).
 
+**An approval on an older head carries over** when the stable patch-id of the
+PR's own diff is the same at the approved SHA and at the head (a rebase, or the
+base merged into the branch); the check is in
+[references/merge-gate.md](references/merge-gate.md#carrying-an-approval-over-a-trivial-rebase).
+Only the approval carries: CI on the new head is still required. Say in the
+report that it was carried, with both SHAs. A different patch-id, an
+unfetchable old SHA, or a `CHANGES_REQUESTED` review means re-approve.
+
 Because the agent and the user share one login, the agent can tell them apart
 only by what it posted: every comment or review the agent posts ends with the
 marker `<!-- finish-work:agent -->`, and a review with that marker never
@@ -170,7 +185,8 @@ Merge only when all of these hold on **one** head SHA (check them with
 - no unresolved review threads;
 - the branch is up to date with the base (`mergeStateStatus` is not `BEHIND`).
 
-Any push after the approval means another round of steps 3 and 5. Merge with
+Any push after the approval means another round of steps 3 and 5, unless the
+approval carries over (step 5). Merge with
 the repo's allowed method, preferring rebase-merge, then squash:
 
 ```bash
