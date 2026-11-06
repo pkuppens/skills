@@ -63,6 +63,32 @@ Tool errors by class: nonzero exit (43), test/lint failure (31), file not found 
 
 Restate the branch (×3) · don't fix with retries · write a prototype first · the PR still has leftovers, commit and push · is this setup option verified? · could a lint step have caught this earlier? · a factual correction to a claim the agent made about the user.
 
+### Refresh 2026-11-04 (same script, 90 sessions)
+
+Re-run of `mine_sessions.py` on the same machine, 3 weeks after the first pass. Counts only; no raw text.
+
+| Signal | First run | Refresh | Reading |
+|---|---|---|---|
+| Sessions | 58 | 90 | +32; includes 12 projects with prompts |
+| Human prompts | 112 (about 145 after tag fix) | 208 | Roughly +60 since the fix |
+| Tool calls | 3,213 | 4,168 | |
+| Tool errors | 121 (3.8%) | 152 (3.6%) | Rate flat: still not the main source of rework |
+| Bash + PowerShell share of errors | 99 of 121 | 125 of 152 | Shell remains the error source (Bash 113, PowerShell 12) |
+| Keyword corrections | 4 | 7 | Still an undercount, see F7 |
+| Interrupts / compactions | 3 / n.a. | 2 / 2 | Compaction is rare; not a priority |
+| Intent-prefix prompts | 1 | 1 | `Question:` has not caught on; no labelled data yet |
+| Repeated failing command heads | n.a. | 0 | No retry loops found |
+
+New error classes in the refresh:
+
+- **`edit-not-read-first` (8)**: Edit attempted before Read. Mechanical, harmless self-correcting retry, but a cheap line in agent guidance if it stays above ~5 per 100 sessions.
+- **`timeout` (7) and `auth` (4)**: not seen in the first run. Auth failures cluster around `gh`; worth a preflight `gh auth status` in `finish-work` (candidate, needs a second moment of evidence).
+- **`permission-denied` rose 10 → 17** and **`blocked-by-harness` 4 → 7**: the prompts and blocks the user hits most often are still the same family as F1 (self-approval) and sleep-polling.
+
+Skill usage (invocations plus slash commands): `branch-cleanup` 7+25 and `dependabot` 2+16 still dominate; `minor` is new at 2+8. This strengthens F4 (finishing work is one repeated procedure). Per-project: `skills` (53 prompts, 786 calls) and `on-prem-rag` (33 prompts, 814 calls, 30 errors, the highest error count) are where the friction is.
+
+Caveats: single machine; the keyword corrections number is a floor; per-project counts include subagent files. Not yet done: hand-reading the ~60 new prompts for corrections (that is the next R1 step, and the only one that needs an LLM or human judgement).
+
 ### Intent prefixes (proposal)
 
 The same words can be a question or a task. With "Question: can you add authentication?" the user wants an answer, for example "no: requests are anonymous, and this needs a new layer with accounts and logins". With "Task: can you add authentication?" the user wants the work done. Proposal (F7):
