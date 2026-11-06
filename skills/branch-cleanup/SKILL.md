@@ -17,6 +17,8 @@ final state. Never forces past anything it can't verify.
 a dry-run on an already clean `pkuppens/pkuppens` planned nothing, and an
 `--execute` on `pkuppens/skills` deleted a squash-merged branch whose remote
 still existed, kept two unmerged branches, and ended on a fresh main.
+Remote ownership (`--remote-scope`) and `branch-cleanup.protect` are covered
+by the fixture suite only; no real run has exercised them yet.
 
 For GitHub Actions workflow-run cleanup, use the separate `clean-ci-runs`
 skill — this skill only touches branches.
@@ -52,19 +54,37 @@ skill — this skill only touches branches.
    A merged local branch is still kept if it is the current branch with
    uncommitted/unstaged/untracked changes, or checked out in another
    worktree.
+
+   An `origin` branch must also be **yours** (default `--remote-scope=mine`):
+   a PR you authored (your `gh` login) was merged into main from it at its
+   current tip, or every commit it has beyond main is authored by your
+   `user.email`, a `branch-cleanup.email`, or your GitHub noreply address.
+   A branch with no commits of its own only qualifies via your PR — so a
+   colleague's freshly pushed branch is kept, and without `gh` so are your
+   own merge-commit-merged branches. The email rule can't tell a colleague's
+   branch that holds only your commits from yours; the head of any open PR
+   is therefore never deleted, in either scope. Other merged remote branches
+   are kept and listed with the reason.
 4. **Switch** to the fresh main — skipped when the working tree has changes,
    or with `--stay` (unless the current branch is being deleted).
 5. **Delete** verified local branches (`git branch -D`: plain `-d` can't see
    squash merges, so step 3 does the verification and the old tip is logged
-   for restore), then verified `origin` branches (`git push --delete`, with
-   a `gh api` delete-ref fallback).
+   for restore), then verified `origin` branches that are yours
+   (`git push --delete`, with a `gh api` delete-ref fallback).
 6. **Report** — actions taken with restore commands, kept branches,
    unresolved items, and final state (current branch, `git branch -vv`,
    origin branches, stash count). Stash entries made on a deleted branch are
    noted — they survive deletion.
 
 Protected branches, never touched: `main`, `master`, `develop`,
-`development`, `staging`, `production`, `release/*`, `hotfix/*`.
+`development`, `staging`, `production`, `release/*`, `hotfix/*`, plus any
+glob you add per repo or globally:
+
+```bash
+git config --add branch-cleanup.protect 'env/*'          # this repo
+git config --global --add branch-cleanup.protect 'next'  # every repo
+git config --global --add branch-cleanup.email old@example.com  # another of your author emails
+```
 
 ## Usage
 
@@ -79,6 +99,7 @@ S=~/.claude/skills/branch-cleanup/cleanup-branches.sh
 bash "$S"              # dry-run (default) - plan only
 bash "$S" --execute    # perform the cleanup
 bash "$S" --local-only # skip remote branch deletion
+bash "$S" --remote-scope=all  # also delete merged remote branches of others
 bash "$S" --stay       # don't switch to main at the end
 bash "$S" --help
 ```
@@ -105,16 +126,17 @@ To verify the script end-to-end without touching a real repo, run
 [tests/test-cleanup.sh](tests/test-cleanup.sh): it builds a throwaway repo
 with a local bare `origin` and a fake `gh` (merged, squash-merged,
 PR-merged after main edited the same files, rewritten-then-merged, unmerged,
-behind and
-dirty branches), runs dry-run and `--execute`, and prints PASS/FAIL per
-check.
+behind, dirty, a colleague's remote branches, and a configured protected
+branch), runs dry-run, `--execute` and `--remote-scope=all`, and prints
+PASS/FAIL per check.
 
 ## When invoked as an agent skill
 
 1. Confirm the working directory is the intended repo (`git remote -v`).
 2. Run the script without `--execute` and show the user the plan.
 3. Only run with `--execute` after the user confirms, or if the invoking
-   context already authorized destructive branch cleanup.
+   context already authorized destructive branch cleanup. Never add
+   `--remote-scope=all` unless the user asked for it explicitly.
 4. Relay the report: actions (with restore commands), kept branches, and the
    "Unresolved" section verbatim — don't silently drop items or work around
    them (no `git push --force`, no admin API calls beyond the script's `gh
@@ -125,10 +147,11 @@ check.
 - Content is verified against `origin/main` (or `origin/master`) when that
   remote-tracking ref exists, else the local main branch.
 - A branch with no commits beyond main (e.g. just created for new work) is
-  `merged` by definition and will be deleted — nothing is lost, but commit
-  or push first if you want to keep the name.
-- A remote branch is deleted on the same content rule, so a squash-merged
-  PR branch GitHub didn't auto-delete is cleaned up too.
+  `merged` by definition. Locally it will be deleted — nothing is lost, but
+  commit or push first if you want to keep the name. On `origin` the
+  ownership rule in step 3 applies.
+- Only pass `--remote-scope=all` when you are responsible for every branch
+  in the repo.
 - Don't improvise the classic one-liners in place of the script.
   `git branch --merged main` misses squash and rebase merges, because those
   rewrite commits. A `[gone]` upstream (`git branch -vv | grep ': gone]'`)
