@@ -30,7 +30,31 @@ gh api repos/{owner}/{repo}/pulls/<pr>/reviews --paginate \
 Pass when at least one reviewer's latest state is `APPROVED` with
 `commit_id == $SHA`, and no reviewer's latest state is `CHANGES_REQUESTED`.
 An approval with another `commit_id` is stale: approve again after checking
-the new commits.
+the new commits, unless it carries over (next section).
+
+### Carrying an approval over a trivial rebase
+
+Before calling an approval stale, check whether the PR's own change is
+unchanged. A rebase onto a newer base, or a merge of the base into the branch,
+moves the head SHA but not what was reviewed. Compare the stable patch-id of
+the PR's own diff at the approved SHA and at the current head:
+
+```bash
+OLD=<commit_id of the approval>
+git fetch origin "$OLD" <base>   # fails if GitHub no longer serves it: stale
+pid() { git diff "$(git merge-base origin/<base> "$1")" "$1" | git patch-id --stable | cut -d' ' -f1; }
+[ "$(pid "$OLD")" = "$(pid "$SHA")" ] && echo "carry over" || echo "stale"
+```
+
+Equal ids mean the same hunks, ignoring line numbers and blob hashes, so the
+approval carries over to `$SHA`. Different ids, or an `$OLD` that cannot be
+fetched, mean stale: re-approve. Conflict resolutions that changed content and
+any new commit change the id, so they are never carried. A `CHANGES_REQUESTED`
+review is never carried over. The carry-over covers only the approval: CI
+(section 3) and threads and freshness (section 4) are still checked on `$SHA`,
+which is what catches a base change that interacts with the PR. Report both
+SHAs and the patch-id. `git range-diff "$OLD"...$SHA` is the human-readable
+view when the ids differ and you want to see why.
 
 ## 2. Self-authored PRs: a positive comment review
 
