@@ -93,6 +93,7 @@ Worked example with stored output: [`workshops/legacy-refactor/`](../workshops/l
 | antipattern-detector | [antipattern-detector/SKILL.md](antipattern-detector/SKILL.md) | Detect structural anti-patterns in proposals and architectures |
 | assumption-challenger | [assumption-challenger/SKILL.md](assumption-challenger/SKILL.md) | Surface implicit assumptions and wishful thinking |
 | brutally-honest-code-review | [brutally-honest-code-review/SKILL.md](brutally-honest-code-review/SKILL.md) | Evidence-first code review with certainty levels |
+| challenge | [challenge/SKILL.md](challenge/SKILL.md) | Independent second look at an idea, plan or document for common pitfalls; a clean verdict is allowed |
 | validation-report-generator | [validation-report-generator/SKILL.md](validation-report-generator/SKILL.md) | Produce structured 8-section validation reports with verdicts |
 | ml-cv-specialist | [ml-cv-specialist/SKILL.md](ml-cv-specialist/SKILL.md) | ML/CV expertise patterns and model selection guidance |
 
