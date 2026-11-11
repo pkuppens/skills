@@ -78,63 +78,98 @@ When the verdict is *Holds up*, keep **Findings** to genuine minor points (or "n
 
 ## Examples
 
-Two real runs, 2026-11-11, on decisions made in this repository. Each is also the evidence that the skill runs and gives a usable result.
+Two actual runs, shown as input and output. They illustrate the format and show the skill giving a usable result.
 
-### Run 1: a rule with a flaw
+### Run 1: a personal decision
 
-**Input:** "Rule 6 in `skills/CLAUDE.md`: every skill carries a `**Status:**` line saying whether a real run exercised it, with a link to the evidence. Is this a good rule?"
+**Input:** `/challenge I intend to ask for a raise and ask for a fixed round number of $5,000 a year.`
 
 ```markdown
-## Challenge: Rule 6, Status line in every skill
+## Challenge: Asking for a $5,000 raise
 
 **Verdict:** Holds up with changes
-**In one line:** Requiring evidence is right; storing it in the instructions the agent loads is the flaw.
+**In one line:** Asking is right; anchoring on a round number you picked without evidence is the weak part.
 
 ### What I understood
-Skills must say whether a real run proved them, so nobody trusts an untested skill. The statement lives in each SKILL.md.
+You want a pay increase and plan to name a flat $5,000 per year.
 
 ### Findings
-1. **Evidence sits in the instruction text** — *established*
-   - Where: `**Status:**` lines in `minor` and `finish-work` ("add a link when a run is recorded").
-   - Problem: the agent loads that text on every use. A line like "add a link when a run is recorded" is repo bookkeeping, not instruction, and goes stale unnoticed.
-   - Fix: keep the claim out of the instructions. Put evidence in an Examples section or in the originating issue.
-2. **"Link that evidence" cannot be checked by CI** — *likely*
-   - Where: the rule wording.
-   - Problem: the validator checks structure, not that a link exists or is true.
-   - Fix: accept it as a review item, or drop the line and let Examples be the proof.
+1. **The number has no basis yet** - *established*
+   - Where: "a fixed round number of $5,000".
+   - Problem: a round figure invites a counter at half, and it is not tied to market rate, your results or your current pay. $5,000 is 2% of a $250k salary but 10% of $50k.
+   - Fix: look up the market range for your role and location, list what you delivered since the last review, then ask for a percentage or a specific figure you can justify.
+2. **No fallback if the answer is no** - *likely*
+   - Where: the plan states only the ask.
+   - Problem: a flat refusal ends the talk with nothing gained.
+   - Fix: decide beforehand what else would be acceptable: a review date, a title change, training budget, extra leave.
+3. **Timing is unknown** - *unverified*
+   - Problem: budget cycles and a recent company setback change the odds. I cannot tell from what you gave me.
 
 ### Alternatives not considered
-- Evidence in the issue only: wins when the skill is stable and examples would bloat it.
-- Do nothing: wins only if every skill already had a recorded run; `minor` and `finish-work` say they have none.
+- Ask for a range with a justified midpoint: wins when you do not know their budget.
+- Wait for the review cycle: wins when raises are only decided then.
+
+### Risks
+| Risk | Likelihood | Impact | How you would notice |
+|------|-----------|--------|----------------------|
+| Counter at a lower figure | High | Medium | They answer with a smaller number |
+| Ask lands in a budget freeze | Medium | Low | They mention timing, not merit |
+
+### Improved version
+Ask for a figure backed by market data and your results, name the effective date, and have one non-salary fallback ready.
 
 ### What I checked and found fine
-The intent (never imply a run that did not happen) is sound and matches how `call-site-exhaustiveness` and `oracle-first-refactor` were validated.
+Asking at all is reasonable. A concrete number beats "more money".
+
+### Open questions
+Current pay, tenure, the last raise, and whether a review cycle is near.
 ```
 
-### Run 2: a decision that mostly holds
+### Run 2: a plan
 
-**Input:** "Issue #79 decision: drop `prompt-improver`; make the pressure-test prompt its own standalone skill named `challenge`, not part of `assumption-challenger`."
+**Input:** `/challenge Plan: build a paid developer tool alone in my evenings, no funding, launch in 3 months, grow by posting on social media.`
 
 ```markdown
-## Challenge: Standalone `challenge` skill, `prompt-improver` dropped
+## Challenge: Solo evening-built developer tool
 
-**Verdict:** Holds up with changes
-**In one line:** Both decisions are sound; the name risks a trigger collision with `assumption-challenger`.
+**Verdict:** Needs rework
+**In one line:** The goal is plausible; the schedule and the growth channel are not backed by anything.
 
 ### What I understood
-Skip a prompt rewriter because `skill-creation` and `improve-skill` already go further. Ship the pressure-test as its own skill so it triggers for any idea, not only CTO plans.
+You will build and launch a paid tool alone, in spare time, in three months, and find customers through posts.
 
 ### Findings
-1. **Name overlaps `assumption-challenger`** — *likely*
-   - Where: "challenge" versus "assumption-challenger".
-   - Problem: an agent may pick the wrong one for "challenge this plan".
-   - Fix: the description names the split: plans and ideas here, deep CTO assumption audits there. Test it on both phrasings.
+1. **Three months of evenings may not cover build plus launch** - *likely*
+   - Where: "launch in 3 months".
+   - Problem: at roughly 10 hours a week that is about 120 hours, and payments, accounts, docs and support take a share before any feature work.
+   - Fix: cut to the one workflow customers pay for, and set a launch date for that slice only.
+2. **No evidence that anyone will pay** - *established*
+   - Where: nothing in the plan mentions a customer.
+   - Problem: the plan builds first and tests demand last, which is the costly order.
+   - Fix: talk to a handful of target users, or sell a waitlist or pre-order before writing the product.
+3. **Posting is not a growth channel yet** - *likely*
+   - Where: "grow by posting on social media".
+   - Problem: without an existing audience, posts reach few people, and nothing says how a post becomes a payment.
+   - Fix: name where your buyers already gather and what you would say to them.
 
 ### Alternatives not considered
-- Extend `assumption-challenger`: wins if one skill with one trigger matters more than keeping the CTO framing out of general use. Rejected in the issue for good reason: its description is tied to `strategic-cto-mentor`.
+- Start with a free or open-source version: wins when trust and reach matter more than early income.
+- Consulting or a template first: wins when you need revenue before the product exists.
+
+### Risks
+| Risk | Likelihood | Impact | How you would notice |
+|------|-----------|--------|----------------------|
+| Built, nobody pays | High | High | No pre-sales after the first outreach |
+| Evenings slip, burnout | Medium | High | Two missed milestones in a row |
+
+### Improved version
+Weeks 1-3: interview users and collect pre-orders. Weeks 4-12: build only what the paying users asked for.
 
 ### What I checked and found fine
-Dropping `prompt-improver` follows from the overlap table in the issue. A standalone skill avoids changing a skill other skills chain to.
+Keeping cost near zero and working alone are sensible for a first test.
+
+### Open questions
+Who the buyer is, whether you already have an audience, and what income you need by when.
 ```
 
 ## Related skills
