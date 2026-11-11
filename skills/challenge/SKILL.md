@@ -83,21 +83,21 @@ Two actual runs, shown as input and output. They illustrate the format and show 
 
 ### Run 1: a personal decision
 
-**Input:** `/challenge I intend to ask for a raise and ask for a fixed round number of $5,000 a year.`
+**Input:** `/challenge I intend to ask for a raise and ask for a fixed round number of €5,000 a year.`
 
 ```markdown
-## Challenge: Asking for a $5,000 raise
+## Challenge: Asking for a €5,000 raise
 
 **Verdict:** Holds up with changes
 **In one line:** Asking is right; anchoring on a round number you picked without evidence is the weak part.
 
 ### What I understood
-You want a pay increase and plan to name a flat $5,000 per year.
+You want a pay increase and plan to name a flat €5,000 per year.
 
 ### Findings
 1. **The number has no basis yet** - *established*
-   - Where: "a fixed round number of $5,000".
-   - Problem: a round figure invites a counter at half, and it is not tied to market rate, your results or your current pay. $5,000 is 2% of a $250k salary but 10% of $50k.
+   - Where: "a fixed round number of €5,000".
+   - Problem: a round figure invites a counter at half, and it is not tied to market rate, your results or your current pay. €5,000 is 2% of a €250k salary but 10% of €50k.
    - Fix: look up the market range for your role and location, list what you delivered since the last review, then ask for a percentage or a specific figure you can justify.
 2. **No fallback if the answer is no** - *likely*
    - Where: the plan states only the ask.
