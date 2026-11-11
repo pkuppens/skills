@@ -72,7 +72,7 @@
     {
       "name": "challenge",
       "source": "./",
-      "description": "Give an idea, plan, document or decision an independent second look for common pitfalls: weak logic, hidden assumptions, missing alternatives, risks. Reports plainly when nothing significant is wrong. Use for challenge this, pressure-test this, or what am I missing.",
+      "description": "Give an idea, plan, document or decision an independent second look for common pitfalls: weak logic, hidden assumptions, alternatives to consider, risks. Reports plainly when nothing significant is wrong. Use for challenge this, pressure-test this, or what am I missing.",
       "skills": [
         "./skills/challenge"
       ],

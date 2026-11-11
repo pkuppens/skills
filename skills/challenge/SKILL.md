@@ -1,6 +1,6 @@
 ---
 name: challenge
-description: "Give an idea, plan, document or decision an independent second look for common pitfalls before commitment: weak logic, hidden assumptions, missing alternatives, risks. Does not agree by default and does not disagree by default; reports plainly when nothing significant is wrong. Use when the user says challenge this, pressure-test this, what am I missing, poke holes in this, is this a good idea, or asks for honest pushback on a plan or decision. Not for code or diffs (use brutally-honest-code-review) and not for CTO roadmaps (use assumption-challenger)."
+description: "Give an idea, plan, document or decision an independent second look for common pitfalls before commitment: weak logic, hidden assumptions, alternatives to consider, risks. Does not agree by default and does not disagree by default; reports plainly when nothing significant is wrong. Use when the user says challenge this, pressure-test this, what am I missing, poke holes in this, is this a good idea, or asks for honest pushback on a plan or decision. Not for code or diffs (use brutally-honest-code-review) and not for CTO roadmaps (use assumption-challenger)."
 ---
 
 # Challenge
@@ -35,7 +35,7 @@ An independent second look at something the user is about to commit to: an idea,
 1. **Restate** the idea and its goal in two or three sentences, so any misunderstanding shows up first. Ask one question if the goal is unclear; otherwise proceed.
 2. **Check the logic.** Look for claims that do not follow from their reasons, circular reasoning, a goal and a means that do not match, and conclusions that rest on a single example.
 3. **Surface assumptions.** List what is treated as fact without support. For a plan with timelines, resources or scale numbers, offer `assumption-challenger` for the deeper pass instead of repeating its categories here.
-4. **Find alternatives.** Name at least one credible alternative the user has not mentioned, including "do nothing" or "do less", and say when it would win.
+4. **Find alternatives.** Offer at least one credible alternative the user has not mentioned, including "do nothing" or "do less", and say when it would win.
 5. **Identify risks.** What fails, how would you notice, and what does it cost? Rank by impact times likelihood.
 6. **Improve it.** Propose a concrete better version, or the smallest change that removes the biggest risk.
 7. **Check for a better direction.** Say explicitly whether a different approach is better overall, or that the current direction is sound.
@@ -57,7 +57,8 @@ An independent second look at something the user is about to commit to: an idea,
    - Problem: [why it matters]
    - Fix: [concrete change]
 
-### Alternatives not considered
+### Alternatives to consider
+Other routes to the same goal, each with the condition under which it wins.
 - [Alternative]: wins when [condition]
 
 ### Risks
@@ -105,7 +106,8 @@ You want a pay increase and plan to name a flat $5,000 per year.
 3. **Timing is unknown** - *unverified*
    - Problem: budget cycles and a recent company setback change the odds. I cannot tell from what you gave me.
 
-### Alternatives not considered
+### Alternatives to consider
+Other routes to the same goal, each with the condition under which it wins.
 - Ask for a range with a justified midpoint: wins when you do not know their budget.
 - Wait for the review cycle: wins when raises are only decided then.
 
@@ -152,7 +154,8 @@ You will build and launch a paid tool alone, in spare time, in three months, and
    - Problem: without an existing audience, posts reach few people, and nothing says how a post becomes a payment.
    - Fix: name where your buyers already gather and what you would say to them.
 
-### Alternatives not considered
+### Alternatives to consider
+Other routes to the same goal, each with the condition under which it wins.
 - Start with a free or open-source version: wins when trust and reach matter more than early income.
 - Consulting or a template first: wins when you need revenue before the product exists.
 
