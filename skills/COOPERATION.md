@@ -31,6 +31,10 @@ Then, when the plan is accepted: [roadmap-generator](roadmap-generator/SKILL.md)
 
 [brutally-honest-code-review](brutally-honest-code-review/SKILL.md) is standalone. On design-level findings it can pull in [antipattern-detector](antipattern-detector/SKILL.md) and [assumption-challenger](assumption-challenger/SKILL.md), and summarise with [validation-report-generator](validation-report-generator/SKILL.md).
 
+## Second look on a plan or idea
+
+[challenge](challenge/SKILL.md) is standalone: an independent pitfall check on any idea, plan, document or decision, with a clean verdict allowed. It hands CTO-level plans to [assumption-challenger](assumption-challenger/SKILL.md) for a deeper assumption pass and points code to [brutally-honest-code-review](brutally-honest-code-review/SKILL.md).
+
 ## Terminal routing
 
 Any skill that emits shell commands should follow [terminal](terminal/SKILL.md), which detects the shell (project docs → runtime probe → ask) and routes to one leaf: [cmd](terminal/cmd/SKILL.md), [powershell](terminal/powershell/SKILL.md), [bash](terminal/bash/SKILL.md) or [zsh](terminal/zsh/SKILL.md). Load only the leaf for the detected shell.

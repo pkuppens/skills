@@ -20,7 +20,7 @@ This directory holds the portable Agent Skills for Cursor, Claude, and Codex. Co
 3. Keep `SKILL.md` under ~300 lines; move detail to `reference.md` / `references/`, or split into smaller skills.
 4. Register every new skill in [SKILL_TREE.md](SKILL_TREE.md) and as its own plugin in `.claude-plugin/marketplace.json`.
 5. **Define terms once, in [CONTEXT.md](../CONTEXT.md), and link them.** If a skill uses a term that has a CONTEXT.md entry, link that entry at the term's **first** use in the skill — `[test oracle](../../CONTEXT.md#language-legacy-refactoring)`. Do not restate the definition: two copies drift, and an agent that reads only one of them gets the stale one. If a skill needs a term that CONTEXT.md does not define yet, add the entry there first. Terms that read as ordinary English but carry a precise meaning (`oracle`, `sound`, `recall`, `call site`) need this most, because an agent will otherwise supply the everyday meaning.
-6. State what proves the skill works. Give each skill a `**Status:**` line saying whether a real run has exercised it, and link that evidence. A skill with no evidence yet says so — never imply a run that did not happen.
+6. State what proves the skill works, outside the instructions. Evidence of a real run goes in the skill's `## Examples` section (1-2 actual runs, input and output) or in its originating issue, not in a `**Status:**` line that the agent loads on every use. A skill with no evidence yet says nothing: never imply a run that did not happen. Existing `**Status:**` lines are migrated when their skill is next edited.
 
 ## Validation
 

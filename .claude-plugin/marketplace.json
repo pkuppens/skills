@@ -70,6 +70,15 @@
       "strict": false
     },
     {
+      "name": "challenge",
+      "source": "./",
+      "description": "Give an idea, plan, document or decision an independent second look for common pitfalls: weak logic, hidden assumptions, alternatives to consider, risks. Reports plainly when nothing significant is wrong. Use for challenge this, pressure-test this, or what am I missing.",
+      "skills": [
+        "./skills/challenge"
+      ],
+      "strict": false
+    },
+    {
       "name": "clarification-protocol",
       "source": "./",
       "description": "Generate targeted clarifying questions (2-3 max) that challenge vague requirements and extract missing context. Use after request-analyzer identifies clarification needs, before routing to specialist agents. Helps cto-orchestrator avoid delegating unclear requirements.",
