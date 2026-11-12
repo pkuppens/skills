@@ -112,8 +112,9 @@ bash "$HOME/.claude/skills/branch-cleanup/cleanup-branches.sh"            # dry-
 bash "$HOME/.claude/skills/branch-cleanup/cleanup-branches.sh" --execute
 ```
 
-**Always dry-run first** and read the plan before passing `--execute`. The
-dry-run still performs the step-1 fetch/prune (it only updates
+**Dry-run first, then execute.** Read the plan, then pass `--execute`
+without asking: step 3 has already proved each deletion by content, and the
+report logs a restore command for every deleted branch. The dry-run still performs the step-1 fetch/prune (it only updates
 remote-tracking refs) so the plan reflects the remote's current state.
 
 Requirements: `git` (2.38+ for the `merge-tree` squash check; older versions
@@ -133,10 +134,13 @@ PASS/FAIL per check.
 ## When invoked as an agent skill
 
 1. Confirm the working directory is the intended repo (`git remote -v`).
-2. Run the script without `--execute` and show the user the plan.
-3. Only run with `--execute` after the user confirms, or if the invoking
-   context already authorized destructive branch cleanup. Never add
-   `--remote-scope=all` unless the user asked for it explicitly.
+2. Run the script without `--execute` and read the plan.
+3. Then run it with `--execute`. Do not ask first: invoking this skill, or
+   being called from `finish-work` or `improve-skill`, authorizes the cleanup,
+   including a squash-merged local branch whose remote is already gone. Stop
+   and ask only if the plan deletes something unexpected (a branch the user
+   named as in progress). Never add `--remote-scope=all` unless the user asked
+   for it explicitly.
 4. Relay the report: actions (with restore commands), kept branches, and the
    "Unresolved" section verbatim — don't silently drop items or work around
    them (no `git push --force`, no admin API calls beyond the script's `gh
