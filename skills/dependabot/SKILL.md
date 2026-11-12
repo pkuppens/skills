@@ -1,8 +1,8 @@
 ---
 name: dependabot
-description: Run the daily Dependabot check — find the open Dependabot PRs assigned to you (by bot author, dependencies label, or dependabot/** branch), classify each version bump as patch/minor/major from the diff rather than the title, require green CI and a clean no-conflict rebase, post a formal GitHub review (not a plain comment) approving only same-major increases, rebase-merge those without waiting for a go-ahead unless something blocks, then babysit the base branch run afterwards and revert the responsible merge through a PR if it goes red. Use when the user wants their daily or routine dependency check, or wants to review, triage, clear out, or work through Dependabot PRs, dependency-update PRs, or version-bump PRs.
-compatibility: Requires the gh CLI authenticated with read, pull-request-review, and merge access to the target repository, plus Python 3.9+ for scripts/classify_bump.py.
-allowed-tools: Bash(gh pr list*) Bash(gh pr view*) Bash(gh pr diff*) Bash(gh pr checks*) Bash(gh run list*) Bash(gh run view*) Bash(gh run watch*) Bash(gh repo view*) Bash(gh api*)
+description: Run the daily Dependabot check — find the open Dependabot PRs assigned to you (by bot author, dependencies label, or dependabot/** branch), classify each version bump as patch/minor/major from the diff rather than the title, require green CI and a clean no-conflict rebase, run local review checks (lockfile, package usage, what CI actually ran, the affected tests), post a formal GitHub review (not a plain comment) approving only same-major increases, rebase-merge those without waiting for a go-ahead unless something blocks, then babysit the base branch run afterwards and revert the responsible merge through a PR if it goes red. Use when the user wants their daily or routine dependency check, or wants to review, triage, clear out, or work through Dependabot PRs, dependency-update PRs, or version-bump PRs.
+compatibility: Requires the gh CLI authenticated with read, pull-request-review, and merge access to the target repository, plus Python 3.9+ for scripts/classify_bump.py. The Step 5a review checks also need git, a local clone of the target repository, and that ecosystem's toolchain (for example uv or npm); without them, the local checks are recorded as not run.
+allowed-tools: Bash(gh pr list*) Bash(gh pr view*) Bash(gh pr diff*) Bash(gh pr checks*) Bash(gh run list*) Bash(gh run view*) Bash(gh run watch*) Bash(gh repo view*) Bash(gh api*) Bash(git log*) Bash(git diff*) Bash(git ls-remote*) Bash(git patch-id*) Bash(uv tree*)
 ---
 
 # Dependabot daily check
@@ -10,7 +10,8 @@ allowed-tools: Bash(gh pr list*) Bash(gh pr view*) Bash(gh pr diff*) Bash(gh pr 
 Reviews the Dependabot PRs assigned to you and posts a **formal GitHub
 review** for each — `gh pr review`, which counts as a review contribution —
 never a bare `gh pr comment`. PRs that clear all three gates (version, CI,
-rebase) are rebase-merged, and the resulting base-branch run is watched to a
+rebase) and the review checks (Step 5a) are rebase-merged, and the resulting
+base-branch run is watched to a
 conclusion. With no blocker (Step 7) it runs end to end without pausing for
 a go-ahead. This skill only ever identifies, reviews, merges, and — when a
 merge turns the base branch red — reverts that merge through a PR (Step 9):
@@ -21,6 +22,10 @@ and report the finding instead (Step 5).
 (merged, main green). Hold path with red CI that predated the PRs: babblr
 #341–#343. Revert path: rehearsed in a local clone, not yet run against a
 remote. Evidence: [pkuppens/skills#52](https://github.com/pkuppens/skills/pull/52).
+Review checks (Step 5a) are **experimental**. They were run by hand on one
+private `uv` lockfile-only patch PR, which they approved with two notes.
+That run is described in [#87](https://github.com/pkuppens/skills/issues/87).
+The skill has not yet run them end to end.
 
 If invoked with a repo (`owner/name`) or a PR number, use it as the target.
 Otherwise default to the current directory's repo (`gh repo view --json
@@ -181,20 +186,36 @@ Never edit files to fix it — only find out why, for the comment:
   changes daily, so an old green run proves nothing about today. When the
   failing job is one of those, or the base run is older than a day, rerun
   that base workflow once (`gh run rerun <base-run-id>`) and compare against
-  the fresh result.
+  the fresh result. When the base branch has moved since that run, dispatch
+  it on the current base SHA instead (R7 in
+  [references/review-checks.md](references/review-checks.md)).
 - If it's not present on the base branch, skim the failing job's log tail
   (`gh run view <run-id> --log-failed`) for a one-line cause.
 - A failure that disappears on a single rerun (`gh run rerun <run-id>
   --failed`) is transient/flaky — say so; don't rerun repeatedly chasing
   green.
 
+### 5a. Run the review checks (always, for PRs still eligible)
+
+Green CI says the checks passed, not what they tested. For every PR that is
+still AUTO, green and rebase-clean, run R1–R6 from
+[references/review-checks.md](references/review-checks.md). Run them in a
+throwaway worktree, with no tokens in the environment, because R3 and R6
+execute the new dependency's code. R7, the base-branch evidence, runs once
+in Step 7.
+
+**Done when:** each eligible PR has a hold, note, or pass result for R1–R6,
+with the commands that were run.
+
 ### 6. Decide
 
-All three gates must pass to merge. Any one failing holds the PR:
+All three gates must pass, and no Step 5a check may hold. Any failure
+holds the PR:
 
 | Gate verdict | CI | Rebase | Verdict |
 |---|---|---|---|
-| AUTO (patch, minor, or Actions `tag`) | green | clean (`CLEAN`/`BEHIND`) | **Approve + rebase-merge** (Template A) |
+| AUTO (patch, minor, or Actions `tag`) | green | clean (`CLEAN`/`BEHIND`) | **Approve + rebase-merge** (Template A), if no Step 5a check holds |
+| AUTO, but a Step 5a check holds | green | clean (`CLEAN`/`BEHIND`) | **Comment**, hold (Template B, review-check variant), naming the check and the finding |
 | AUTO | green | `DIRTY`/`UNKNOWN` after re-poll | **Comment**, hold (Template D) |
 | HOLD — major | any | any | **Comment**, hold (Template B) — a semver major bump (or a single-level non-Action version) can break even with green CI |
 | HOLD — downgrade | any | any | **Comment**, hold (Template B) — a version going backwards is never an expected Dependabot bump |
@@ -213,7 +234,7 @@ Templates: [references/review-templates.md](references/review-templates.md).
 
 Before any `gh pr review` or `gh pr merge` call, print a table of every PR in
 scope with its package(s), severity, gate verdict, CI status, rebase state,
-and proposed action — stating explicitly which ones will be rebase-merged.
+review-check result (Step 5a), and proposed action — stating explicitly which ones will be rebase-merged.
 
 Then record the base branch's current state, the baseline Step 9 compares
 against:
@@ -225,14 +246,17 @@ gh run list --repo <repo> --branch <base> --limit 5 \
 ```
 
 **The default is to go ahead**: post the reviews and merge without waiting
-for the user. The gates in Steps 2–6 are what make that safe, and Step 9
+for the user. The gates and review checks in Steps 2–6 are what make that safe, and Step 9
 catches the rest. Two things change that:
 
 - **Base branch red → no merges.** If the base branch's latest completed
   run of a CI workflow is `failure` (including a fresh rerun from Step 5),
   skip every merge and ask before merging anything: on a red base a
   post-merge failure can't be attributed, and the revert in Step 9 depends
-  on that attribution. Reviews and hold comments still post.
+  on that attribution. Reviews and hold comments still post. A green run on
+  an *older* base SHA is not evidence. Run R7 from
+  [references/review-checks.md](references/review-checks.md): dispatch the
+  workflow on the current base SHA and wait for the result.
 - **The user asked to confirm first**, for this run or in standing
   instructions → pause before posting anything.
 
@@ -250,12 +274,19 @@ gh pr review <number> --repo <repo> --comment  --body "..."  # Template B/C/D
 Never `--request-changes` — the point of Templates B/C/D is to flag for a
 human decision, not block the PR.
 
+Templates A and B include the evidence block, and line comments on the lock
+entries are optional. See
+[references/review-templates.md](references/review-templates.md).
+
 For every PR approved under Template A, follow the approval with a rebase
 merge:
 
 ```bash
-gh pr merge <number> --repo <repo> --rebase --delete-branch
+gh pr merge <number> --repo <repo> --rebase --delete-branch --match-head-commit <reviewed-head-sha>
 ```
+
+`--match-head-commit` makes sure the merged commit is the one you reviewed.
+If Dependabot pushed in the meantime, the merge fails: review again.
 
 Rebase, not squash: these PRs are already one logical commit from a bot, and
 a rebase keeps Dependabot's own commit (with its release-notes trailer and
@@ -304,7 +335,7 @@ commands included, is in
 ### 10. Report
 
 Summarize: how many approved and merged, how many approved but left unmerged
-(and why), how many held (and which gate held them), how many needed CI
+(and why), how many held (and which gate or review check held them), how many needed CI
 investigation (and the finding), the post-merge base-branch status, and any
 revert PR with its state. Link each PR.
 
