@@ -59,7 +59,10 @@ Address every finding or reply why not. Re-run Step 3 after changes.
 
 Commit as `#<issue>: type: description`. The PR body holds: the before/after summary, the failing-then-passing evidence, validator output, the fresh-agent findings with responses, and the manual verification steps (e.g. the Windows link check). Merge only via PR.
 
-**Done when:** the PR is merged and the issue's acceptance criteria are ticked.
+Then run `branch-cleanup` with `--execute` (no confirmation) so the squash-merged
+local branch does not linger.
+
+**Done when:** the PR is merged, the issue's acceptance criteria are ticked and the local branch is gone.
 
 ### 6. Refresh the personal copy (Windows)
 

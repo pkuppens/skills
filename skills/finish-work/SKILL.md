@@ -220,6 +220,9 @@ also applies here.
 ### 8. Cleanup
 
 - [branch-cleanup](../branch-cleanup/SKILL.md) for the local and remote branch.
+  Run it with `--execute` straight after the merge, without asking. `gh pr merge
+  --delete-branch` can leave the local branch behind (a worktree holds it, or a
+  rebase merge made it look unmerged); this step removes it.
 - Confirm the linked issue closed (`gh issue view <n> --json state`); if it did
   not, close it with a comment that points at the merge commit.
 - Link the follow-up issues from step 4 on the issue.

@@ -45,7 +45,7 @@ Any skill that emits shell commands should follow [terminal](terminal/SKILL.md),
 "finish this" → finish-work ─┬─ Dependabot PR? → dependabot (hand off, stop here)
                              ├─ step 4 review → brutally-honest-code-review
                              └─ step 8 cleanup → branch-cleanup
-PR merged → branch-cleanup (dry-run → confirm → --execute)
+PR merged → branch-cleanup (dry-run → --execute, no confirmation)
 Dependabot PRs open → dependabot → branch-cleanup
 ```
 
