@@ -65,17 +65,17 @@ Use Case Identified
 
 ```markdown
 ## API Costs (Example: OpenAI GPT-4)
-- Input: $0.03/1K tokens
-- Output: $0.06/1K tokens
+- Input: 0.03 USD/1K tokens
+- Output: 0.06 USD/1K tokens
 - Average request: 500 input + 200 output tokens
-- Cost per request: $0.027
-- 100K requests/month: $2,700
+- Cost per request: 0.027 USD
+- 100K requests/month: 2,700 USD
 
 ## Self-Hosted Costs (Example: Llama 70B)
-- GPU instance: $3/hour (A100 40GB)
+- GPU instance: 3 USD/hour (A100 40GB)
 - Throughput: ~50 requests/minute = 3K/hour
-- Cost per request: $0.001
-- 100K requests/month: $100 + $500 engineering time
+- Cost per request: 0.001 USD
+- 100K requests/month: 100 USD + 500 USD engineering time
 
 ## Break-even Analysis
 - < 50K requests: API likely cheaper

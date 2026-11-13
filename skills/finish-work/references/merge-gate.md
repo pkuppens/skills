@@ -84,6 +84,13 @@ that case, ask the user; never infer approval. A review on an older
 `commit_id` is stale, the same as a stale `APPROVE`. Quote the review body
 and its id in the report.
 
+**A pending review hides its comments.** While the user's review is pending,
+the REST `reviews` and `pulls/<pr>/comments` calls do not return its comments,
+and replying to a review comment fails with HTTP 422. Read the threads through
+GraphQL (`pullRequest.reviewThreads { nodes { isResolved comments(first:20)
+{ nodes { body author { login } } } } }`, as in step 4 below) and answer with a
+plain PR comment (`gh pr comment`) that quotes what it replies to.
+
 ## 3. Green CI on the head SHA
 
 ```bash

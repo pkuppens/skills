@@ -43,7 +43,7 @@ Every delegation prompt follows this format:
 [Relevant existing systems, constraints, decisions]
 
 ### Key Constraints
-- [Constraint 1: e.g., "Budget: < $10K/month infrastructure"]
+- [Constraint 1: e.g., "Budget: < 10K USD/month infrastructure"]
 - [Constraint 2: e.g., "Timeline: MVP in 8 weeks"]
 - [Constraint 3: e.g., "Team: 3 senior engineers, Python/React expertise"]
 
@@ -145,7 +145,7 @@ See the prompt-templates folder for pre-built templates:
 **Quality Criteria**: Measurable success
 - "Latency < 200ms at p95"
 - "Support 100K concurrent users"
-- "Cost < $5K/month at launch scale"
+- "Cost < 5K USD/month at launch scale"
 
 **Integration Points**: Connect the workflow
 - What happens after this agent finishes?
@@ -160,7 +160,7 @@ See the prompt-templates folder for pre-built templates:
 
 ### 2. The Vague Task
 **Bad**: "Design a good system"
-**Good**: "Design a notification system architecture that supports 100K users, uses our existing PostgreSQL database, and costs < $2K/month"
+**Good**: "Design a notification system architecture that supports 100K users, uses our existing PostgreSQL database, and costs < 2K USD/month"
 
 ### 3. The Missing Constraints
 **Bad**: Letting agent assume unlimited budget/time
@@ -187,7 +187,7 @@ Enable customers to receive real-time notifications for order status changes, re
 - Mobile app (React Native) and web app (React)
 
 ### Key Constraints
-- Budget: < $3K/month additional infrastructure
+- Budget: < 3K USD/month additional infrastructure
 - Timeline: MVP in 6 weeks, full rollout in 10 weeks
 - Team: 2 backend engineers, 1 mobile engineer
 - Must integrate with existing authentication system
@@ -234,7 +234,7 @@ Standard 7-section architecture document:
 ### Quality Criteria
 - p95 latency < 5 seconds from event to notification
 - 99.9% delivery success rate
-- Infrastructure cost < $3K/month at 200K users
+- Infrastructure cost < 3K USD/month at 200K users
 
 ### Integration Points
 - Will be validated by strategic-cto-mentor before implementation

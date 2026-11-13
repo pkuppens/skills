@@ -31,7 +31,7 @@ Provides systematic guidance for scaling systems at different growth stages, ide
 │  Single         Add caching,    Horizontal      Global,             │
 │  server         read replicas   scaling         multi-region        │
 │                                                                     │
-│  $100/mo        $1K/mo          $10K/mo         $100K+/mo           │
+│  100 USD/mo        1K USD/mo          10K USD/mo         100K+ USD/mo           │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -452,8 +452,8 @@ Cache Size:
 
 | Users | Architecture | Monthly Cost |
 |-------|-------------|--------------|
-| 10K | Single server | $100-300 |
-| 100K | Load balanced + cache | $1,000-3,000 |
-| 1M | Microservices + sharding | $10,000-30,000 |
-| 10M | Multi-region | $100,000+ |
+| 10K | Single server | 100-300 USD |
+| 100K | Load balanced + cache | 1,000-3,000 USD |
+| 1M | Microservices + sharding | 10,000-30,000 USD |
+| 10M | Multi-region | 100,000+ USD |
 

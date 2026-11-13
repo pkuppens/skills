@@ -11,15 +11,6 @@ delete local and remote branches that carry nothing main doesn't already
 have. Ends on a fresh main and reports what it did, what it kept, and the
 final state. Never forces past anything it can't verify.
 
-**Status:** exercised by the end-to-end fixture suite
-[tests/test-cleanup.sh](tests/test-cleanup.sh), and by real runs on
-2026-10-18 ([recorded on #49](https://github.com/pkuppens/skills/pull/49#issuecomment-6247141023)):
-a dry-run on an already clean `pkuppens/pkuppens` planned nothing, and an
-`--execute` on `pkuppens/skills` deleted a squash-merged branch whose remote
-still existed, kept two unmerged branches, and ended on a fresh main.
-Remote ownership (`--remote-scope`) and `branch-cleanup.protect` are covered
-by the fixture suite only; no real run has exercised them yet.
-
 For GitHub Actions workflow-run cleanup, use the separate `clean-ci-runs`
 skill — this skill only touches branches.
 
@@ -170,3 +161,14 @@ PASS/FAIL per check.
   (`<repo>/.claude/skills/branch-cleanup/`) appears next to this one as a
   second, different `/branch-cleanup`. Delete it rather than keeping the two
   in sync.
+
+## Examples
+
+Fixture suite: [tests/test-cleanup.sh](tests/test-cleanup.sh). Real runs on
+2026-10-18 ([recorded on #49](https://github.com/pkuppens/skills/pull/49#issuecomment-6247141023)):
+a dry-run on an already clean `pkuppens/pkuppens` planned nothing, and an
+`--execute` on `pkuppens/skills` deleted a squash-merged branch whose remote
+still existed, kept two unmerged branches, and ended on a fresh main. On
+2026-11-12 `--execute` deleted three squash-merged branches whose remotes
+were gone (#84). `--remote-scope` and `branch-cleanup.protect` are covered by
+the fixture suite only; no real run has exercised them yet.

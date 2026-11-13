@@ -5,8 +5,6 @@ description: 'Autonomously complete a minor GitHub issue end to end - validate i
 
 # Minor
 
-**Status:** no run on record in this repository yet. The skill was written and used as a personal user skill (`~/.claude/skills/minor`) before landing here; add a link to a real run when one is recorded.
-
 Take a minor GitHub issue from open to merged without asking the user anything.
 
 "Minor" is the user's judgment, not yours. When they call an issue minor they are
