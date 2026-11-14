@@ -22,6 +22,43 @@ Rebase state: {CLEAN | BEHIND} — merges without conflicts.
 Approving as a routine, low-risk dependency update; rebase-merging.
 ```
 
+Append the **evidence block** to every A and B body (Step 5a). It makes the
+review usable as a change record:
+
+```
+Head reviewed: {head_sha} — CI run on this SHA: {ci_run_url}
+R1 Branch integrity: {pass | note: {author} commit {sha}, patch ID equals Dependabot commit}
+R2 Change reconciliation: {pass — {files}; transitive: {pkg old -> new, required by {bumped pkg}}}
+R3 Lockfile: {pass — {lock check command}}
+R4 Usage: {consumers} via {dependency path}; imported in {modules | none: run by {config/task}}}
+R5 Checks: {consumer suite ran in CI with {n} tests} {; not run in CI: {checks}}
+R6 Local repetition: {commands} — {results} | not run: {reason}
+R7 Base evidence: {base_branch} @ {base_sha} — {base_run_url} ({conclusion}{, dispatched for this review})
+Notes (not blocking): {follow-ups, with issue links}
+```
+
+### Line comments and threads (optional)
+
+To anchor findings on the changed lock or manifest entries, post the review
+through the API instead of `gh pr review`. Use `line` and `side: RIGHT`, on
+lines inside the diff hunks:
+
+```bash
+gh api repos/<repo>/pulls/<n>/reviews --input review.json
+# review.json: {"commit_id": "<head_sha>", "event": "APPROVE" | "COMMENT",
+#               "body": "...", "comments": [{"path": "uv.lock", "line": 1055, "side": "RIGHT", "body": "..."}]}
+```
+
+Each line comment opens a review thread. A repository that requires resolved
+conversations keeps the PR `BLOCKED` until every thread is resolved. Resolve
+purely informational threads before `gh pr merge`. Leave a thread open when
+it asks a human to act:
+
+```bash
+gh api graphql -f query='{repository(owner:"<o>",name:"<r>"){pullRequest(number:<n>){reviewThreads(first:50){nodes{id isResolved}}}}}'
+gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'
+```
+
 For a GitHub Actions tag bump (`actions/checkout@v5` → `@v7`), name it as such —
 the level is `tag`, and the reason is that no semver applies, so green CI is
 the gate:
@@ -114,6 +151,16 @@ but only {n_resolved} could be matched to a version pair ({package list}).
 CI status: {green | red | pending | no checks ran}.
 Not auto-approving because an approval naming {n_resolved} of {n_claimed}
 packages would be an incomplete review.
+```
+
+**Review check held (Step 5a), version and CI gates passed:**
+
+```
+Holding this one for manual review: {level} bump {package}: {old} -> {new}
+passes the version, CI and rebase gates, but review check {R#} holds:
+{finding, e.g. "the consumer's suite did not run in CI" | "uv lock --check
+fails" | "commit {sha} by {author} changes the effective diff"}.
+Not auto-approving until a human decides on {R#}.
 ```
 
 When more than one hold applies (for example red CI *and* a count
