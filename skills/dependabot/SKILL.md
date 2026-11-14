@@ -23,8 +23,12 @@ and report the finding instead (Step 5).
 #341–#343. Revert path: rehearsed in a local clone, not yet run against a
 remote. Evidence: [pkuppens/skills#52](https://github.com/pkuppens/skills/pull/52).
 Review checks (Step 5a) are **experimental**. They were run by hand on one
-private `uv` lockfile-only patch PR, which they approved with two notes.
-That run is described in [#87](https://github.com/pkuppens/skills/issues/87).
+private `uv` lockfile-only patch PR, which they approved with two notes, and
+on one `npm` major bump (pkuppens.github.io #132, jsdom 30 to 31): R4/R5 found
+three Node scripts that import jsdom and that CI never runs, R6 ran them on
+the base and the PR head, the output matched, and the PR was merged. That run
+is described in [#87](https://github.com/pkuppens/skills/issues/87) and
+[#88](https://github.com/pkuppens/skills/pull/88).
 The skill has not yet run them end to end.
 
 If invoked with a repo (`owner/name`) or a PR number, use it as the target.
