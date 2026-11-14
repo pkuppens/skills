@@ -21,7 +21,7 @@ Contents: [R1](#r1--branch-integrity) · [R2](#r2--change-reconciliation) ·
 | R3 | Lockfile consistency | the lock check fails | — |
 | R4 | Usage | — | nothing uses the package; a declared lower bound cannot install on the project runtime |
 | R5 | Check the checks | CI ran on another SHA, or a consumer's suite did not run | checks configured for a consumer that CI does not run |
-| R6 | Local repetition | a consumer test or a check from the R5 gap list fails | it was not run (no local clone or no sandbox); results differ from CI but both pass |
+| R6 | Local repetition | a consumer test or a check from the R5 gap list fails on the PR but passes on the base | it was not run (no local clone or no sandbox); results differ from CI but both pass |
 | R7 | Base-branch evidence | no successful run exists for the current base SHA (blocks all merges, see Step 7) | — |
 
 Record every result in the evidence block ([review-templates.md](review-templates.md)).
@@ -29,15 +29,26 @@ Record every result in the evidence block ([review-templates.md](review-template
 ## Safety
 
 R3 installs and R6 runs the code of the dependency under review. Never do this
-in the user's own checkout, or in a shell that has `GH_TOKEN` or
-`GITHUB_TOKEN` set:
+in the user's own checkout. A throwaway worktree protects your files, not your
+credentials:
 
 ```bash
 git fetch origin pull/<n>/head
 git worktree add /tmp/dependabot-<n> FETCH_HEAD     # throwaway, removed afterwards
-env -u GH_TOKEN -u GITHUB_TOKEN <command>           # or run inside a container
 git worktree remove --force /tmp/dependabot-<n>
 ```
+
+Unsetting `GH_TOKEN` and `GITHUB_TOKEN` (`env -u GH_TOKEN -u GITHUB_TOKEN
+<command>`) removes only those two variables. The `gh` keyring login, the git
+credential helper and SSH keys stay reachable to code you run. So:
+
+- **Preferred for R6:** run it in a container or VM that has none of those
+  credentials mounted.
+- **Without one:** run R6 only when the PR is a patch or minor bump of a
+  package the repository already trusts. For anything else record R6 as "not
+  run (no sandbox)", a note, and let CI carry the result.
+- `--ignore-scripts` in R3 stops install scripts only. R6 executes the package
+  anyway through the test run, so R3's flag is not a substitute for the above.
 
 Use the installer options that skip install scripts (see R3). The rule
 "never edit files" means never edit tracked files in the target repository.
@@ -117,10 +128,35 @@ linters, an integration suite). R6 covers those checks.
 
 ## R6 — Local repetition
 
-In the throwaway worktree (see [Safety](#safety)), run the consumers' test
-suites and the checks from the R5 gap list. Use the repository's task runner
-where one exists. Limit the run to the consumers from R4. The full suite
-belongs in CI. Record the commands and the test counts.
+In the throwaway worktree (see [Safety](#safety)), run the tests of the code
+that uses the package, plus the checks from the R5 gap list. The consumers
+come from R4. Use the repository's task runner where one exists, and record
+the commands and the test counts.
+
+Select the tests by the importers found in R4:
+
+| Ecosystem | Run only the tests that exercise the consumers |
+|---|---|
+| npm / pnpm / yarn | test files that import the package: `npm test -- <files>` (vitest and jest also accept `--related <source-files>`) |
+| uv / poetry / pip-tools | `uv run pytest <paths>` / `poetry run pytest <paths>` for the test files that import the package or the modules from R4 |
+| GitHub Actions | no tests; confirm the workflow that uses the Action ran green on the head SHA (R5) |
+
+Selection rules:
+
+- A test file counts as a consumer when it imports the package, or imports a
+  module from R4 that does. Follow one level of project-owned imports; stop
+  there.
+- When no test file qualifies (a tool, a type stub, a build dependency), or
+  the whole suite finishes in a few minutes, run the whole suite instead.
+  A too-narrow selection is worse than a slow run.
+- A major-version difference in the package's own behaviour (for example a
+  DOM implementation or a test environment) is a reason to run the whole
+  suite, because the effect reaches every test.
+- Repeat the run once on the base branch when a test fails, to show whether the
+  bump caused the failure. Hold only when the base passes and the PR fails.
+
+The full suite on the head SHA belongs in CI. R6 adds the selected tests, run
+locally, for the consumers and checks that CI did not run.
 
 ## R7 — Base-branch evidence
 

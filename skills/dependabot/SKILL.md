@@ -2,7 +2,7 @@
 name: dependabot
 description: Run the daily Dependabot check — find the open Dependabot PRs assigned to you (by bot author, dependencies label, or dependabot/** branch), classify each version bump as patch/minor/major from the diff rather than the title, require green CI and a clean no-conflict rebase, run local review checks (lockfile, package usage, what CI actually ran, the affected tests), post a formal GitHub review (not a plain comment) approving only same-major increases, rebase-merge those without waiting for a go-ahead unless something blocks, then babysit the base branch run afterwards and revert the responsible merge through a PR if it goes red. Use when the user wants their daily or routine dependency check, or wants to review, triage, clear out, or work through Dependabot PRs, dependency-update PRs, or version-bump PRs.
 compatibility: Requires the gh CLI authenticated with read, pull-request-review, and merge access to the target repository, plus Python 3.9+ for scripts/classify_bump.py. The Step 5a review checks also need git, a local clone of the target repository, and that ecosystem's toolchain (for example uv or npm); without them, the local checks are recorded as not run.
-allowed-tools: Bash(gh pr list*) Bash(gh pr view*) Bash(gh pr diff*) Bash(gh pr checks*) Bash(gh run list*) Bash(gh run view*) Bash(gh run watch*) Bash(gh repo view*) Bash(gh api*) Bash(git log*) Bash(git diff*) Bash(git ls-remote*) Bash(git patch-id*) Bash(uv tree*)
+allowed-tools: Bash(gh pr list*) Bash(gh pr view*) Bash(gh pr diff*) Bash(gh pr checks*) Bash(gh run list*) Bash(gh run view*) Bash(gh run watch*) Bash(gh repo view*) Bash(gh api*) Bash(git log*) Bash(git diff*) Bash(git fetch*) Bash(git worktree*) Bash(git ls-remote*) Bash(git patch-id*) Bash(uv tree*) Bash(uv lock --check*)
 ---
 
 # Dependabot daily check
@@ -200,8 +200,9 @@ Never edit files to fix it — only find out why, for the comment:
 Green CI says the checks passed, not what they tested. For every PR that is
 still AUTO, green and rebase-clean, run R1–R6 from
 [references/review-checks.md](references/review-checks.md). Run them in a
-throwaway worktree, with no tokens in the environment, because R3 and R6
-execute the new dependency's code. R7, the base-branch evidence, runs once
+throwaway worktree, in a container where you can, because R3 and R6
+execute the new dependency's code and clearing the token variables does not
+hide your other credentials (Safety section of the reference). R7, the base-branch evidence, runs once
 in Step 7.
 
 **Done when:** each eligible PR has a hold, note, or pass result for R1–R6,
