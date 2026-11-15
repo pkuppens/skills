@@ -14,26 +14,14 @@ the repo's branch protection does not enforce it:
 The approval is a formal `APPROVE` review. The one exception is a PR the
 user's own login opened, where GitHub forbids `APPROVE`: there, the user's
 positive comment review on the head commit counts (step 5). A chat message
-does not count, nor does anything the agent posted, nor an approval given
+counts only when the user says in plain words, after the last push, to merge
+this PR on the chat's authority (e.g. "merge, chat counts as approval"); a
+bare "ok" or "go" does not. Record it first as a marked PR comment on the head
+SHA that quotes the words. Nothing the agent posted counts, nor an approval given
 before the last push, unless that push left the PR's own diff unchanged (a
 trivial rebase, see step 5).
 The commands that check the gate are in
 [references/merge-gate.md](references/merge-gate.md).
-
-**Status:** no end-to-end run with an approval yet. The first run, on
-[pkuppens/skills#53](https://github.com/pkuppens/skills/pull/53) (the PR that
-adds this skill), went through steps 0–4 and stopped at step 5: the agent's
-`gh` login is the PR author, so it cannot approve its own PR, and #45 (bot
-identity) is still open. That stop is the self-approval rule working as
-intended. The user then squash-merged it by hand without a comment review
-(`6365ee4`), and the agent ran steps 7–8 afterwards: `main` CI green, the
-issue closed, branches removed. The second run, on #65 and #71, stopped at
-step 5 the same way, and caught that the user's "OK" comment reviews sat on
-SHAs the user had since rebased in the GitHub UI. The user re-approved and
-merged by hand (`fa03d48`, `3670df8`). That rebase changed nothing in either
-diff, which is what the carry-over rule
-([#76](https://github.com/pkuppens/skills/issues/76)) now covers. The carry-over
-itself and steps 5–6 (the agent running the merge) have not run end to end.
 
 If invoked with a PR number or URL, use it. Otherwise use the PR for the
 current branch (`gh pr view --json number`), and create one in step 0 if none
@@ -232,6 +220,18 @@ also applies here.
 
 PR link, merge SHA, `main` run conclusion, follow-ups filed, iterations (fixes,
 re-approvals after a push), and every step skipped with the reason.
+
+## Examples
+
+Real runs: [#53](https://github.com/pkuppens/skills/pull/53) (the PR that added
+this skill) and #65/#71. Each went through steps 0–4 and stopped at step 5,
+because the agent's login is the PR author and cannot approve (#45, bot
+identity, is open). The user then merged by hand (`6365ee4`; `fa03d48`,
+`3670df8`). Steps 7–8 ran afterwards on the first run; the second caught
+approvals left on SHAs the user had since rebased, which the carry-over rule
+([#76](https://github.com/pkuppens/skills/issues/76)) now covers. The
+carry-over itself and steps 5–6 (the agent running the merge) have not run end
+to end.
 
 ## Stop and ask
 

@@ -47,22 +47,22 @@ TCO = Infrastructure + Development + Operations + Opportunity Cost
 
 | Instance | vCPU | RAM | Monthly Cost | Best For |
 |----------|------|-----|--------------|----------|
-| t3.micro | 2 | 1GB | $8 | Dev/test |
-| t3.medium | 2 | 4GB | $30 | Small apps |
-| t3.large | 2 | 8GB | $60 | Light production |
-| m6i.large | 2 | 8GB | $70 | General production |
-| m6i.xlarge | 4 | 16GB | $140 | Medium workloads |
-| m6i.2xlarge | 8 | 32GB | $280 | Heavy workloads |
-| c6i.2xlarge | 8 | 16GB | $250 | CPU-intensive |
-| r6i.2xlarge | 8 | 64GB | $370 | Memory-intensive |
+| t3.micro | 2 | 1GB | 8 USD | Dev/test |
+| t3.medium | 2 | 4GB | 30 USD | Small apps |
+| t3.large | 2 | 8GB | 60 USD | Light production |
+| m6i.large | 2 | 8GB | 70 USD | General production |
+| m6i.xlarge | 4 | 16GB | 140 USD | Medium workloads |
+| m6i.2xlarge | 8 | 32GB | 280 USD | Heavy workloads |
+| c6i.2xlarge | 8 | 16GB | 250 USD | CPU-intensive |
+| r6i.2xlarge | 8 | 64GB | 370 USD | Memory-intensive |
 
 #### GPU Instances
 
 | Instance | GPU | VRAM | Monthly Cost | Best For |
 |----------|-----|------|--------------|----------|
-| g4dn.xlarge | T4 | 16GB | $380 | Inference |
-| g5.xlarge | A10G | 24GB | $730 | ML training/inference |
-| p4d.24xlarge | 8x A100 | 320GB | $23,000 | Large model training |
+| g4dn.xlarge | T4 | 16GB | 380 USD | Inference |
+| g5.xlarge | A10G | 24GB | 730 USD | ML training/inference |
+| p4d.24xlarge | 8x A100 | 320GB | 23,000 USD | Large model training |
 
 #### Savings Options
 
@@ -79,45 +79,45 @@ TCO = Infrastructure + Development + Operations + Opportunity Cost
 
 | Instance | vCPU | RAM | Monthly Cost | Connections |
 |----------|------|-----|--------------|-------------|
-| db.t3.micro | 2 | 1GB | $15 | 50 |
-| db.t3.medium | 2 | 4GB | $50 | 100 |
-| db.m6g.large | 2 | 8GB | $120 | 200 |
-| db.m6g.xlarge | 4 | 16GB | $240 | 400 |
-| db.r6g.xlarge | 4 | 32GB | $350 | 500 |
-| db.r6g.2xlarge | 8 | 64GB | $700 | 1000 |
+| db.t3.micro | 2 | 1GB | 15 USD | 50 |
+| db.t3.medium | 2 | 4GB | 50 USD | 100 |
+| db.m6g.large | 2 | 8GB | 120 USD | 200 |
+| db.m6g.xlarge | 4 | 16GB | 240 USD | 400 |
+| db.r6g.xlarge | 4 | 32GB | 350 USD | 500 |
+| db.r6g.2xlarge | 8 | 64GB | 700 USD | 1000 |
 
-**Add for storage**: $0.115/GB/month (gp3)
-**Add for IOPS**: $0.02/IOPS/month (over 3000 baseline)
+**Add for storage**: 0.115 USD/GB/month (gp3)
+**Add for IOPS**: 0.02 USD/IOPS/month (over 3000 baseline)
 
 #### Redis/ElastiCache
 
 | Node Type | RAM | Monthly Cost |
 |-----------|-----|--------------|
-| cache.t3.micro | 0.5GB | $12 |
-| cache.t3.medium | 3GB | $50 |
-| cache.m6g.large | 6.4GB | $100 |
-| cache.r6g.large | 13GB | $175 |
+| cache.t3.micro | 0.5GB | 12 USD |
+| cache.t3.medium | 3GB | 50 USD |
+| cache.m6g.large | 6.4GB | 100 USD |
+| cache.r6g.large | 13GB | 175 USD |
 
 ### Storage Pricing
 
 | Service | Cost | Use Case |
 |---------|------|----------|
-| S3 Standard | $0.023/GB | Frequently accessed |
-| S3 Infrequent | $0.0125/GB | Backups, archives |
-| S3 Glacier | $0.004/GB | Long-term archive |
-| EBS gp3 | $0.08/GB | Block storage |
-| EBS io2 | $0.125/GB + IOPS | High performance |
+| S3 Standard | 0.023 USD/GB | Frequently accessed |
+| S3 Infrequent | 0.0125 USD/GB | Backups, archives |
+| S3 Glacier | 0.004 USD/GB | Long-term archive |
+| EBS gp3 | 0.08 USD/GB | Block storage |
+| EBS io2 | 0.125 USD/GB + IOPS | High performance |
 
 ### Network Costs (Often Overlooked!)
 
 | Traffic Type | Cost |
 |--------------|------|
 | Data IN | Free |
-| Data OUT (first 10TB) | $0.09/GB |
-| Data OUT (next 40TB) | $0.085/GB |
-| Inter-AZ transfer | $0.01/GB each way |
-| Inter-region transfer | $0.02/GB |
-| CloudFront to internet | $0.085/GB |
+| Data OUT (first 10TB) | 0.09 USD/GB |
+| Data OUT (next 40TB) | 0.085 USD/GB |
+| Inter-AZ transfer | 0.01 USD/GB each way |
+| Inter-region transfer | 0.02 USD/GB |
+| CloudFront to internet | 0.085 USD/GB |
 
 ---
 
@@ -129,10 +129,10 @@ TCO = Infrastructure + Development + Operations + Opportunity Cost
 Development Cost = (Hours × Hourly Rate) × Complexity Factor × Risk Buffer
 
 Hourly Rate (Fully Loaded):
-- Junior Engineer: $75-100/hr
-- Mid-level Engineer: $100-150/hr
-- Senior Engineer: $150-200/hr
-- Staff/Principal: $200-300/hr
+- Junior Engineer: 75-100 USD/hr
+- Mid-level Engineer: 100-150 USD/hr
+- Senior Engineer: 150-200 USD/hr
+- Staff/Principal: 200-300 USD/hr
 
 Complexity Factors:
 - Greenfield, known tech: 1.0x
@@ -151,12 +151,12 @@ Risk Buffer:
 
 | Size | Story Points | Hours | Cost (Mid-level) |
 |------|-------------|-------|------------------|
-| XS | 1 | 2-4 | $200-400 |
-| S | 2 | 4-8 | $400-800 |
-| M | 3 | 8-16 | $800-1,600 |
-| L | 5 | 16-32 | $1,600-3,200 |
-| XL | 8 | 32-64 | $3,200-6,400 |
-| XXL | 13+ | 64+ | $6,400+ |
+| XS | 1 | 2-4 | 200-400 USD |
+| S | 2 | 4-8 | 400-800 USD |
+| M | 3 | 8-16 | 800-1,600 USD |
+| L | 5 | 16-32 | 1,600-3,200 USD |
+| XL | 8 | 32-64 | 3,200-6,400 USD |
+| XXL | 13+ | 64+ | 6,400+ USD |
 
 ### Team Cost Calculator
 
@@ -164,14 +164,14 @@ Risk Buffer:
 ## Monthly Team Cost
 
 Engineering Team:
-- 2 Senior Engineers × $15,000 = $30,000
-- 3 Mid-level Engineers × $10,000 = $30,000
-- 1 Engineering Manager × $18,000 = $18,000
+- 2 Senior Engineers × 15,000 USD = 30,000 USD
+- 3 Mid-level Engineers × 10,000 USD = 30,000 USD
+- 1 Engineering Manager × 18,000 USD = 18,000 USD
 
 Overhead (benefits, tools, etc.): 30%
-Monthly Burn: ($78,000) × 1.3 = $101,400
+Monthly Burn: (78,000 USD) × 1.3 = 101,400 USD
 
-Annual Team Cost: ~$1.2M
+Annual Team Cost: ~1.2M USD
 ```
 
 ---
@@ -256,44 +256,44 @@ Total: $XXX
 
 | Scale | Users | Monthly Infra | Notes |
 |-------|-------|---------------|-------|
-| **Startup** | 0-1K | $200-500 | Single server, managed DB |
-| **Growth** | 1K-10K | $500-2,000 | Load balancer, caching |
-| **Scale** | 10K-100K | $2,000-10,000 | Horizontal scaling |
-| **Enterprise** | 100K-1M | $10,000-50,000 | Multi-region, HA |
-| **Large** | 1M+ | $50,000+ | Global, custom CDN |
+| **Startup** | 0-1K | 200-500 USD | Single server, managed DB |
+| **Growth** | 1K-10K | 500-2,000 USD | Load balancer, caching |
+| **Scale** | 10K-100K | 2,000-10,000 USD | Horizontal scaling |
+| **Enterprise** | 100K-1M | 10,000-50,000 USD | Multi-region, HA |
+| **Large** | 1M+ | 50,000+ USD | Global, custom CDN |
 
 ### Cost Per User Benchmarks
 
 | Application Type | Cost/User/Month | Notes |
 |------------------|-----------------|-------|
-| Simple web app | $0.05-0.20 | Static + API |
-| Data-intensive | $0.20-0.50 | Analytics, storage |
-| Real-time | $0.50-2.00 | WebSockets, streaming |
-| ML-powered | $1.00-5.00 | Inference costs |
-| Video/media | $2.00-10.00 | Transcoding, CDN |
+| Simple web app | 0.05-0.20 USD | Static + API |
+| Data-intensive | 0.20-0.50 USD | Analytics, storage |
+| Real-time | 0.50-2.00 USD | WebSockets, streaming |
+| ML-powered | 1.00-5.00 USD | Inference costs |
+| Video/media | 2.00-10.00 USD | Transcoding, CDN |
 
 ### E-commerce Cost Model
 
 ```markdown
 ## Monthly Infrastructure Cost by GMV
 
-$0-100K GMV/month:
-- Basic infrastructure: $500
-- Payment processing (2.9%): ~$2,000
-- Total: ~$2,500
+0-100K USD GMV/month:
+- Basic infrastructure: 500 USD
+- Payment processing (2.9%): ~2,000 USD
+- Total: ~2,500 USD
 
-$100K-1M GMV/month:
-- Scaled infrastructure: $2,000
-- Payment processing: ~$20,000
-- Fraud protection: $500
-- Total: ~$22,500
+100K-1M USD GMV/month:
+- Scaled infrastructure: 2,000 USD
+- Payment processing: ~20,000 USD
+- Fraud protection: 500 USD
+- Total: ~22,500 USD
 
-$1M-10M GMV/month:
-- HA infrastructure: $10,000
-- Payment processing: ~$200,000
-- Fraud/security: $5,000
-- CDN/performance: $3,000
-- Total: ~$218,000
+1M-10M USD GMV/month:
+- HA infrastructure: 10,000 USD
+- Payment processing: ~200,000 USD
+- Fraud/security: 5,000 USD
+- CDN/performance: 3,000 USD
+- Total: ~218,000 USD
 ```
 
 ---
@@ -305,7 +305,7 @@ $1M-10M GMV/month:
 **Infrastructure**:
 - [ ] Data transfer costs (egress)
 - [ ] Backup storage
-- [ ] Log storage (CloudWatch: $0.50/GB)
+- [ ] Log storage (CloudWatch: 0.50 USD/GB)
 - [ ] SSL certificates
 - [ ] DNS queries
 - [ ] Load balancer hours
@@ -314,21 +314,21 @@ $1M-10M GMV/month:
 - [ ] Code reviews (add 20-30% to dev time)
 - [ ] Documentation
 - [ ] Testing infrastructure
-- [ ] CI/CD pipeline (GitHub Actions: $0.008/min)
+- [ ] CI/CD pipeline (GitHub Actions: 0.008 USD/min)
 - [ ] Staging environments
 
 **Operations**:
-- [ ] Monitoring tools (Datadog: ~$15/host/month)
-- [ ] Error tracking (Sentry: $26+/month)
+- [ ] Monitoring tools (Datadog: ~15 USD/host/month)
+- [ ] Error tracking (Sentry: 26+ USD/month)
 - [ ] Log management
 - [ ] On-call compensation
 - [ ] Incident response time
 
 **Third-Party Services**:
-- [ ] Email (SendGrid: $0.00025-0.001/email)
-- [ ] SMS (Twilio: $0.0075/message)
+- [ ] Email (SendGrid: 0.00025-0.001 USD/email)
+- [ ] SMS (Twilio: 0.0075 USD/message)
 - [ ] Video (encoding, streaming)
-- [ ] Maps/geocoding (Google: $7/1K requests)
+- [ ] Maps/geocoding (Google: 7 USD/1K requests)
 
 ---
 
@@ -420,9 +420,9 @@ Inputs:
 Calculations:
 - Daily requests: X × Y
 - Monthly requests: Daily × 30
-- Required compute: (Monthly requests / 100K) × $50
-- Storage: X × Z × $0.10
-- Database: (X / 10K) × $200
+- Required compute: (Monthly requests / 100K) × 50 USD
+- Storage: X × Z × 0.10 USD
+- Database: (X / 10K) × 200 USD
 - Estimated monthly: Compute + Storage + Database × 1.3
 
 12-month projection with growth:

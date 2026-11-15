@@ -67,7 +67,7 @@ Transform neutral questions into challenging ones:
 | Neutral (Weak) | Challenge (Strong) |
 |----------------|-------------------|
 | "What do you mean by AI-powered?" | "'AI-powered' can mean many things—are you trying to classify data, generate content, or make predictions? What specific problem are you solving?" |
-| "What's your budget?" | "Knowing budget helps me avoid over-engineering. Are we optimizing for < $5K/month or is $50K/month acceptable for the right solution?" |
+| "What's your budget?" | "Knowing budget helps me avoid over-engineering. Are we optimizing for < 5K USD/month or is 50K USD/month acceptable for the right solution?" |
 | "How many users?" | "You mentioned 'scale'—I want to avoid designing for problems you don't have. How many users today, and what's realistic in 12 months?" |
 
 ## Output Format
