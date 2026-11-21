@@ -276,11 +276,14 @@ allowed. After the merges, remove leftover `dependabot/*` branches that have
 no open PR. Details and commands:
 [references/merge-and-cleanup.md](references/merge-and-cleanup.md).
 
-**Auto-merge.** Before merging, check `gh pr view <number> --json
-autoMergeRequest`. When it is set, GitHub will merge the PR itself once checks
-pass: still post the review, but do not merge, and say so in the report. A
-workflow that only satisfies a required check (babblr's `dependabot-automerge.yml`
-merges nothing) does not count: `autoMergeRequest` is the signal, not the name.
+**Auto-merge.** Dependabot PRs do not merge themselves. Only a repo that
+turns on GitHub auto-merge for the PR does (a workflow running `gh pr merge
+--auto`, or a person clicking it). Before merging, check `gh pr view <number>
+--json autoMergeRequest`. When it is set, GitHub merges the PR once required
+checks pass, with no review by this skill. Still post the review, do not merge
+yourself, and say so in the report. Do not trust a workflow's file name:
+`autoMergeRequest` is the signal. babblr's `dependabot-automerge.yml` is named
+for auto-merge but only prints a message and merges nothing.
 
 Re-check mergeability right before merging if the approval was what unblocked
 it (`BLOCKED` in Step 4). If the merge is refused, skip it, say why, and
