@@ -1,8 +1,8 @@
 ---
 name: dependabot
-description: Run the daily Dependabot check — find the open Dependabot PRs assigned to you (by bot author, dependencies label, or dependabot/** branch), classify each version bump as patch/minor/major from the diff rather than the title, require green CI and a clean no-conflict rebase, run local review checks (lockfile, package usage, what CI actually ran, the affected tests), post a formal GitHub review (not a plain comment) approving same-major increases, and major bumps only when cooldown, mapped usage and test coverage are proven, rebase-merge those without waiting for a go-ahead unless something blocks, then babysit the base branch run afterwards and revert the responsible merge through a PR if it goes red. Use when the user wants their daily or routine dependency check, or wants to review, triage, clear out, or work through Dependabot PRs, dependency-update PRs, or version-bump PRs.
+description: "Run the daily Dependabot check on your assigned PRs. Classify each bump by SemVer, treating 0.x minor bumps as major. Require green CI and a clean rebase. Run local review checks: lockfile, package usage, what CI ran. Post a formal GitHub review, not a plain comment. Approve patch and minor bumps. Approve a major bump only when cooldown, usage and test coverage are proven. Merge, watch the base branch, and revert through a PR if it goes red. Use for the daily dependency check, or to review, triage or clear Dependabot PRs."
 compatibility: Requires the gh CLI authenticated with read, pull-request-review, and merge access to the target repository, plus Python 3.9+ for scripts/classify_bump.py. The Step 5a review checks also need git, a local clone of the target repository, and that ecosystem's toolchain (for example uv or npm); without them, the local checks are recorded as not run.
-allowed-tools: Bash(gh pr list*) Bash(gh pr view*) Bash(gh pr diff*) Bash(gh pr checks*) Bash(gh run list*) Bash(gh run view*) Bash(gh run watch*) Bash(gh repo view*) Bash(gh api*) Bash(git log*) Bash(git diff*) Bash(git fetch*) Bash(git worktree*) Bash(git ls-remote*) Bash(git patch-id*) Bash(uv tree*) Bash(uv lock --check*) Bash(npm view*) Bash(npm explain*) Bash(npm ls*) Bash(curl -s https://pypi.org/*)
+allowed-tools: Bash(gh pr *) Bash(gh run *) Bash(gh repo view*) Bash(gh api*) Bash(git *) Bash(uv *) Bash(npm view*) Bash(npm explain*) Bash(npm ls*) Bash(curl -s https://pypi.org/*)
 ---
 
 # Dependabot daily check
@@ -57,6 +57,14 @@ that turns out not to be Dependabot-authored included.
 
 ### 2. Classify each bump's severity and gate verdict
 
+Trust SemVer for the verdict. Do not review upstream code to decide it.
+The PR diff is read only for version numbers: the manifest and lock lines.
+To learn what changed, read in this order and stop at the first that answers:
+the release notes (patch notes) in the PR body, the package's CHANGELOG, then
+the commit log between the two tags (`gh api repos/<o>/<r>/compare/<old>...<new>`
+or `git log <old>..<new>`). Never read the source diff of the dependency:
+too much effort, and not needed for a verdict.
+
 Run [scripts/classify_bump.py](scripts/classify_bump.py) (resolve the path
 relative to this skill's own directory) against the PR's diff **and** its
 body:
@@ -97,17 +105,29 @@ pair as `unclassifiable`, which holds.
 
 #### The version rule
 
-A bump is auto-mergeable by this table only when the **major component is unchanged** and
-the new version is an **overall semver increase**. From `1.2.3`:
+A bump is auto-mergeable only when the **breaking component is unchanged**
+and the new version is an overall increase. The breaking component is the
+leftmost non-zero one. SemVer 2.0.0 (item 4) says that while the major is `0`,
+anything may change at any time, and does not say more. This skill follows the
+npm caret and Cargo reading, the strictest common one:
 
-| New version | Verdict | Why |
-|---|---|---|
-| `1.3.0` | AUTO | minor increase |
-| `1.2.4` | AUTO | patch increase |
-| `1.3.1` | AUTO | minor increase; the lower patch number is a normal reset on a minor bump, not a decrease |
-| `1.1.0` | HOLD | minor decrease |
-| `1.2.1` | HOLD | patch decrease |
-| `2.0.0` | HOLD | major bump (the major path in Step 6 can lift this hold) |
+- `X.Y.Z` with `X > 0`: a change of `X` is major, of `Y` minor, of `Z` patch.
+- `0.Y.Z` with `Y > 0`: a change of `Y` is **major**. Only `Z` is patch.
+- `0.0.Z`: any change is **major**. `^0.0.1` admits no other version.
+
+| From | To | Verdict | Why |
+|---|---|---|---|
+| `1.2.3` | `1.3.0` | AUTO | minor increase |
+| `1.2.3` | `1.2.4` | AUTO | patch increase |
+| `1.2.3` | `1.3.1` | AUTO | minor increase; the lower patch is a normal reset |
+| `1.2.3` | `1.1.0` | HOLD | minor decrease |
+| `1.2.3` | `1.2.1` | HOLD | patch decrease |
+| `1.2.3` | `2.0.0` | HOLD | major bump (the major path in Step 6 can lift this) |
+| `0.1.2` | `0.1.5` | AUTO | patch inside the same `0.Y` line |
+| `0.1.2` | `0.2.0` | HOLD | major: `0.Y` minor bump may break |
+| `0.9.0` | `0.10.0` | HOLD | major, same reason |
+| `0.0.1` | `0.0.2` | HOLD | major: every `0.0.Z` release may break |
+| `0.9.0` | `1.0.0` | HOLD | major |
 
 Comparing the version tuples as a whole is what makes the `1.3.1` row come
 out right — checking each component in isolation would wrongly read the
@@ -283,12 +303,28 @@ gh pr merge <number> --repo <repo> --rebase --delete-branch --match-head-commit 
 `--match-head-commit` makes sure the merged commit is the one you reviewed.
 If Dependabot pushed in the meantime, the merge fails: review again.
 
-Rebase, not squash: these PRs are already one logical commit from a bot, and
-a rebase keeps Dependabot's own commit (with its release-notes trailer and
-signature) intact on the base branch. If the repo's settings disallow rebase
-merging, `gh` will say so — report that and leave the approval standing
-rather than silently switching strategy, since merge strategy is the repo
-owner's decision.
+**Merge strategy.** Prefer rebase: these PRs are one logical commit from a
+bot, and a rebase keeps Dependabot's own commit (release-notes trailer,
+signature) on the base branch. Squash is acceptable when the repo disallows
+rebase, or when its history is squash-only. Say which strategy you used in
+the report. Use `--squash` in place of `--rebase`. Never use a merge commit
+unless it is the only allowed strategy. `gh` reports a disallowed strategy:
+try the next one in that order, never a strategy the repo has not enabled.
+
+**Branch cleanup.** `--delete-branch` removes the PR's own branch. It does
+not remove leftovers: a closed or superseded group PR, or a repo with
+auto-delete off. After the merges, list what is left and delete only branches
+whose PR is merged or closed:
+
+```bash
+git ls-remote --heads origin 'dependabot/*'
+gh pr list --repo <repo> --state open --search "head:dependabot/" --json headRefName
+```
+
+Anything on the first list but not the second has no open PR. Delete it with
+`git push origin --delete <branch>` after checking `gh pr list --state all
+--head <branch>` shows it merged or closed. The `branch-cleanup` skill does
+the same for local branches.
 
 Re-check mergeability right before merging if the approval was what unblocked
 it (`BLOCKED` in Step 4). If the merge is refused, skip it, say why, and
@@ -323,9 +359,9 @@ dependency merge into an unreviewed direct commit on a protected branch.
 
 In short: rerun once to rule out flake, match base runs to merge commits by
 `headSha` to find the culprit, revert it through a PR, merge the revert once
-its CI is green, and post Template E on the original PR. The full procedure,
-commands included, is in
-[references/revert-procedure.md](references/revert-procedure.md).
+its CI is green. Then analyse why it failed and post Template E, with a
+recommendation, on the original PR. The full procedure, commands included, is
+in [references/revert-procedure.md](references/revert-procedure.md).
 
 ### 10. Report
 
@@ -349,17 +385,19 @@ and the body's instructions for the same safety properties on every host
 
 ## Examples
 
-Evidence of real runs. The review checks (Step 5a) and the major path ran
-by hand, not yet end to end through the skill. Treat both as experimental.
+Earlier sessions, and the rule each one supports. Add a row after each real
+run. A rule with no row is a hypothesis, not policy.
 
-- Merge path: pkuppens.github.io #124/#125 (merged, main green). Hold path with
-  red CI that predated the PRs: babblr #341–#343. Revert path: rehearsed in a
-  local clone only. [pkuppens/skills#52](https://github.com/pkuppens/skills/pull/52).
-- Review checks: a `uv` lockfile-only patch PR (approved with two notes) and
-  pkuppens.github.io #132, jsdom 30 to 31 (R4/R5 found three uncovered Node
-  scripts, R6 ran them, merged). [#87](https://github.com/pkuppens/skills/issues/87),
-  [#88](https://github.com/pkuppens/skills/pull/88).
-- Major path: babblr #365, jsdom 30.1.3 to 31.0.0 plus 12 minor/patch (every
-  version at least 7 days old): approved and merged after M1–M4 (by hand, under the policy the skill now holds). babblr #369
-  (same group) held: five versions were under 7 days old.
-  [#90](https://github.com/pkuppens/skills/issues/90).
+| Session | Repo and PR | Outcome | Rule it supports |
+|---|---|---|---|
+| Merge path | [pkuppens.github.io #124](https://github.com/pkuppens/pkuppens.github.io/pull/124), [#125](https://github.com/pkuppens/pkuppens.github.io/pull/125) | merged, base green | Patch/minor bump with green CI and a clean rebase: approve and merge. |
+| Red CI before the PR | [babblr #341](https://github.com/pkuppens/babblr/pull/341), [#342](https://github.com/pkuppens/babblr/pull/342), [#343](https://github.com/pkuppens/babblr/pull/343) | held, comment only | A failure that also occurs on the base branch is not the bump's fault. Report it, do not merge on red. |
+| Lockfile-only patch | `uv` lockfile patch PR, see [#87](https://github.com/pkuppens/skills/issues/87), [#88](https://github.com/pkuppens/skills/pull/88) | approved with two notes | Green CI is not enough: check the lockfile and the usage (R1-R6). |
+| Dev-dependency major, aged | [pkuppens.github.io #132](https://github.com/pkuppens/pkuppens.github.io/pull/132) (jsdom 30 to 31) | merged | R4/R5 found three Node scripts CI did not run; R6 ran them locally. |
+| Major path, cooldown met | [babblr #365](https://github.com/pkuppens/babblr/pull/365) (jsdom 30.1.3 to 31.0.0 plus 12) | approved and merged | A dev-only major merges after M1-M4: 7-day cooldown, mapped usage, coverage. |
+| Major path, cooldown not met | [babblr #369](https://github.com/pkuppens/babblr/pull/369) (same group) | held | Five versions were under 7 days old: the group waits as a whole. |
+| Revert path | rehearsed in a local clone only, [#52](https://github.com/pkuppens/skills/pull/52) | not yet run for real | Unproven. Treat as experimental. |
+
+The review checks (Step 5a) and the major path ran by hand, not yet end to
+end through the skill ([#90](https://github.com/pkuppens/skills/issues/90)).
+Treat both as experimental.

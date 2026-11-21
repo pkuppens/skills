@@ -5,6 +5,15 @@ never post a template verbatim with unfilled `{...}` markers. Every template
 names concrete packages, versions, and a CI run link — a bare "LGTM" is not
 a formal review.
 
+Every approval and hold starts with a **management summary**: the
+conclusion and the evidence it rests on, in one or two lines. The reader
+can stop there. The details follow below it. For a routine approval the
+conclusion is: "Meets the conditions for a safe dependency update."
+
+Any B, C or D comment may end with an optional `Recommended next steps:`
+line. Use it when the next action is not obvious, for example "wait for
+{package} {version}", "ask `@dependabot rebase`", or "add a test for {feature}".
+
 Which template to use is decided by the table in SKILL.md Step 6. The short
 version: A is the only one that approves, and the only one followed by a
 merge; B, C, and D all post `--comment` and leave the PR for a human. E is
@@ -13,13 +22,12 @@ posted after the fact, on a PR that was merged and then reverted (Step 9).
 ## A — Approve (gate AUTO, CI green, rebase clean)
 
 Used for `gh pr review <n> --approve --body "..."`, then `gh pr merge <n>
---rebase --delete-branch`.
+--rebase --delete-branch` (`--squash` when the repo disallows rebase).
 
 ```
-CI/CD verified — {level} bump: {package list, e.g. "react-router 8.3.0 -> 8.3.1"}.
-All checks passed: {ci_run_url}.
-Rebase state: {CLEAN | BEHIND} — merges without conflicts.
-Approving as a routine, low-risk dependency update; rebase-merging.
+Meets the conditions for a safe dependency update: {level} bump, {package list, e.g. "react-router 8.3.0 -> 8.3.1"}.
+Evidence: CI green ({ci_run_url}); rebase {CLEAN | BEHIND}; review checks R1-R6 {pass | pass with notes}.
+Merging by {rebase | squash}; the Dependabot branch is deleted afterwards.
 ```
 
 Append the **evidence block** to every A and B body (Step 5a). It makes the
@@ -64,40 +72,39 @@ the level is `tag`, and the reason is that no semver applies, so green CI is
 the gate:
 
 ```
-CI/CD verified — single-level tag bump (no semver): {package} {old} -> {new}.
-All checks passed: {ci_run_url}.
-Rebase state: {CLEAN | BEHIND} — merges without conflicts.
-Approving — version has no minor/patch to assess, and CI exercises the new version; rebase-merging.
+Meets the conditions for a safe dependency update: single-level tag bump (no semver), {package} {old} -> {new}.
+Evidence: CI green ({ci_run_url}) and exercises the new version; rebase {CLEAN | BEHIND}.
+Merging by {rebase | squash}.
 ```
 
 For a group PR with mixed levels, list every package with its own level and
 state the overall as the worst one:
 
 ```
-CI/CD verified — {overall_level} bump across {n} packages in this group:
+Meets the conditions for a safe dependency update: {overall_level} bump across {n} packages in this group.
+Evidence: CI green ({ci_run_url}); rebase {CLEAN | BEHIND}; no package changes its breaking component.
 - {pkg1}: {old1} -> {new1} ({level1})
 - {pkg2}: {old2} -> {new2} ({level2})
-All checks passed: {ci_run_url}.
-Rebase state: {CLEAN | BEHIND} — merges without conflicts.
-Approving — overall severity is {overall_level}, same major throughout, CI is green.
+Merging by {rebase | squash}.
 ```
 
 ### A, major variant — approve through the major path
 
-Only after M1–M3 in [major-bumps.md](major-bumps.md) all pass. Name the
-evidence, not the conclusion:
+Only after M1–M4 in [major-bumps.md](major-bumps.md) all pass. State the
+conclusion first, then the evidence for each condition:
 
 ```
-Approving under the cooldown + usage policy — major bump: {package} {old} -> {new}
-(plus {n} minor/patch updates in this group).
+Meets the conditions for a safe major update: {package} {old} -> {new}
+(plus {n} minor/patch updates in this group), under the cooldown + usage policy.
 - Cooldown ({cooldown} days required): {package}@{new} published {date} ({days} days ago);
   every other version in the group is at least as old as the requirement.
 - Review checks R1–R6: {result each, one line}.
 - Usage: {direct | indirect via {layer}}: {where, e.g. test.environment in vite.config.ts}.
   Breaking changes in the release notes: {each one, used / not used}.
-- Coverage: {suite} ran on the head SHA: {counts}, locally with `{ci install command}`
-  and in CI {ci_run_url}. {For indirect use: {layer} admits {new major} and its tests passed.}
-- Rebase state: {CLEAN | BEHIND}. Rebase-merging.
+- Coverage: {suite} ran on the head SHA: {passed}/{total} tests, locally with `{ci install command}`
+  and in CI {ci_run_url}. {Added or manual: {test cases added in this PR | manual check done, with what and result}.}
+  {For indirect use: {layer} admits {new major} and its tests passed.}
+- Rebase state: {CLEAN | BEHIND}. Merging by {rebase | squash}.
 ```
 
 ## B — Comment, held for human judgement (version gate held)
@@ -126,6 +133,7 @@ matures {date + cooldown days} | Usage: {why the use or its coverage is unknown}
 | Coverage: {which use has no passing test}}.
 CI status: {green | red | pending | no checks ran}.
 Will qualify once {the missing evidence}.
+Recommended next steps: {optional, e.g. "re-run the check on {date}", "add a test for {feature}"}.
 ```
 
 **Downgrade (any component going backwards overall):**
@@ -210,6 +218,7 @@ it passed the second time — looks transient/flaky | no workflow is
 configured to run on this PR}.
 Not making any code changes here — flagging for a decision on whether to
 fix, rerun, or close.
+Recommended next steps: {optional}.
 ```
 
 ## D — Comment, rebase not clean
@@ -246,6 +255,10 @@ Rerun once: still failing, so not transient. The pre-merge baseline
 ({baseline_run_url}) was green.
 {Isolated to this merge by its own base run | Reverted together with
  #{other_prs} — the base runs couldn't separate them}.
+Cause: {from the failing log, with the log line}. Evidence: {run_url}.
+Recommended next steps: {from the cause table in revert-procedure.md, e.g.
+"fix-forward PR adapting {code}, then re-apply" | "ignore {version} in
+dependabot.yml until {condition}"}.
 Not attempting a fix here — Dependabot will offer this update again; it
 needs someone to look at {failing job} first.
 ```

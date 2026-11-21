@@ -37,3 +37,20 @@ asked. Every change goes through a PR; never push to the base branch.
    failure for a human.
 6. **Tell the original PRs** with Template E, so the revert is traceable
    from the bump that caused it.
+7. **Analyse and recommend.** A revert restores green but fixes nothing:
+   Dependabot will offer the update again. Read the failing job log
+   (`gh run view <run-id> --log-failed`) and the release notes of the bumped
+   package, then classify the cause and recommend one next step. Never push a
+   fix to the base branch. A fix is a separate PR, opened only when asked.
+
+   | Cause (from the log) | Typical recommendation |
+   |---|---|
+   | Breaking API change the project uses | Fix-forward PR that adapts the code, then re-apply the bump. Or `ignore` that version in `dependabot.yml` until then. |
+   | Peer-dependency or resolution conflict | Bump the conflicting package in the same PR, or pin and wait for its release. |
+   | Lockfile or installer mismatch (CI installs differently than local) | Fix the lockfile or the CI install command, then `@dependabot rebase`. |
+   | Test relied on old behaviour | Update the test in a separate PR, linked from the bump. |
+   | Advisory database or other external change | Not the bump: report it as a base-branch failure. |
+   | Cause unclear | Open an issue with the log excerpt. Assign it, and wait for the next patch release. |
+
+   Put the cause, the evidence (log line, run URL) and the recommendation in
+   Template E. If several causes fit, say which one the evidence favours.
