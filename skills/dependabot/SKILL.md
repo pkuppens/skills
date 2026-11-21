@@ -11,7 +11,7 @@ Reviews the Dependabot PRs assigned to you and posts a **formal GitHub
 review** for each — `gh pr review`, which counts as a review contribution —
 never a bare `gh pr comment`. PRs that clear all three gates (version, CI,
 rebase; a major bump clears the version gate through the major path in
-Step 6) and the review checks (Step 5a) are rebase-merged, and the resulting
+Step 6) and the review checks (Step 5a) are squash-merged under your name, and the resulting
 base-branch run is watched to a
 conclusion. With no blocker (Step 7) it runs end to end without pausing for
 a go-ahead. This skill only ever identifies, reviews, merges, and — when a
@@ -82,26 +82,11 @@ minor, not a downgrade. It prints a per-package severity, an `OVERALL:`
 `GATE:` verdict of `AUTO` or `HOLD` applying the rule below, and any
 `WARN:` lines.
 
-**Always pass `--body` on a group PR.** When a package's existing range
-already covers the new version (`^5.0.2` covering `5.0.3`), Dependabot
-updates only the lock file and the manifest diff shows nothing for it — so
-the diff alone silently under-reports. The body's `Updates \`pkg\` from X to
-Y` lines come from Dependabot's update metadata, so reconciling against them
-recovers those packages (tagged `[lock-only]`) without parsing the lock file.
-This matters because the templates promise a concrete package list: an
-approval naming 2 of 3 bumped packages is a misleading review, even when the
-verdict happens to be right.
-
-Read the `WARN:` lines rather than skimming past them. A count mismatch
-against the body's "with N updates" claim, or a `conflict` row where the
-manifest and the body disagree about a version, means the package list you
-are about to put in a review is not trustworthy — hold instead of guessing
-which source is right.
-
-If it prints `NO_VERSION_CHANGES_FOUND` (non-npm ecosystem, or neither
-source yields a pair), parse the PR title's "from X to Y" wording by hand and
-apply the same rule — treating anything you can't pin to a concrete old→new
-pair as `unclassifiable`, which holds.
+Always pass `--body` on a group PR: lock-only updates are missing from the
+diff. Read every `WARN:` line, and hold on a count mismatch or a `conflict`
+row. When it prints `NO_VERSION_CHANGES_FOUND`, parse the title by hand and
+treat an unpinnable pair as `unclassifiable` (holds). Why, and the details:
+[references/classifier-notes.md](references/classifier-notes.md).
 
 #### The version rule
 
@@ -135,19 +120,11 @@ reset patch digit as a decrease. `python scripts/classify_bump.py
 --self-test` asserts every row here, so the rule is verified by running it
 rather than by re-reading this table; run it if you change the gate.
 
-**GitHub Actions tags (`@v5` → `@v7`).** An Action's tag has one numeric
-component and no minor/patch, so "major" says nothing about breakage risk
-and CI exercising the new version is the real check. When the package is an
-Action seen in a workflow file (`uses: owner/repo@vN` under
-`.github/workflows/` or an `action.yml`) and *both* versions are
-single-level, the classifier reports severity `tag` and the gate is `AUTO`
-for an increase. A decrease or no-op still HOLDs, a mix of shapes
-(`5` → `6.0.0`) falls back to semver, and single-level versions that are
-*not* Actions (Docker `node:20` → `22`, calver `2024` → `2025`) are read as
-semver majors and HOLD — PR CI does not exercise a runtime or schema change.
-Before approving a `tag` bump, glance at the touched workflow's triggers:
-if it only runs on release, tag, or deploy events, PR CI did not exercise
-the new version, so hold it (Template B).
+**GitHub Actions tags (`@v5` → `@v7`)** have no minor or patch. The
+classifier reports severity `tag`, gate `AUTO` for an increase, and CI is the
+real check. Before approving one, check that the touched workflow runs on pull
+requests. Single-level versions that are not Actions (Docker, calver) hold.
+See [references/classifier-notes.md](references/classifier-notes.md).
 
 **Done when:** every PR in scope has a severity and an AUTO/HOLD verdict
 backed by the specific old→new pair(s), not a guess from the title.
@@ -188,28 +165,18 @@ re-polled rather than taken at face value.
 
 ### 5. Investigate red or missing CI (skip if green)
 
-Never edit files to fix it — only find out why, for the comment:
-
-- Compare against the base branch's latest run: `gh run list --branch
-  <base> --limit 1 --json conclusion` — same failure there means it
-  **predates** this PR, not caused by it.
-- A green base run is only evidence if it is recent enough to have seen the
-  same inputs. Audit and scanning jobs depend on an advisory database that
-  changes daily, so an old green run proves nothing about today. When the
-  failing job is one of those, or the base run is older than a day, rerun
-  that base workflow once (`gh run rerun <base-run-id>`) and compare against
-  the fresh result. When the base branch has moved since that run, dispatch
-  it on the current base SHA instead (R7 in
-  [references/review-checks.md](references/review-checks.md)).
-- If it's not present on the base branch, skim the failing job's log tail
-  (`gh run view <run-id> --log-failed`) for a one-line cause.
-- A failure that disappears on a single rerun (`gh run rerun <run-id>
-  --failed`) is transient/flaky — say so; don't rerun repeatedly chasing
-  green.
+Never edit files to fix it. Find out why, for the comment: compare with the
+base branch's latest run (a same failure there predates this PR), rerun a
+stale base run, skim `gh run view <run-id> --log-failed`, and rerun a failed
+job once to spot a flake. A green base run only counts if it is recent.
+Details: [references/classifier-notes.md](references/classifier-notes.md#red-or-missing-ci).
 
 ### 5a. Run the review checks (always, for PRs still eligible)
 
-Green CI says the checks passed, not what they tested. For every PR that is
+Green CI says the checks passed, not what they tested. First run
+`git fetch origin <base>`: a stale local base ref makes `git diff
+origin/<base>...HEAD` show changes from earlier merges, and a patch can look
+like a major bump (seen on pkuppens.github.io#133). For every PR that is
 still AUTO, green and rebase-clean, and for every major bump that is green and
 rebase-clean and goes to the major path (Step 6), run R1–R6 from
 [references/review-checks.md](references/review-checks.md). Run them in a
@@ -228,10 +195,10 @@ holds the PR:
 
 | Gate verdict | CI | Rebase | Verdict |
 |---|---|---|---|
-| AUTO (patch, minor, or Actions `tag`) | green | clean (`CLEAN`/`BEHIND`) | **Approve + rebase-merge** (Template A), if no Step 5a check holds |
+| AUTO (patch, minor, or Actions `tag`) | green | clean (`CLEAN`/`BEHIND`) | **Approve + merge** (Template A), if no Step 5a check holds |
 | AUTO, but a Step 5a check holds | green | clean (`CLEAN`/`BEHIND`) | **Comment**, hold (Template B, review-check variant), naming the check and the finding |
 | AUTO | green | `DIRTY`/`UNKNOWN` after re-poll | **Comment**, hold (Template D) |
-| HOLD — major | green | clean | Run the major path ([references/major-bumps.md](references/major-bumps.md)), with R1–R6: **approve + rebase-merge** (Template A, major variant) only when M1–M4 pass, no Step 5a check holds, and every major-bumped package is a dev/test-only dependency. A runtime or production dependency: post the evidence as a **comment** and ask before merging. Any step failing: **comment**, hold (Template B) naming it. Never for Docker/runtime/calver versions |
+| HOLD — major | green | clean | Run the major path ([references/major-bumps.md](references/major-bumps.md)), with R1–R6: **approve + merge** (Template A, major variant) only when M1–M4 pass, no Step 5a check holds, and every major-bumped package is a dev/test-only dependency. A runtime or production dependency: post the evidence as a **comment** and ask before merging. Any step failing: **comment**, hold (Template B) naming it. Never for Docker/runtime/calver versions |
 | HOLD — major | red, pending, none, or not clean | any | **Comment**, hold (Template B, or C/D for the CI or rebase cause) — a semver major bump (or a single-level non-Action version) can break even with green CI |
 | HOLD — downgrade | any | any | **Comment**, hold (Template B) — a version going backwards is never an expected Dependabot bump |
 | HOLD — unchanged | any | any | **Comment**, hold (Template B) — nothing effective to approve |
@@ -249,7 +216,7 @@ Templates: [references/review-templates.md](references/review-templates.md).
 
 Before any `gh pr review` or `gh pr merge` call, print a table of every PR in
 scope with its package(s), severity, gate verdict, CI status, rebase state,
-review-check result (Step 5a), and proposed action — stating explicitly which ones will be rebase-merged.
+review-check result (Step 5a), and proposed action — stating explicitly which ones will be merged.
 
 Then record the base branch's current state, the baseline Step 9 compares
 against:
@@ -279,7 +246,7 @@ A held PR (Templates B/C/D) is not a blocker: posting its comment is the
 routine outcome, and it proceeds with the rest. `skipped` and `success` on
 the base branch both count as not red.
 
-### 8. Post the reviews, rebase-merge the eligible ones
+### 8. Post the reviews, merge the eligible ones
 
 ```bash
 gh pr review <number> --repo <repo> --approve --body "..."   # Template A
@@ -293,38 +260,34 @@ Templates A and B include the evidence block, and line comments on the lock
 entries are optional. See
 [references/review-templates.md](references/review-templates.md).
 
-For every PR approved under Template A, follow the approval with a rebase
-merge:
+For every PR approved under Template A, follow the approval with a squash
+merge authored by you:
 
 ```bash
-gh pr merge <number> --repo <repo> --rebase --delete-branch --match-head-commit <reviewed-head-sha>
+gh pr merge <number> --repo <repo> --squash --delete-branch \
+  --author-email "$(gh api user --jq '"\(.id)+\(.login)@users.noreply.github.com"')" \
+  --match-head-commit <reviewed-head-sha>
 ```
 
 `--match-head-commit` makes sure the merged commit is the one you reviewed.
 If Dependabot pushed in the meantime, the merge fails: review again.
 
-**Merge strategy.** Prefer rebase: these PRs are one logical commit from a
-bot, and a rebase keeps Dependabot's own commit (release-notes trailer,
-signature) on the base branch. Squash is acceptable when the repo disallows
-rebase, or when its history is squash-only. Say which strategy you used in
-the report. Use `--squash` in place of `--rebase`. Never use a merge commit
-unless it is the only allowed strategy. `gh` reports a disallowed strategy:
-try the next one in that order, never a strategy the repo has not enabled.
+**Merge strategy and cleanup.** Squash, with your noreply address as the
+commit author, so the merge counts as your commit and you are the first
+contact when it breaks. Fall back to rebase when the repo disallows squash
+(the commit then stays Dependabot's). Never a merge commit unless it is the
+only strategy allowed. After the merges, remove leftover `dependabot/*` branches that have
+no open PR. Details and commands:
+[references/merge-and-cleanup.md](references/merge-and-cleanup.md).
 
-**Branch cleanup.** `--delete-branch` removes the PR's own branch. It does
-not remove leftovers: a closed or superseded group PR, or a repo with
-auto-delete off. After the merges, list what is left and delete only branches
-whose PR is merged or closed:
-
-```bash
-git ls-remote --heads origin 'dependabot/*'
-gh pr list --repo <repo> --state open --search "head:dependabot/" --json headRefName
-```
-
-Anything on the first list but not the second has no open PR. Delete it with
-`git push origin --delete <branch>` after checking `gh pr list --state all
---head <branch>` shows it merged or closed. The `branch-cleanup` skill does
-the same for local branches.
+**Auto-merge.** Dependabot PRs do not merge themselves. Only a repo that
+turns on GitHub auto-merge for the PR does (a workflow running `gh pr merge
+--auto`, or a person clicking it). Before merging, check `gh pr view <number>
+--json autoMergeRequest`. When it is set, GitHub merges the PR once required
+checks pass, with no review by this skill. Still post the review, do not merge
+yourself, and say so in the report. Do not trust a workflow's file name:
+`autoMergeRequest` is the signal. babblr's `dependabot-automerge.yml` is named
+for auto-merge but only prints a message and merges nothing.
 
 Re-check mergeability right before merging if the approval was what unblocked
 it (`BLOCKED` in Step 4). If the merge is refused, skip it, say why, and
@@ -365,6 +328,12 @@ in [references/revert-procedure.md](references/revert-procedure.md).
 
 ### 10. Report
 
+**You are the first contact.** A merge by this skill is yours: it is authored
+by you and the review is under your login. When anything goes wrong (a red
+base run, a revert, a merge that was refused or held), assign the revert PR or
+issue to `@me` and put it first in the report, so GitHub notifies you and you
+can refine the skill from it.
+
 Summarize: how many approved and merged, how many approved but left unmerged
 (and why), how many held (and which gate or review check held them), how many needed CI
 investigation (and the finding), the post-merge base-branch status, and any
@@ -396,7 +365,8 @@ run. A rule with no row is a hypothesis, not policy.
 | Dev-dependency major, aged | [pkuppens.github.io #132](https://github.com/pkuppens/pkuppens.github.io/pull/132) (jsdom 30 to 31) | merged | R4/R5 found three Node scripts CI did not run; R6 ran them locally. |
 | Major path, cooldown met | [babblr #365](https://github.com/pkuppens/babblr/pull/365) (jsdom 30.1.3 to 31.0.0 plus 12) | approved and merged | A dev-only major merges after M1-M4: 7-day cooldown, mapped usage, coverage. |
 | Major path, cooldown not met | [babblr #369](https://github.com/pkuppens/babblr/pull/369) (same group) | held | Five versions were under 7 days old: the group waits as a whole. |
-| Revert path | rehearsed in a local clone only, [#52](https://github.com/pkuppens/skills/pull/52) | not yet run for real | Unproven. Treat as experimental. |
+| Full run, dev-dependency group | [pkuppens.github.io #133](https://github.com/pkuppens/pkuppens.github.io/pull/133) (8 updates, minor) | approved, rebase-merged, `main` deploy run green | R1-R7, review, merge, babysit and branch check all ran through the skill. A stale local base ref once faked a major (Step 5a now fetches first). |
+| Revert path | rehearsed in scratch clones only, [#52](https://github.com/pkuppens/skills/pull/52), [#92](https://github.com/pkuppens/skills/issues/92) | range revert, newest first, restores the files | The git mechanics work. A real red base run has not happened, so the analyse-and-recommend step is unproven. |
 
 The review checks (Step 5a) and the major path ran by hand, not yet end to
 end through the skill ([#90](https://github.com/pkuppens/skills/issues/90)).

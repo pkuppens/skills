@@ -31,7 +31,7 @@ asked. Every change goes through a PR; never push to the base branch.
    commits that are not from the PR being reverted, revert that PR's own
    commits by SHA instead of the range.
 5. **Merge the revert when its CI is green** (`gh pr checks <n> --watch`,
-   then `gh pr merge <n> --rebase --delete-branch`), and watch the base run
+   then `gh pr merge <n> --squash --delete-branch`), and watch the base run
    it triggers, as above. If the revert PR is also red, the failure is not
    from these bumps: leave the revert PR open, and report it as a base-branch
    failure for a human.
