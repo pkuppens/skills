@@ -22,12 +22,12 @@ posted after the fact, on a PR that was merged and then reverted (Step 9).
 ## A — Approve (gate AUTO, CI green, rebase clean)
 
 Used for `gh pr review <n> --approve --body "..."`, then `gh pr merge <n>
---rebase --delete-branch` (`--squash` when the repo disallows rebase).
+--squash --delete-branch --author-email <your noreply address>` (`--rebase` when the repo disallows squash).
 
 ```
 Meets the conditions for a safe dependency update: {level} bump, {package list, e.g. "react-router 8.3.0 -> 8.3.1"}.
 Evidence: CI green ({ci_run_url}); rebase {CLEAN | BEHIND}; review checks R1-R6 {pass | pass with notes}.
-Merging by {rebase | squash}; the Dependabot branch is deleted afterwards.
+Merging by {squash | rebase} as {you}; the Dependabot branch is deleted afterwards.
 ```
 
 Append the **evidence block** to every A and B body (Step 5a). It makes the
@@ -74,7 +74,7 @@ the gate:
 ```
 Meets the conditions for a safe dependency update: single-level tag bump (no semver), {package} {old} -> {new}.
 Evidence: CI green ({ci_run_url}) and exercises the new version; rebase {CLEAN | BEHIND}.
-Merging by {rebase | squash}.
+Merging by {squash | rebase}.
 ```
 
 For a group PR with mixed levels, list every package with its own level and
@@ -85,7 +85,7 @@ Meets the conditions for a safe dependency update: {overall_level} bump across {
 Evidence: CI green ({ci_run_url}); rebase {CLEAN | BEHIND}; no package changes its breaking component.
 - {pkg1}: {old1} -> {new1} ({level1})
 - {pkg2}: {old2} -> {new2} ({level2})
-Merging by {rebase | squash}.
+Merging by {squash | rebase}.
 ```
 
 ### A, major variant — approve through the major path
@@ -104,7 +104,7 @@ Meets the conditions for a safe major update: {package} {old} -> {new}
 - Coverage: {suite} ran on the head SHA: {passed}/{total} tests, locally with `{ci install command}`
   and in CI {ci_run_url}. {Added or manual: {test cases added in this PR | manual check done, with what and result}.}
   {For indirect use: {layer} admits {new major} and its tests passed.}
-- Rebase state: {CLEAN | BEHIND}. Merging by {rebase | squash}.
+- Rebase state: {CLEAN | BEHIND}. Merging by {squash | rebase}.
 ```
 
 ## B — Comment, held for human judgement (version gate held)

@@ -11,7 +11,7 @@ Reviews the Dependabot PRs assigned to you and posts a **formal GitHub
 review** for each — `gh pr review`, which counts as a review contribution —
 never a bare `gh pr comment`. PRs that clear all three gates (version, CI,
 rebase; a major bump clears the version gate through the major path in
-Step 6) and the review checks (Step 5a) are rebase-merged, and the resulting
+Step 6) and the review checks (Step 5a) are squash-merged under your name, and the resulting
 base-branch run is watched to a
 conclusion. With no blocker (Step 7) it runs end to end without pausing for
 a go-ahead. This skill only ever identifies, reviews, merges, and — when a
@@ -195,10 +195,10 @@ holds the PR:
 
 | Gate verdict | CI | Rebase | Verdict |
 |---|---|---|---|
-| AUTO (patch, minor, or Actions `tag`) | green | clean (`CLEAN`/`BEHIND`) | **Approve + rebase-merge** (Template A), if no Step 5a check holds |
+| AUTO (patch, minor, or Actions `tag`) | green | clean (`CLEAN`/`BEHIND`) | **Approve + merge** (Template A), if no Step 5a check holds |
 | AUTO, but a Step 5a check holds | green | clean (`CLEAN`/`BEHIND`) | **Comment**, hold (Template B, review-check variant), naming the check and the finding |
 | AUTO | green | `DIRTY`/`UNKNOWN` after re-poll | **Comment**, hold (Template D) |
-| HOLD — major | green | clean | Run the major path ([references/major-bumps.md](references/major-bumps.md)), with R1–R6: **approve + rebase-merge** (Template A, major variant) only when M1–M4 pass, no Step 5a check holds, and every major-bumped package is a dev/test-only dependency. A runtime or production dependency: post the evidence as a **comment** and ask before merging. Any step failing: **comment**, hold (Template B) naming it. Never for Docker/runtime/calver versions |
+| HOLD — major | green | clean | Run the major path ([references/major-bumps.md](references/major-bumps.md)), with R1–R6: **approve + merge** (Template A, major variant) only when M1–M4 pass, no Step 5a check holds, and every major-bumped package is a dev/test-only dependency. A runtime or production dependency: post the evidence as a **comment** and ask before merging. Any step failing: **comment**, hold (Template B) naming it. Never for Docker/runtime/calver versions |
 | HOLD — major | red, pending, none, or not clean | any | **Comment**, hold (Template B, or C/D for the CI or rebase cause) — a semver major bump (or a single-level non-Action version) can break even with green CI |
 | HOLD — downgrade | any | any | **Comment**, hold (Template B) — a version going backwards is never an expected Dependabot bump |
 | HOLD — unchanged | any | any | **Comment**, hold (Template B) — nothing effective to approve |
@@ -216,7 +216,7 @@ Templates: [references/review-templates.md](references/review-templates.md).
 
 Before any `gh pr review` or `gh pr merge` call, print a table of every PR in
 scope with its package(s), severity, gate verdict, CI status, rebase state,
-review-check result (Step 5a), and proposed action — stating explicitly which ones will be rebase-merged.
+review-check result (Step 5a), and proposed action — stating explicitly which ones will be merged.
 
 Then record the base branch's current state, the baseline Step 9 compares
 against:
@@ -246,7 +246,7 @@ A held PR (Templates B/C/D) is not a blocker: posting its comment is the
 routine outcome, and it proceeds with the rest. `skipped` and `success` on
 the base branch both count as not red.
 
-### 8. Post the reviews, rebase-merge the eligible ones
+### 8. Post the reviews, merge the eligible ones
 
 ```bash
 gh pr review <number> --repo <repo> --approve --body "..."   # Template A
@@ -260,19 +260,23 @@ Templates A and B include the evidence block, and line comments on the lock
 entries are optional. See
 [references/review-templates.md](references/review-templates.md).
 
-For every PR approved under Template A, follow the approval with a rebase
-merge:
+For every PR approved under Template A, follow the approval with a squash
+merge authored by you:
 
 ```bash
-gh pr merge <number> --repo <repo> --rebase --delete-branch --match-head-commit <reviewed-head-sha>
+gh pr merge <number> --repo <repo> --squash --delete-branch \
+  --author-email "$(gh api user --jq '"\(.id)+\(.login)@users.noreply.github.com"')" \
+  --match-head-commit <reviewed-head-sha>
 ```
 
 `--match-head-commit` makes sure the merged commit is the one you reviewed.
 If Dependabot pushed in the meantime, the merge fails: review again.
 
-**Merge strategy and cleanup.** Prefer rebase; squash is acceptable when the
-repo disallows rebase. Never a merge commit unless it is the only strategy
-allowed. After the merges, remove leftover `dependabot/*` branches that have
+**Merge strategy and cleanup.** Squash, with your noreply address as the
+commit author, so the merge counts as your commit and you are the first
+contact when it breaks. Fall back to rebase when the repo disallows squash
+(the commit then stays Dependabot's). Never a merge commit unless it is the
+only strategy allowed. After the merges, remove leftover `dependabot/*` branches that have
 no open PR. Details and commands:
 [references/merge-and-cleanup.md](references/merge-and-cleanup.md).
 
@@ -323,6 +327,12 @@ recommendation, on the original PR. The full procedure, commands included, is
 in [references/revert-procedure.md](references/revert-procedure.md).
 
 ### 10. Report
+
+**You are the first contact.** A merge by this skill is yours: it is authored
+by you and the review is under your login. When anything goes wrong (a red
+base run, a revert, a merge that was refused or held), assign the revert PR or
+issue to `@me` and put it first in the report, so GitHub notifies you and you
+can refine the skill from it.
 
 Summarize: how many approved and merged, how many approved but left unmerged
 (and why), how many held (and which gate or review check held them), how many needed CI

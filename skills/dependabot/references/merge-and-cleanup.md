@@ -4,12 +4,23 @@ Disclosed reference for [`SKILL.md`](../SKILL.md) Step 8.
 
 ## Merge strategy
 
-Prefer rebase: these PRs are one logical commit from a bot, and a rebase
-keeps Dependabot's own commit (release-notes trailer, signature) on the base
-branch. Squash is acceptable when the repo disallows rebase, or when its
-history is squash-only. Say which strategy you used in the report. Use
-`--squash` in place of `--rebase`. Never use a merge commit unless it is the
-only allowed strategy. Check what the repo allows:
+Prefer squash, authored by you. A squash commit takes the author you pass
+with `--author-email`; a rebase replays Dependabot's own commit and can never
+count as yours. Use your GitHub noreply address, so your personal email stays
+out of public history:
+
+```bash
+gh api user --jq '"\(.id)+\(.login)@users.noreply.github.com"'
+```
+
+A squash commit that carries an email linked to your account counts as a
+contribution once it is on the default branch. What it loses is Dependabot's
+own signature and trailer. The PR keeps the release notes, so put the bumped
+packages and the PR URL in the commit body. Cleanup is the same as for a
+rebase: `--delete-branch` and the repo's delete-on-merge setting remove the
+branch. Fall back to rebase when the repo disallows squash, and say in the
+report that the commit stays Dependabot's. Never use a merge commit unless it
+is the only allowed strategy. Check what the repo allows:
 
 ```bash
 gh repo view <repo> --json rebaseMergeAllowed,squashMergeAllowed,mergeCommitAllowed,deleteBranchOnMerge
