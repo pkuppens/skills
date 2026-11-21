@@ -82,6 +82,24 @@ Rebase state: {CLEAN | BEHIND} — merges without conflicts.
 Approving — overall severity is {overall_level}, same major throughout, CI is green.
 ```
 
+### A, major variant — approve through the major path
+
+Only after M1–M3 in [major-bumps.md](major-bumps.md) all pass. Name the
+evidence, not the conclusion:
+
+```
+Approving under the cooldown + usage policy — major bump: {package} {old} -> {new}
+(plus {n} minor/patch updates in this group).
+- Cooldown ({cooldown} days required): {package}@{new} published {date} ({days} days ago);
+  every other version in the group is at least as old as the requirement.
+- Review checks R1–R6: {result each, one line}.
+- Usage: {direct | indirect via {layer}}: {where, e.g. test.environment in vite.config.ts}.
+  Breaking changes in the release notes: {each one, used / not used}.
+- Coverage: {suite} ran on the head SHA: {counts}, locally with `{ci install command}`
+  and in CI {ci_run_url}. {For indirect use: {layer} admits {new major} and its tests passed.}
+- Rebase state: {CLEAN | BEHIND}. Rebase-merging.
+```
+
 ## B — Comment, held for human judgement (version gate held)
 
 Used for `gh pr review <n> --comment --body "..."` — never `--approve` and
@@ -97,6 +115,17 @@ Holding this one for manual review: {package}: {old} -> {new} is a major bump.
 CI status: {green | red | pending | no checks ran}.
 Not auto-approving because a major version bump can carry breaking changes
 even with green CI — this needs someone to read the release notes.
+```
+
+**Major bump, major path not cleared:**
+
+```
+Holding this one: {package}: {old} -> {new} is a major bump and the major path
+(M1 cooldown, M2 usage, M3 coverage or M4 install) is not met: {Cooldown: {package}@{version} was published {date},
+matures {date + cooldown days} | Usage: {why the use or its coverage is unknown}
+| Coverage: {which use has no passing test}}.
+CI status: {green | red | pending | no checks ran}.
+Will qualify once {the missing evidence}.
 ```
 
 **Downgrade (any component going backwards overall):**
