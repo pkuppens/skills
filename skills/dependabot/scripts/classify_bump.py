@@ -119,9 +119,23 @@ def parse_version(v: str) -> tuple[int, int, int]:
 
 
 def classify(old: tuple[int, int, int], new: tuple[int, int, int]) -> str:
+    """Severity of an old -> new pair of (major, minor, patch) tuples.
+
+    SemVer 2.0.0 item 4: while the major is 0, anything MAY change at any
+    time. It does not say how to read 0.y.z, so this follows the npm caret
+    and Cargo convention, the strictest common reading: the leftmost non-zero
+    component is the breaking one. Hence 0.1.2 -> 0.2.0 is "major", and so is
+    0.0.1 -> 0.0.2 (^0.0.1 admits no other version). 0.1.2 -> 0.1.5 stays "patch".
+    """
     if new > old:
         if new[0] != old[0]:
             return "major"
+        if old[0] == 0:
+            if new[1] != old[1]:
+                return "major"
+            if old[1] == 0:
+                return "major"
+            return "patch"
         if new[1] != old[1]:
             return "minor"
         return "patch"
@@ -265,7 +279,14 @@ def self_test() -> int:
         ("1.2.3", "2.0.0", "major", "HOLD"),      # major bump
         ("1.9.0", "1.11.0", "minor", "AUTO"),     # numeric, not lexicographic
         ("1.2.3", "1.2.3", "unchanged", "HOLD"),  # no-op
-        ("0.9.0", "0.10.0", "minor", "AUTO"),     # 0.x still compares on major=0
+        # 0.y.z: the leftmost non-zero component is the breaking one (SemVer 2.0.0 item 4).
+        ("0.9.0", "0.10.0", "major", "HOLD"),     # 0.x minor bump may break
+        ("0.1.2", "0.2.0", "major", "HOLD"),
+        ("0.1.2", "0.1.5", "patch", "AUTO"),      # same 0.x: patch
+        ("0.0.1", "0.0.2", "major", "HOLD"),      # 0.0.x: every release may break
+        ("0.0.3", "0.1.0", "major", "HOLD"),
+        ("0.9.0", "1.0.0", "major", "HOLD"),
+        ("0.1.2", "0.1.1", "downgrade", "HOLD"),
         # Single-level versions: AUTO only for a GitHub Action seen in a workflow file.
         ("5", "7", "tag", "AUTO", "action"),          # actions/checkout@v5 -> @v7
         ("v5", "v7", "tag", "AUTO", "action"),        # same with a v prefix
