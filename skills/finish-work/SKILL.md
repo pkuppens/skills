@@ -130,8 +130,8 @@ their review.
 
 **Answer every human thread you act on.** After a fix is pushed, reply on
 that thread with what changed and the commit SHA. When you change nothing,
-reply with the reason. **Never resolve a thread**: the person who opened it
-resolves it. Commands and the pending-review exception:
+reply with the reason. End each reply with the agent marker (step 5). **Never
+resolve a thread**: the person who opened it resolves it. Commands and the pending-review exception:
 [references/merge-gate.md](references/merge-gate.md) section 4.
 
 ### 5. Sign-off
@@ -275,6 +275,7 @@ to end.
 Only in these cases. Everything else, decide and go on:
 
 - a human has requested changes;
+- review threads are still open after your replies (see step 4);
 - CI is red and you cannot reproduce it within the timebox;
 - a conflict changes behaviour on both sides;
 - the gate would need an admin override;
