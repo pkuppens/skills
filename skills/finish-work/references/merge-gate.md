@@ -159,6 +159,18 @@ gh api graphql -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$
 gh pr view <pr> --json mergeable,mergeStateStatus   # want: MERGEABLE, not BEHIND/DIRTY
 ```
 
+**Replying and resolving.** Reply on each human thread you act on, with what
+changed and the commit SHA. Do not resolve the thread: the reviewer who opened
+it does that. Threads still open after your replies are not a failure of the
+reply; report them and ask the user. Never resolve them to pass the gate.
+
+```bash
+gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<comment-id>/replies -f body="<what changed> (<sha>)"
+```
+
+`<comment-id>` is the id of the thread's first comment (`pulls/<pr>/comments`).
+For a pending review, use the plain PR comment from section 2 instead.
+
 `BLOCKED` means a protection rule is not yet satisfied; after the checks above
 pass it usually names the missing approval. `UNKNOWN` means GitHub has not
 computed it yet: query again once or twice before treating it as a failure.
