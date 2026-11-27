@@ -22,7 +22,7 @@ posted after the fact, on a PR that was merged and then reverted (Step 9).
 ## A — Approve (gate AUTO, CI green, rebase clean)
 
 Used for `gh pr review <n> --approve --body "..."`, then `gh pr merge <n>
---squash --delete-branch --author-email <your noreply address>` (`--rebase` when the repo disallows squash).
+<strategy from Step 0> --delete-branch`, with `--author-email <your noreply address>` for squash only.
 
 ```
 Meets the conditions for a safe dependency update: {level} bump, {package list, e.g. "react-router 8.3.0 -> 8.3.1"}.
@@ -88,13 +88,14 @@ Evidence: CI green ({ci_run_url}); rebase {CLEAN | BEHIND}; no package changes i
 Merging by {squash | rebase}.
 ```
 
-### A, major variant — approve through the major path
+### A, major variant — approve an authorized major
 
-Only after M1–M4 in [major-bumps.md](major-bumps.md) all pass. State the
-conclusion first, then the evidence for each condition:
+Only when the user's invocation explicitly authorized majors (SKILL.md Step 0).
+Quote the authorization, then report the M1–M4 evidence from
+[major-bumps.md](major-bumps.md), including any condition that is not met:
 
 ```
-Meets the conditions for a safe major update: {package} {old} -> {new}
+Merging a major update on the user's explicit authorization: {package} {old} -> {new}
 (plus {n} minor/patch updates in this group), under the cooldown + usage policy.
 - Cooldown ({cooldown} days required): {package}@{new} published {date} ({days} days ago);
   every other version in the group is at least as old as the requirement.
@@ -115,23 +116,15 @@ never `--request-changes` for this case; the point is to flag, not block.
 Pick the sentence matching why the gate held, so the comment says something
 specific rather than a generic "needs review".
 
-**Major bump:**
+**Major bump (not authorized, or authorized but R1/R2 holds; name which):**
 
 ```
-Holding this one for manual review: {package}: {old} -> {new} is a major bump.
-CI status: {green | red | pending | no checks ran}.
-Not auto-approving because a major version bump can carry breaking changes
-even with green CI — this needs someone to read the release notes.
-```
-
-**Major bump, major path not cleared:**
-
-```
-Holding this one: {package}: {old} -> {new} is a major bump and the major path
-(M1 cooldown, M2 usage, M3 coverage or M4 install) is not met: {Cooldown: {package}@{version} was published {date},
+Holding this one for a human decision: {package}: {old} -> {new} is a major bump.
+Evidence so far (M1 cooldown, M2 usage, M3 coverage, M4 install): {Cooldown: {package}@{version} was published {date},
 matures {date + cooldown days} | Usage: {why the use or its coverage is unknown}
 | Coverage: {which use has no passing test}}.
 CI status: {green | red | pending | no checks ran}.
+A major can break even with green CI: someone needs to read the release notes.
 Will qualify once {the missing evidence}.
 Recommended next steps: {optional, e.g. "re-run the check on {date}", "add a test for {feature}"}.
 ```

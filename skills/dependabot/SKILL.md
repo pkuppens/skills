@@ -1,6 +1,6 @@
 ---
 name: dependabot
-description: "Run the daily Dependabot check on your assigned PRs. Classify each bump by SemVer, treating 0.x minor bumps as major. Require green CI and a clean rebase. Run local review checks: lockfile, package usage, what CI ran. Post a formal GitHub review, not a plain comment. Approve patch and minor bumps. Approve a major bump only when cooldown, usage and test coverage are proven. Merge, watch the base branch, and revert through a PR if it goes red. Use for the daily dependency check, or to review, triage or clear Dependabot PRs."
+description: "Run the daily Dependabot check on your assigned PRs. Classify each bump by SemVer, treating 0.x minor bumps as major. Require green CI and a clean rebase. Run local review checks: lockfile, package usage, what CI ran. Post a formal GitHub review, not a plain comment. Approve and merge patch and minor bumps. Hold major bumps for a human, and merge them only when the user's invocation explicitly authorizes majors. Merge, watch the base branch, and revert through a PR if it goes red. Use for the daily dependency check, or to review, triage, update or clear Dependabot PRs, including an explicit \"update majors\" request."
 compatibility: Requires the gh CLI authenticated with read, pull-request-review, and merge access to the target repository, plus Python 3.9+ for scripts/classify_bump.py. The Step 5a review checks also need git, a local clone of the target repository, and that ecosystem's toolchain (for example uv or npm); without them, the local checks are recorded as not run.
 allowed-tools: Bash(gh pr *) Bash(gh run *) Bash(gh repo view*) Bash(gh api*) Bash(git *) Bash(uv *) Bash(npm view*) Bash(npm explain*) Bash(npm ls*) Bash(curl -s https://pypi.org/*)
 ---
@@ -10,8 +10,9 @@ allowed-tools: Bash(gh pr *) Bash(gh run *) Bash(gh repo view*) Bash(gh api*) Ba
 Reviews the Dependabot PRs assigned to you and posts a **formal GitHub
 review** for each — `gh pr review`, which counts as a review contribution —
 never a bare `gh pr comment`. PRs that clear all three gates (version, CI,
-rebase; a major bump clears the version gate through the major path in
-Step 6) and the review checks (Step 5a) are squash-merged under your name, and the resulting
+rebase; a major bump clears the version gate only when the user explicitly
+authorized majors, Step 6) and the review checks (Step 5a) are merged with the
+repository's allowed strategy (Step 0, Step 8), and the resulting
 base-branch run is watched to a
 conclusion. With no blocker (Step 7) it runs end to end without pausing for
 a go-ahead. This skill only ever identifies, reviews, merges, and — when a
@@ -24,6 +25,15 @@ Otherwise default to the current directory's repo (`gh repo view --json
 nameWithOwner`).
 
 ## Steps
+
+### 0. Detect the project policy and the invocation
+
+Once per repository, before Step 1: read the allowed merge methods, the
+required CI check, and the project's dependency policy. Project rules only make
+the skill stricter. **Majors are merged only when the user's invocation
+explicitly authorizes them** (for example "update majors on green CI, I
+pre-checked"); "run the daily check" does not. When unsure, majors hold.
+Commands and rules: [references/project-policy.md](references/project-policy.md).
 
 ### 1. Find the Dependabot PRs assigned to you
 
@@ -107,7 +117,7 @@ npm caret and Cargo reading, the strictest common one:
 | `1.2.3` | `1.3.1` | AUTO | minor increase; the lower patch is a normal reset |
 | `1.2.3` | `1.1.0` | HOLD | minor decrease |
 | `1.2.3` | `1.2.1` | HOLD | patch decrease |
-| `1.2.3` | `2.0.0` | HOLD | major bump (the major path in Step 6 can lift this) |
+| `1.2.3` | `2.0.0` | HOLD | major bump (held unless the invocation authorizes majors, Step 0) |
 | `0.1.2` | `0.1.5` | AUTO | patch inside the same `0.Y` line |
 | `0.1.2` | `0.2.0` | HOLD | major: `0.Y` minor bump may break |
 | `0.9.0` | `0.10.0` | HOLD | major, same reason |
@@ -178,7 +188,7 @@ Green CI says the checks passed, not what they tested. First run
 origin/<base>...HEAD` show changes from earlier merges, and a patch can look
 like a major bump (seen on pkuppens.github.io#133). For every PR that is
 still AUTO, green and rebase-clean, and for every major bump that is green and
-rebase-clean and goes to the major path (Step 6), run R1–R6 from
+rebase-clean and is a major (Step 6), run R1–R6 from
 [references/review-checks.md](references/review-checks.md). Run them in a
 throwaway worktree, in a container where you can, because R3 and R6
 execute the new dependency's code and clearing the token variables does not
@@ -198,8 +208,9 @@ holds the PR:
 | AUTO (patch, minor, or Actions `tag`) | green | clean (`CLEAN`/`BEHIND`) | **Approve + merge** (Template A), if no Step 5a check holds |
 | AUTO, but a Step 5a check holds | green | clean (`CLEAN`/`BEHIND`) | **Comment**, hold (Template B, review-check variant), naming the check and the finding |
 | AUTO | green | `DIRTY`/`UNKNOWN` after re-poll | **Comment**, hold (Template D) |
-| HOLD — major | green | clean | Run the major path ([references/major-bumps.md](references/major-bumps.md)), with R1–R6: **approve + merge** (Template A, major variant) only when M1–M4 pass, no Step 5a check holds, and every major-bumped package is a dev/test-only dependency. A runtime or production dependency: post the evidence as a **comment** and ask before merging. Any step failing: **comment**, hold (Template B) naming it. Never for Docker/runtime/calver versions |
-| HOLD — major | red, pending, none, or not clean | any | **Comment**, hold (Template B, or C/D for the CI or rebase cause) — a semver major bump (or a single-level non-Action version) can break even with green CI |
+| HOLD — major, **not** authorized | green | clean | **Comment**, hold (Template B, major variant) with the evidence from [references/major-bumps.md](references/major-bumps.md) (M1–M4, R1–R6) as advice for the human. Never approve or merge. The human decides |
+| HOLD — major, **authorized** by the invocation (Step 0) | green | clean | **Approve + merge** (Template A, major variant) if no Step 5a check holds (R1, R2). The authorization replaces the M1–M4 conditions, but run and report them anyway. Docker, runtime, calver and project-policy tool-dependency bumps are covered only when the invocation names them |
+| HOLD — major | red, pending, none, or not clean | any | **Comment**, hold (Template B, or C/D for the CI or rebase cause) — a major (or a single-level non-Action version) needs green CI and a clean rebase before it can be considered at all |
 | HOLD — downgrade | any | any | **Comment**, hold (Template B) — a version going backwards is never an expected Dependabot bump |
 | HOLD — unchanged | any | any | **Comment**, hold (Template B) — nothing effective to approve |
 | HOLD — conflict | any | any | **Comment**, hold (Template B) — the manifest diff and the PR body disagree about a version, so the real change is unclear |
@@ -260,8 +271,8 @@ Templates A and B include the evidence block, and line comments on the lock
 entries are optional. See
 [references/review-templates.md](references/review-templates.md).
 
-For every PR approved under Template A, follow the approval with a squash
-merge authored by you:
+For every PR approved under Template A, follow the approval with a merge
+using the strategy from Step 0. Squash, authored by you, is the default:
 
 ```bash
 gh pr merge <number> --repo <repo> --squash --delete-branch \
@@ -274,9 +285,9 @@ If Dependabot pushed in the meantime, the merge fails: review again.
 
 **Merge strategy and cleanup.** Squash, with your noreply address as the
 commit author, so the merge counts as your commit and you are the first
-contact when it breaks. Fall back to rebase when the repo disallows squash
-(the commit then stays Dependabot's). Never a merge commit unless it is the
-only strategy allowed. After the merges, remove leftover `dependabot/*` branches that have
+contact when it breaks. Use rebase only when the repo disallows squash
+(the commit then stays Dependabot's), and drop `--author-email`. Never a merge
+commit unless it is the only strategy allowed. After the merges, remove leftover `dependabot/*` branches that have
 no open PR. Details and commands:
 [references/merge-and-cleanup.md](references/merge-and-cleanup.md).
 
@@ -362,12 +373,13 @@ run. A rule with no row is a hypothesis, not policy.
 | Merge path | [pkuppens.github.io #124](https://github.com/pkuppens/pkuppens.github.io/pull/124), [#125](https://github.com/pkuppens/pkuppens.github.io/pull/125) | merged, base green | Patch/minor bump with green CI and a clean rebase: approve and merge. |
 | Red CI before the PR | [babblr #341](https://github.com/pkuppens/babblr/pull/341), [#342](https://github.com/pkuppens/babblr/pull/342), [#343](https://github.com/pkuppens/babblr/pull/343) | held, comment only | A failure that also occurs on the base branch is not the bump's fault. Report it, do not merge on red. |
 | Lockfile-only patch | `uv` lockfile patch PR, see [#87](https://github.com/pkuppens/skills/issues/87), [#88](https://github.com/pkuppens/skills/pull/88) | approved with two notes | Green CI is not enough: check the lockfile and the usage (R1-R6). |
-| Dev-dependency major, aged | [pkuppens.github.io #132](https://github.com/pkuppens/pkuppens.github.io/pull/132) (jsdom 30 to 31) | merged | R4/R5 found three Node scripts CI did not run; R6 ran them locally. |
-| Major path, cooldown met | [babblr #365](https://github.com/pkuppens/babblr/pull/365) (jsdom 30.1.3 to 31.0.0 plus 12) | approved and merged | A dev-only major merges after M1-M4: 7-day cooldown, mapped usage, coverage. |
+| Dev-dependency major, aged (before Step 0; now needs explicit authorization) | [pkuppens.github.io #132](https://github.com/pkuppens/pkuppens.github.io/pull/132) (jsdom 30 to 31) | merged | R4/R5 found three Node scripts CI did not run; R6 ran them locally. |
+| Major path, cooldown met (before Step 0; now needs explicit authorization) | [babblr #365](https://github.com/pkuppens/babblr/pull/365) (jsdom 30.1.3 to 31.0.0 plus 12) | approved and merged | Evidence for a major: 7-day cooldown, mapped usage, coverage. Now merged only on explicit authorization. |
 | Major path, cooldown not met | [babblr #369](https://github.com/pkuppens/babblr/pull/369) (same group) | held | Five versions were under 7 days old: the group waits as a whole. |
 | Full run, dev-dependency group | [pkuppens.github.io #133](https://github.com/pkuppens/pkuppens.github.io/pull/133) (8 updates, minor) | approved, rebase-merged, `main` deploy run green | R1-R7, review, merge, babysit and branch check all ran through the skill. A stale local base ref once faked a major (Step 5a now fetches first). |
 | Revert path | rehearsed in scratch clones only, [#52](https://github.com/pkuppens/skills/pull/52), [#92](https://github.com/pkuppens/skills/issues/92) | range revert, newest first, restores the files | The git mechanics work. A real red base run has not happened, so the analyse-and-recommend step is unproven. |
 
 The review checks (Step 5a) and the major path ran by hand, not yet end to
 end through the skill ([#90](https://github.com/pkuppens/skills/issues/90)).
-Treat both as experimental.
+Treat both as experimental. Step 0 and the authorized-major path
+([#101](https://github.com/pkuppens/skills/issues/101)) have not run on a real PR.
