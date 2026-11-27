@@ -11,7 +11,8 @@ gh pr checks <pr>
 # Local gate
 test -f .pre-commit-config.yaml && echo "pre-commit: yes"
 
-# Branch protection (404 = none)
+# Branch protection (404 = none). For the required-review count use the probe in
+# merge-gate.md section 0 instead: it also reads rulesets and fails safe.
 gh api repos/{owner}/{repo}/branches/<base>/protection --jq '{
   approvals: .required_pull_request_reviews.required_approving_review_count,
   dismiss_stale: .required_pull_request_reviews.dismiss_stale_reviews,

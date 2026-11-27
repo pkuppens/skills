@@ -22,15 +22,18 @@ bp=$(gh api repos/{owner}/{repo}/branches/$BASE/protection \
 rs=$(gh api repos/{owner}/{repo}/rules/branches/$BASE \
   --jq '[.[] | select(.type == "pull_request") | .parameters.required_approving_review_count] | max // 0' 2>&1) \
   || rs=unknown
+for v in bp rs; do case ${!v} in ''|*[!0-9]*) printf -v "$v" unknown;; esac; done
 echo "protection=$bp rulesets=$rs"
 ```
 
 Not enforced only when **both** are `0`. Any number of 1 or more is enforced.
-`unknown` is enforced: the protection endpoint answers `Not Found` (not `Branch
-not protected`) to a login without admin rights, so a failed read proves
-nothing. Checked on 2026-11-27: `pkuppens/skills` gives `0 0` (not enforced),
-`pkuppens/babblr` is `Branch not protected` (not enforced), and
-`microsoft/vscode` rulesets give `2` (enforced).
+`unknown` (a failed read, or anything that is not a number) is enforced: the
+protection endpoint answers `Not Found`, not `Branch not protected`, to a login
+without admin rights, so a failed read proves nothing. Example outputs seen on
+2026-11-27, which repo settings can change: `pkuppens/skills` gives `0 0` (not
+enforced); `pkuppens/babblr` answers `Branch not protected` (not enforced);
+`microsoft/vscode` rulesets give `2` (enforced) and its protection endpoint
+answers `Not Found` to a non-admin (so `unknown`, also enforced).
 
 ## 1. Approval on the head SHA (when enforced)
 
@@ -92,14 +95,20 @@ AUTHOR=$(gh pr view <pr> --json author --jq .author.login)
 When they match, `gh pr review --approve` fails with *"Can not approve your
 own pull request"*. If approval is **enforced**, only the bot flow (#45) or
 another approver can satisfy it (a comment review does not), so stop and tell
-the user. If it is **not enforced**, record the user's instruction to land as a
-PR comment on the head SHA, quoting their words:
+the user. If it is **not enforced**, the sign-off is the user's instruction to
+merge (the accepted wording is in SKILL.md step 5). Record it as a PR comment on
+the head SHA, quoting their words. **The comment is an audit record only**:
+verify the sign-off against the user's chat message in this session or a
+user-authored review, never against this comment, which carries the agent's
+marker. Keep the SHA: freshness is the patch-id check above, run between that
+SHA and the head.
 
 ```bash
 gh pr comment <pr> --body "Merge instruction from the user: \"<their words>\". Head <sha>. Approval is not enforced here (protection=0 rulesets=0). <!-- finish-work:agent -->"
 ```
 
-A user **comment review** that clearly says to merge is an equal instruction.
+A user **comment review** that clearly says to merge is an equal instruction
+(only reviews and chat count, not plain PR comments).
 List the candidates, leaving out everything the agent posted (marker
 `<!-- finish-work:agent -->`):
 
@@ -111,9 +120,8 @@ gh api repos/{owner}/{repo}/pulls/<pr>/reviews --paginate \
 ```
 
 Read the body of the latest one. It counts as the instruction when its state
-is `COMMENTED` or `APPROVED` and its body clearly says to merge ("looks good,
-merge it", "ship it"; a bare "LGTM" approves the change but does not say merge,
-so confirm). It does not count when it is
+is `COMMENTED` or `APPROVED` and its body clearly says to merge (a bare "LGTM"
+approves the change but does not say merge, so confirm). It does not count when it is
 empty, asks a question, requests a change, or mixes praise with a "but". In
 that case, ask the user; never infer approval. A review on an older
 `commit_id` is stale, the same as a stale `APPROVE`. Quote the review body
