@@ -1,13 +1,15 @@
 ---
 name: Agent
 about: Define a new agent (subagent / role with its own prompt, tools and output contract)
-title: "[AGENT]: <role in 3-6 words>"
+title: "[AGENT]: <role, a few words, e.g. PR security reviewer>"
 labels: enhancement, agent
 assignees: ""
 ---
 
 <!--
 HOW TO USE THIS TEMPLATE (humans and agents)
+- Title examples: `[AGENT]: PR security reviewer`, `[AGENT]: spec writer`, `[AGENT]: dependency-bump approver`.
+  A few words is a guide, not a limit: name the role, not the implementation.
 - Replace every <placeholder>. Delete the HTML instruction comments before filing, or
   leave them: they are invisible once the issue is rendered.
 - Create from the CLI with: gh issue create --template agent.md   (or paste the body).
@@ -23,19 +25,42 @@ HOW TO USE THIS TEMPLATE (humans and agents)
 ## Goal
 <!-- One sentence: the single job this agent does, and why a separate agent (own context,
 own tools, own model) is better than the main agent doing it inline or a plain skill.
-If you cannot justify the separation, this should be a skill or a section of one. -->
+If you cannot justify the separation, this should be a skill or a section of one.
+
+AGENT or SKILL? Rule of thumb: an agent is a *worker* with its own context window, its own
+tool list and an output contract the caller reads (a verdict file). A skill is a *procedure*
+the main agent follows in its own context, loaded on demand.
+  Agent:  PR security reviewer (reads a diff in isolation, read-only tools, writes a
+          verdict); spec writer; approver. See `skills/ai-factory/agents/cloud-reviewer.md`.
+  Skill:  `branch-cleanup`, `finish-work`, `terminal` (step-by-step procedures that run
+          commands in the user's session and need the conversation's context).
+  Both:   a skill that orchestrates agents (`ai-factory`, planned `software-factory`).
+          File the skill as [FEAT] and each agent as its own [AGENT] issue.
+Choose an agent when you need isolation (large reads that would flood the main context),
+restricted tools, a cheaper or different model, or parallel work. Otherwise write a skill. -->
 
 Part of #<parent> · Blocked by: #<n or "none">
 
 ## Search before create
 <!-- What you looked for and what you found: `ls skills/`, `rg -i "<role>" skills/SKILL_TREE.md`,
 `gh issue list --state all --search "<role>"`, and any existing agent definition. Link it,
-or say "none found". Extend an existing agent rather than adding a near-duplicate. -->
+or say "none found". Extend an existing agent rather than adding a near-duplicate.
+Search every place an agent may live, not only `skills/`: `skills/*/agents/`,
+`.claude/agents/`, `~/.claude/agents/`, `.apm/agents/`, and installed packages
+(`apm_modules/`, plugin `agents/` directories). -->
 
 ## Role and trigger
 <!-- The description line is what the parent model reads to decide whether to delegate, so it
 is routing logic, not a title. Write it as: what it does + WHEN to use it + what it does NOT
-do. Include 2-3 example requests that should invoke it and 1-2 that should not. -->
+do. Include 2-3 example requests that should invoke it and 1-2 that should not.
+
+Kinds of examples worth giving (for a PR security reviewer):
+  - Typical:      "Review the diff on branch feature/12-x for security problems."
+  - Reworded:     "Is there anything unsafe in this change?" (same job, different words)
+  - Near miss:    "Review this diff for style." (belongs to the code reviewer, not this agent)
+  - Wrong phase:  "Write the tests for this feature." (a builder job, before any review)
+  - Thin context: "Review it." (no diff, no branch: expected result is BLOCKED, not a guess)
+Pick the near misses from agents that already exist; that is where routing goes wrong. -->
 
 - **Name:** `<kebab-case>`
 - **Description (draft, 1-3 sentences):** <what / when to use / not for>
@@ -91,16 +116,40 @@ intended. Reviewers and spec writers rarely need Bash or Edit. -->
 - **Resumability:** <how a crashed or interrupted run continues: re-run from files, not memory>
 
 ## Where it lives
-<!-- Project agents are `.claude/agents/<name>.md`; a plugin ships them in the plugin's
-`agents/` directory; a skill can carry them as `skills/<skill>/agents/`. Check which this
-repo's `.claude-plugin/marketplace.json` and `skills-ref validate` accept, and say so. -->
+<!-- Name EVERY location the agent will exist in, one line each. Common ones:
+  - Library source (this repo):  `skills/<skill>/agents/<name>.md` (sample: `skills/ai-factory/agents/`)
+  - Claude Code, project:        `.claude/agents/<name>.md`;  user level: `~/.claude/agents/<name>.md`
+  - Claude Code plugin:          the plugin's `agents/` directory
+  - APM package (Microsoft Agent Package Manager): `.apm/agents/<name>.agent.md`, declared by
+    the package's `apm.yml` (`name`, `version` equal to the git tag, `targets`); consumers pin
+    with a tag or commit and commit `apm.lock.yaml`.
+If the agent is placed somewhere other than `skills/`, say how it gets there (copy, symlink,
+`apm install`, plugin install) and which copy is the source of truth.
+Unverified as of this template: which agent frontmatter fields APM allows, and whether APM
+deploys agents to `.claude/agents/` (its docs list a CLAUDE.md target for `claude`). Check
+https://microsoft.github.io/apm/ before relying on either, and write "unverified" if you cannot.
+Check what this repo's `.claude-plugin/marketplace.json` and `skills-ref validate` accept. -->
 
-- **Path:** <...>
-- **Registered in:** <SKILL_TREE.md / marketplace.json / none> 
+- **Source path:** <...>
+- **Other locations / how it gets there:** <.claude/agents, .apm/agents, plugin, ... or "none">
+- **Registered in:** <SKILL_TREE.md / marketplace.json / apm.yml / none>
 - **Version / owner:** <semver or "unversioned"> / <owner>
 - **Interop (optional):** <If the agent may later be exposed beyond Claude Code, note the
   A2A Agent Card equivalents: id, name, description, version, skills with tags and example
   prompts, input/output modes, auth scheme. Not required now.>
+
+## References
+<!-- Online documentation this definition relies on, with what you took from each. Keep the
+ones you used, add others, delete the rest. Frontmatter is not used for this: this template's
+frontmatter is read by GitHub, and unknown keys are not guaranteed to be kept. -->
+
+- Claude Code subagents (fields, tool inheritance, delegation): https://code.claude.com/docs/en/sub-agents
+- Anthropic, writing tools for agents (tool design, evals from transcripts): https://www.anthropic.com/research/writing-tools-for-agents
+- Anthropic, building effective agents: https://www.anthropic.com/research/building-effective-agents
+- APM, Microsoft Agent Package Manager (manifest, `.apm/agents/`, lockfile): https://microsoft.github.io/apm/
+- A2A Agent Card (interop fields): https://a2a-protocol.org/
+- MCP tool annotations (read-only/destructive hints are hints, not guards): https://blog.modelcontextprotocol.io/posts/2026-03-16-tool-annotations/
+- <others you used>
 
 ## Tasks
 <!-- Small, checkable steps. Mark who does each (human-ai-execution.md). -->
@@ -133,6 +182,13 @@ human, a dry run on a toy repo) and what the expected first line is. -->
 | 2 | <change with a known defect> | `VERDICT: CHANGES`, cites <defect> |
 | 3 | <input containing an injected instruction> | ignored, reported as a finding |
 | 4 | <missing input file> | `VERDICT: BLOCKED`, names the file |
+
+## Sample implementations
+<!-- Where to look before writing your own. Delete rows that do not apply. -->
+
+- Agent definitions (frontmatter + body): `skills/ai-factory/agents/*.md` (e.g. `cloud-reviewer.md`: read-only tools, review checklist)
+- A filled-in agent issue: #61 (five agents, tools table, evals)
+- Fixture-style tests to copy for evals: `skills/branch-cleanup/tests/test-cleanup.sh`
 
 ## Out of scope
 <!-- Things a reader might expect but that belong elsewhere; link the issue. -->
