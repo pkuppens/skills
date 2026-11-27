@@ -1,13 +1,38 @@
 # Merge gate: the commands
 
-The gate is **approval and green CI on the same head commit**. Every check
-below is keyed to one SHA, read once at the start:
+The gate is **green CI on the head commit, plus the sign-off the repo calls
+for**: an `APPROVE` where a review is enforced (section 1), the user's
+instruction to land where it is not (section 2). Every check below is keyed to
+one SHA, read once at the start:
 
 ```bash
 SHA=$(gh pr view <pr> --json headRefOid --jq .headRefOid)
 ```
 
-## 1. Approval on the head SHA
+## 0. Is an approval enforced?
+
+Branch protection and rulesets are separate APIs; a repo can use either. Ask
+both, for the base branch:
+
+```bash
+BASE=<base>
+bp=$(gh api repos/{owner}/{repo}/branches/$BASE/protection \
+  --jq '.required_pull_request_reviews.required_approving_review_count // 0' 2>&1) \
+  || { case $bp in *"Branch not protected"*) bp=0;; *) bp=unknown;; esac; }
+rs=$(gh api repos/{owner}/{repo}/rules/branches/$BASE \
+  --jq '[.[] | select(.type == "pull_request") | .parameters.required_approving_review_count] | max // 0' 2>&1) \
+  || rs=unknown
+echo "protection=$bp rulesets=$rs"
+```
+
+Not enforced only when **both** are `0`. Any number of 1 or more is enforced.
+`unknown` is enforced: the protection endpoint answers `Not Found` (not `Branch
+not protected`) to a login without admin rights, so a failed read proves
+nothing. Checked on 2026-11-27: `pkuppens/skills` gives `0 0` (not enforced),
+`pkuppens/babblr` is `Branch not protected` (not enforced), and
+`microsoft/vscode` rulesets give `2` (enforced).
+
+## 1. Approval on the head SHA (when enforced)
 
 `reviewDecision` is the quick check:
 
@@ -56,7 +81,7 @@ which is what catches a base change that interacts with the PR. Report both
 SHAs and the patch-id. `git range-diff "$OLD"...$SHA` is the human-readable
 view when the ids differ and you want to see why.
 
-## 2. Self-authored PRs: a positive comment review
+## 2. Self-authored PRs, and the merge instruction when approval is not enforced
 
 ```bash
 ME=$(gh api user --jq .login)
@@ -65,9 +90,18 @@ AUTHOR=$(gh pr view <pr> --json author --jq .author.login)
 ```
 
 When they match, `gh pr review --approve` fails with *"Can not approve your
-own pull request"*. Without the bot flow (#45), the approval is then the
-user's comment review on the head SHA. List the candidates, leaving out
-everything the agent posted (marker `<!-- finish-work:agent -->`):
+own pull request"*. If approval is **enforced**, only the bot flow (#45) or
+another approver can satisfy it (a comment review does not), so stop and tell
+the user. If it is **not enforced**, record the user's instruction to land as a
+PR comment on the head SHA, quoting their words:
+
+```bash
+gh pr comment <pr> --body "Merge instruction from the user: \"<their words>\". Head <sha>. Approval is not enforced here (protection=0 rulesets=0). <!-- finish-work:agent -->"
+```
+
+A user **comment review** that clearly says to merge is an equal instruction.
+List the candidates, leaving out everything the agent posted (marker
+`<!-- finish-work:agent -->`):
 
 ```bash
 gh api repos/{owner}/{repo}/pulls/<pr>/reviews --paginate \
@@ -76,9 +110,10 @@ gh api repos/{owner}/{repo}/pulls/<pr>/reviews --paginate \
         | max_by(.submitted_at) // empty | {id, state, submitted_at, body}'
 ```
 
-Read the body of the latest one. It counts as approval when its state is
-`COMMENTED` or `APPROVED` and its body clearly approves the change ("LGTM",
-"approved", "looks good, merge it", "ship it"). It does not count when it is
+Read the body of the latest one. It counts as the instruction when its state
+is `COMMENTED` or `APPROVED` and its body clearly says to merge ("looks good,
+merge it", "ship it"; a bare "LGTM" approves the change but does not say merge,
+so confirm). It does not count when it is
 empty, asks a question, requests a change, or mixes praise with a "but". In
 that case, ask the user; never infer approval. A review on an older
 `commit_id` is stale, the same as a stale `APPROVE`. Quote the review body
