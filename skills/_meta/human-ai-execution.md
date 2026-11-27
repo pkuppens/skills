@@ -36,9 +36,12 @@ Some workflow steps rely on skills **not in this repo**. Install them separately
 
 ## Approval rule for merging
 
-A PR merges only with **approval and green CI on the same head commit**. The approval is a formal `APPROVE` review, never a chat message. It may come from the user or from the agent; an agent approves only after the chores are done (review findings fixed or filed, CI checked) and names the SHA it verified. Any push after the approval needs a new one.
+A PR merges only with **green CI on the head commit and the sign-off the repo calls for**.
 
-The agent cannot approve a PR its own `gh` login opened: GitHub rejects self-approval. Until agent PRs are opened by a bot identity ([#45](https://github.com/pkuppens/skills/issues/45)), such a PR waits for the user: a comment review by the user on the head commit whose body clearly approves counts as the approval. The agent shares the user's login, so anything it posts carries a marker and never counts, and it never posts an approving comment review itself. Without such a review the PR is not merged. The commands that check the rule: [finish-work/references/merge-gate.md](../finish-work/references/merge-gate.md).
+- **Where the repo enforces an approving review** (branch protection or a ruleset requires one): a formal `APPROVE` on the head commit, never a chat message. It may come from the user or from the agent; an agent approves only after the chores are done (review findings fixed or filed, CI checked) and names the SHA it verified. Any push after the approval needs a new one. The agent cannot approve a PR its own `gh` login opened (GitHub rejects self-approval), so such a PR needs the bot identity ([#45](https://github.com/pkuppens/skills/issues/45)) or another approver. A comment review does not satisfy a required review, and an admin override is never used.
+- **Where it does not** (zero required reviews or no protection, as on this repo): no approval is asked for, because GitHub would not ask for one either. The user's explicit instruction to merge that PR in chat ("merge it", not "finish this"), or a positive comment review ("LGTM", "OK", "approved"), and still valid for the diff they saw (same patch-id), is the sign-off, and the agent records it as a marked PR comment that serves as an audit record only. The agent shares the user's login, so anything it posts carries a marker and never counts as the user's word, and it never posts an approving review of its own work.
+
+The commands that check the rule, including the probe for which case applies: [finish-work/references/merge-gate.md](../finish-work/references/merge-gate.md).
 
 ## Relation to skills in this library
 

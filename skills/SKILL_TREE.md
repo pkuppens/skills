@@ -23,7 +23,7 @@ Also in `_meta/`: [human-ai-execution.md](_meta/human-ai-execution.md) (which st
 | Skill | Path | Purpose |
 |-------|------|---------|
 | branch-cleanup | [branch-cleanup/SKILL.md](branch-cleanup/SKILL.md) | Fetch/prune, fast-forward, verify content, and delete merged (incl. squash-merged) local+remote git branches |
-| finish-work | [finish-work/SKILL.md](finish-work/SKILL.md) | Land one PR: preflight, rebase, local gate, CI watch, review, formal APPROVE, merge only with approval and green CI on the same head commit, watch main, cleanup |
+| finish-work | [finish-work/SKILL.md](finish-work/SKILL.md) | Land one PR: preflight, rebase, local gate, CI watch, review, approval where the repo enforces one (else the user's instruction to merge), merge only with that sign-off and green CI on the same head commit, watch main, cleanup |
 | dependabot | [dependabot/SKILL.md](dependabot/SKILL.md) | Daily check of Dependabot PRs assigned to you: classify semver severity, require green CI and a clean rebase, post formal reviews, rebase-merge same-major bumps, then watch the base branch |
 | improve-skill | [improve-skill/SKILL.md](improve-skill/SKILL.md) | Improve a skill repo-first: issue, branch, validator, fresh-agent + user review, PR, then relink the personal copy in ~/.claude/skills (Windows junction/overlay) |
 | minor | [minor/SKILL.md](minor/SKILL.md) | Finish a minor GitHub issue end to end without asking: validate, decide open questions, record decisions as issue comments, implement, PR with transcript, merge |
