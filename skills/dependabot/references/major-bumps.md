@@ -1,25 +1,28 @@
-# Major bumps — the cooldown path
+# Major bumps — evidence for the human decision
 
 Disclosed reference for [`SKILL.md`](../SKILL.md) Step 6. "Major" follows the
 SKILL.md version rule, so `0.1.2 -> 0.2.0` and `0.0.1 -> 0.0.2` come here too:
 SemVer 2.0.0 permits breaking changes at any time while the major is 0.
 A major bump holds by default, because semver allows breaking changes and green CI may not exercise
-them. This path turns that hold into an approval when three things are proven:
+them. This path supports an approval when three things are proven:
 the version has aged, the project's use of it is known, and tests cover that
-use. If any one is missing, hold (Template B).
+use. Without authorization, a missing one means hold (Template B). With authorization, report it and let the human's decision stand.
 
 Run it only for a PR where the CI and rebase gates pass, together with the
 review checks R1–R6 ([review-checks.md](review-checks.md)); an R1 or R2 hold
-blocks approval here too. It replaces the blanket hold for **major** only.
+blocks approval here too. It gathers the evidence for a **major** decision; it does not itself lift the hold.
 `downgrade`, `unchanged`, `conflict` and `unclassifiable` still hold. So does
 any runtime, base-image or calver version (Docker `FROM`, `node`, `python`,
 `.nvmrc`), even though the classifier reports it as `major`: PR CI does not
 exercise a changed runtime.
 
-**Autonomy.** Merge on the major path only when every major-bumped package is
-a dev or test-only dependency (npm `devDependencies`, a `dev` dependency
-group). For a runtime or production dependency, post the evidence as a comment
-and ask the user before merging.
+**Autonomy.** Without explicit authorization in the user's invocation
+(SKILL.md Step 0), a major bump is never approved or merged: post M1–M4 and
+R1–R6 as a comment (Template B) so the human can decide quickly. With
+authorization, the skill may merge on green CI and a clean rebase. M1–M4 are
+still run and reported, but do not block, and runtime or production
+dependencies need no extra question. Docker, runtime, calver and
+policy-restricted bumps still need to be named in the authorization.
 
 ## M1 — Cooldown
 
@@ -67,8 +70,8 @@ breaking change needs a test that exercises it (M3), or the PR holds.
 | Use | What counts as coverage |
 |---|---|
 | Direct, in tests or tooling | The suite that uses it ran and passed on the PR head, in CI (R5) and locally (R6), with the counts reported. |
-| Direct, in runtime or production code | Not eligible for autonomous merge (see Autonomy). Name the test that exercises it, or hold. |
-| Direct, no test | Hold. A manual check can add a note to the review; it never replaces coverage. |
+| Direct, in runtime or production code | Name the test that exercises it, or report it as uncovered. |
+| Direct, no test | Report as uncovered. A manual check can add a note to the review; it never replaces coverage. Uncovered use is a reason for the human to hold; it blocks only when the invocation does not authorize majors. |
 | Indirect | The layer in between vouches for it: its declared range admits the new major, the new major is the single installed copy (`npm ls <pkg>`, `uv tree`), and the layer's own tests ran and passed on the PR head. Or the layer is bumped in the same PR and that bump passes. |
 
 When the declared range does **not** admit the new major (a forced resolution
