@@ -136,9 +136,12 @@ not enforced, and anything unreadable (`unknown`) is treated as enforced.
 
 **Not enforced.** No approval is required and none is requested. The sign-off
 is the user's instruction to **merge** this PR, in plain words ("merge it",
-"merge on my behalf", "ship it"), given in this session's chat or as a user
-comment review on the head SHA that says to merge. "Finish this", "wrap this
-up" and a bare "ok" or "go" are not one: stop at "ready to merge" and ask. An
+"merge on my behalf", "ship it") in this session's chat, **or a positive
+comment review by the user on the head SHA** ("LGTM", "OK", "approved", "looks
+good"): a review is the user judging this diff, so it needs no merge wording.
+In chat, "finish this", "wrap this up" and a bare "ok" or "go" are not an
+instruction: stop at "ready to merge" and ask. A review that asks a question,
+requests a change or mixes praise with a "but" is not a go-ahead. An
 instruction in the invocation itself counts; the review in step 4 still runs,
 and only the formal approval is dropped. A user's plain PR comment or an
 unmarked comment of unknown origin does not count.

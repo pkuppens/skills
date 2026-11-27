@@ -107,8 +107,9 @@ SHA and the head.
 gh pr comment <pr> --body "Merge instruction from the user: \"<their words>\". Head <sha>. Approval is not enforced here (protection=0 rulesets=0). <!-- finish-work:agent -->"
 ```
 
-A user **comment review** that clearly says to merge is an equal instruction
-(only reviews and chat count, not plain PR comments).
+A user **comment review** that is clearly positive ("LGTM", "OK", "approved",
+"looks good") is an equal sign-off (only reviews and chat count, not plain PR
+comments).
 List the candidates, leaving out everything the agent posted (marker
 `<!-- finish-work:agent -->`):
 
@@ -120,8 +121,8 @@ gh api repos/{owner}/{repo}/pulls/<pr>/reviews --paginate \
 ```
 
 Read the body of the latest one. It counts as the instruction when its state
-is `COMMENTED` or `APPROVED` and its body clearly says to merge (a bare "LGTM"
-approves the change but does not say merge, so confirm). It does not count when it is
+is `COMMENTED` or `APPROVED` and its body is clearly positive ("LGTM", "OK",
+"approved", "looks good"; merge wording is not needed in a review). It does not count when it is
 empty, asks a question, requests a change, or mixes praise with a "but". In
 that case, ask the user; never infer approval. A review on an older
 `commit_id` is stale, the same as a stale `APPROVE`. Quote the review body
