@@ -36,8 +36,14 @@ Usage:
     gh pr diff 109 | python classify_bump.py
     python classify_bump.py pr109.diff
     python classify_bump.py pr109.diff --body pr109-body.md
+    python classify_bump.py pr109.diff --body pr109-body.md --manifest package.json
     python classify_bump.py --self-test   # verify the gate rule itself
+
+--manifest (repeatable) names the project's own manifest files. With it every
+package is tagged direct or indirect, and a MAJOR-USE line says whether every
+major is indirect. Without it a lock-only package is tagged unknown.
 """
+import json
 import re
 import sys
 
@@ -165,6 +171,89 @@ def gate(severity: str) -> tuple[str, str]:
     if severity == "unchanged":
         return "HOLD", "no effective version change -- nothing to approve"
     return "HOLD", f"unclassifiable severity {severity!r}"
+
+
+QUOTED = re.compile(r'"([^"\n]+)"')
+PEP508_NAME = re.compile(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)\s*(?:\[[^\]]*\])?\s*(?:[<>=!~;@(]|$)")
+CONTAINER_KEYS = ("dependencies", "devDependencies", "peerDependencies", "optionalDependencies")
+
+
+def norm_name(name: str) -> str:
+    """Normalise a package name: PyPI treats `-`, `_` and `.` alike and ignores case."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def manifest_names(path: str, text: str) -> set[str]:
+    """Names a project declares itself: its direct dependencies.
+
+    package.json: the dependency tables. pyproject.toml: every quoted
+    PEP 508 requirement string. Anything else is read as requirements.txt,
+    one name per line. Deliberately loose for pyproject (it may also pick up a
+    quoted word that is not a dependency): a false "direct" only sends a
+    package down the stricter path, never the looser one.
+    """
+    base = path.replace("\\", "/").rsplit("/", 1)[-1]
+    names: set[str] = set()
+    if base == "package.json":
+        try:
+            data = json.loads(text)
+        except ValueError:
+            return names
+        for key in CONTAINER_KEYS:
+            names.update(norm_name(n) for n in (data.get(key) or {}))
+    elif base.endswith(".toml"):
+        for m in QUOTED.finditer(text):
+            req = PEP508_NAME.match(m.group(1))
+            if req:
+                names.add(norm_name(req.group(1)))
+    else:
+        for line in text.splitlines():
+            req = PEP508_NAME.match(line)
+            if req and not line.lstrip().startswith("-"):
+                names.add(norm_name(req.group(1)))
+    return names
+
+
+def use_of(pkg: str, source: str, names: set[str] | None, is_action: bool = False) -> str:
+    """direct | indirect | unknown for one package.
+
+    An Action `uses:` line or a manifest-diff entry is direct by definition.
+    A lock-only package is direct when the manifest names it, else indirect.
+    Without any manifest to read, a lock-only package is unknown (never
+    guessed), and callers treat unknown like direct.
+    """
+    if is_action or source == "manifest":
+        return "direct"
+    if names is None:
+        return "unknown"
+    return "direct" if norm_name(pkg) in names else "indirect"
+
+
+COOLDOWN_RANK = {"ok": 0, "notice": 1, "review": 2, "hold": 3}
+
+
+def cooldown_outcome(severity: str, young: bool, advisory: bool = False) -> str:
+    """Review outcome of one package against the cooldown, by its own severity.
+
+    ok      cooldown met, or a security update (advisory in the PR body)
+    notice  patch or Actions tag still young: may pass, print the notice
+    review  minor still young: comment, ask for a human look, do not merge
+    hold    major still young: hold, name the date it matures
+    """
+    if not young or advisory:
+        return "ok"
+    if severity == "major":
+        return "hold"
+    if severity == "minor":
+        return "review"
+    if severity in ("patch", "tag"):
+        return "notice"
+    return "hold"  # downgrade, unchanged, conflict: never pass on a young version
+
+
+def group_cooldown_outcome(outcomes: list[str]) -> str:
+    """A PR cannot be split, so the worst package decides."""
+    return max(outcomes, key=COOLDOWN_RANK.__getitem__, default="ok")
 
 
 def parse_diff(text: str) -> dict[str, tuple[str, str]]:
@@ -387,7 +476,53 @@ def self_test() -> int:
     failures += not wf_ok
     print(f"{'PASS' if wf_ok else 'FAIL'} parse_actions: workflow `uses:` lines only")
 
-    total = len(cases) + len(recon_checks) + 5
+    # Direct / indirect: manifest names decide for lock-only packages.
+    pj = '{"dependencies": {"react": "^19"}, "devDependencies": {"@scope/Tool": "^1"}}'
+    pyp = 'dependencies = [\n  "Requests[socks]>=2.31",\n  "my_pkg~=1.0",\n]\n'
+    names = manifest_names("package.json", pj) | manifest_names("pyproject.toml", pyp)
+    names |= manifest_names("requirements.txt", "# c\nflask==3.0\n-r other.txt\n")
+    use_checks = [
+        ("package.json dependency is direct", use_of("react", "lock-only", names) == "direct"),
+        ("scoped devDependency is direct", use_of("@scope/tool", "lock-only", names) == "direct"),
+        ("pyproject name is normalised", use_of("my-pkg", "lock-only", names) == "direct"),
+        ("extras are stripped", use_of("requests", "lock-only", names) == "direct"),
+        ("requirements.txt name is direct", use_of("Flask", "lock-only", names) == "direct"),
+        ("lock-only and not named is indirect", use_of("whatwg-url", "lock-only", names) == "indirect"),
+        ("manifest-diff entry is direct", use_of("whatwg-url", "manifest", names) == "direct"),
+        ("action is direct", use_of("actions/checkout", "manifest", None, True) == "direct"),
+        ("lock-only without a manifest is unknown", use_of("whatwg-url", "lock-only", None) == "unknown"),
+    ]
+    for label, ok in use_checks:
+        failures += not ok
+        print(f"{'PASS' if ok else 'FAIL'} use: {label}")
+
+    # Cooldown by severity (issue #103): severity, young, advisory, outcome.
+    cool = [
+        ("major", True, False, "hold"),
+        ("major", False, False, "ok"),
+        ("minor", True, False, "review"),
+        ("patch", True, False, "notice"),
+        ("tag", True, False, "notice"),
+        ("major", True, True, "ok"),  # security update: exempt
+        ("downgrade", True, False, "hold"),
+    ]
+    for sev, young, adv, want in cool:
+        got = cooldown_outcome(sev, young, adv)
+        ok = got == want
+        failures += not ok
+        print(f"{'PASS' if ok else 'FAIL'} cooldown: {sev} young={young} advisory={adv} -> {got} (want {want})")
+    # babblr#373 shape: major old enough, minors and patches young -> review, not hold.
+    g373 = group_cooldown_outcome(
+        [cooldown_outcome("major", False), cooldown_outcome("minor", True), cooldown_outcome("patch", True)]
+    )
+    g_young_major = group_cooldown_outcome([cooldown_outcome("major", True), cooldown_outcome("minor", True)])
+    g_patch_only = group_cooldown_outcome([cooldown_outcome("minor", False), cooldown_outcome("patch", True)])
+    grp_ok = g373 == "review" and g_young_major == "hold" and g_patch_only == "notice"
+    grp_ok = grp_ok and group_cooldown_outcome([]) == "ok"
+    failures += not grp_ok
+    print(f"{'PASS' if grp_ok else 'FAIL'} cooldown: the worst package decides for a group")
+
+    total = len(cases) + len(recon_checks) + 5 + len(use_checks) + len(cool) + 1
     print(f"\n{total} checks, {failures} failure(s)")
     return 1 if failures else 0
 
@@ -407,6 +542,21 @@ def main() -> None:
             sys.exit(2)
         del args[i : i + 2]
 
+    manifests: list[str] = []
+    while "--manifest" in args:
+        i = args.index("--manifest")
+        try:
+            manifests.append(args[i + 1])
+        except IndexError:
+            print("--manifest needs a file path", file=sys.stderr)
+            sys.exit(2)
+        del args[i : i + 2]
+    names: set[str] | None = None
+    if manifests:
+        names = set()
+        for mp in manifests:
+            names |= manifest_names(mp, open(mp, encoding="utf-8").read())
+
     text = open(args[0], encoding="utf-8").read() if args else sys.stdin.read()
     action_pkgs = parse_actions(text)
     diff_pkgs = {**parse_diff(text), **action_pkgs}
@@ -425,9 +575,10 @@ def main() -> None:
     rows, warnings = reconcile(diff_pkgs, body_pkgs, frozenset(action_pkgs))
     overall = max(rows, key=lambda r: SEVERITY_ORDER.get(r[3], 99))[3]
 
+    uses = {r[0]: use_of(r[0], r[4], names, r[0] in action_pkgs) for r in rows}
     for pkg, old_v, new_v, level, source in rows:
         suffix = "" if source == "manifest" else f"  [{source}]"
-        print(f"{level.upper():10s} {pkg}: {old_v} -> {new_v}{suffix}")
+        print(f"{level.upper():10s} {pkg}: {old_v} -> {new_v}{suffix}  ({uses[pkg]})")
 
     # Only meaningful when a body was supplied; without one, a count
     # mismatch is expected rather than a finding, so stay quiet about it.
@@ -450,6 +601,12 @@ def main() -> None:
     verdict, reason = gate(overall)
     print(f"\nOVERALL: {overall.upper()}")
     print(f"GATE:    {verdict} ({reason})")
+    majors = [r[0] for r in rows if r[3] == "major"]
+    if majors:
+        if all(uses[p] == "indirect" for p in majors):
+            print("MAJOR-USE: indirect-only (the indirect-major rule in major-bumps.md may apply)")
+        else:
+            print("MAJOR-USE: " + ", ".join(f"{p} {uses[p]}" for p in majors) + " (major path)")
     for w in warnings:
         print(f"WARN:    {w}")
 
