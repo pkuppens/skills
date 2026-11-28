@@ -82,8 +82,13 @@ body:
 ```bash
 gh pr diff <number> --repo <repo> > /tmp/pr.diff
 gh pr view <number> --repo <repo> --json body --jq .body > /tmp/pr.body
-python scripts/classify_bump.py /tmp/pr.diff --body /tmp/pr.body
+python scripts/classify_bump.py /tmp/pr.diff --body /tmp/pr.body \
+  --manifest package.json --manifest pyproject.toml   # the manifests the repo has
 ```
+
+`--manifest` tags each package `direct` or `indirect` and prints `MAJOR-USE:`.
+Judge every package against the cooldown by its own severity, the worst
+outcome decides ([major-bumps.md M1](references/major-bumps.md#m1--cooldown)).
 
 It parses every `"pkg": "old"` → `"pkg": "new"` pair and compares versions
 as numeric tuples — never lexicographically, so `1.9.0` → `1.11.0` reads as
@@ -206,9 +211,12 @@ holds the PR:
 | Gate verdict | CI | Rebase | Verdict |
 |---|---|---|---|
 | AUTO (patch, minor, or Actions `tag`) | green | clean (`CLEAN`/`BEHIND`) | **Approve + merge** (Template A), if no Step 5a check holds |
+| AUTO, patch or `tag` package still in cooldown (worst in the group) | green | clean | **Approve + merge** (Template A) with the cooldown notice in the Explanation, if no Step 5a check holds |
+| AUTO, minor package still in cooldown (worst in the group) | green | clean | **Comment** (Template B, cooldown variant): ask for a human look, list the release notes to read. Never merge |
+| HOLD — major, **every** major indirect, parents unchanged or minor/patch | green | clean | **Approve + merge** (Template A, indirect-major variant) under the rule in [references/major-bumps.md](references/major-bumps.md#indirect-major-rule), when R1–R6 pass and the cooldown is met. A parent with a major bump, or a forced override, takes the next row |
 | AUTO, but a Step 5a check holds | green | clean (`CLEAN`/`BEHIND`) | **Comment**, hold (Template B, review-check variant), naming the check and the finding |
 | AUTO | green | `DIRTY`/`UNKNOWN` after re-poll | **Comment**, hold (Template D) |
-| HOLD — major, **not** authorized | green | clean | **Comment**, hold (Template B, major variant) with the evidence from [references/major-bumps.md](references/major-bumps.md) (M1–M4, R1–R6) as advice for the human. Never approve or merge. The human decides |
+| HOLD — major, **not** authorized, a major is direct or its parent has a major bump, or its cooldown is not met | green | clean | **Comment**, hold (Template B, major variant; cooldown variant names the date it matures) with the evidence from [references/major-bumps.md](references/major-bumps.md) (M1–M4, R1–R6) as advice for the human. Never approve or merge. The human decides |
 | HOLD — major, **authorized** by the invocation (Step 0) | green | clean | **Approve + merge** (Template A, major variant) if no Step 5a check holds (R1, R2). The authorization replaces the M1–M4 conditions, but run and report them anyway. Docker, runtime, calver and project-policy tool-dependency bumps are covered only when the invocation names them |
 | HOLD — major | red, pending, none, or not clean | any | **Comment**, hold (Template B, or C/D for the CI or rebase cause) — a major (or a single-level non-Action version) needs green CI and a clean rebase before it can be considered at all |
 | HOLD — downgrade | any | any | **Comment**, hold (Template B) — a version going backwards is never an expected Dependabot bump |
@@ -267,7 +275,7 @@ gh pr review <number> --repo <repo> --comment  --body "..."  # Template B/C/D
 Never `--request-changes` — the point of Templates B/C/D is to flag for a
 human decision, not block the PR.
 
-Templates A and B include the evidence block, and line comments on the lock
+Templates A and B include the Evidence table, and line comments on the lock
 entries are optional. See
 [references/review-templates.md](references/review-templates.md).
 
@@ -378,6 +386,7 @@ run. A rule with no row is a hypothesis, not policy.
 | Major path, cooldown not met | [babblr #369](https://github.com/pkuppens/babblr/pull/369) (same group) | held | Five versions were under 7 days old: the group waits as a whole. |
 | Full run, dev-dependency group | [pkuppens.github.io #133](https://github.com/pkuppens/pkuppens.github.io/pull/133) (8 updates, minor) | approved, rebase-merged, `main` deploy run green | R1-R7, review, merge, babysit and branch check all ran through the skill. A stale local base ref once faked a major (Step 5a now fetches first). |
 | Revert path | rehearsed in scratch clones only, [#52](https://github.com/pkuppens/skills/pull/52), [#92](https://github.com/pkuppens/skills/issues/92) | range revert, newest first, restores the files | The git mechanics work. A real red base run has not happened, so the analyse-and-recommend step is unproven. |
+| Cooldown by severity, dry run of the classifier only | [babblr #373](https://github.com/pkuppens/babblr/pull/373) (jest-dom 8.0.0 plus minors and patches) | expected: review advice, not a hold | Major old enough, minors too young: the worst package decides, and a young minor gets review advice. No comment was posted from the new templates yet. |
 
 The review checks (Step 5a) and the major path ran by hand, not yet end to
 end through the skill ([#90](https://github.com/pkuppens/skills/issues/90)).

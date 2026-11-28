@@ -2,48 +2,148 @@
 
 Disclosed reference for [`SKILL.md`](../SKILL.md). Fill the placeholders;
 never post a template verbatim with unfilled `{...}` markers. Every template
-names concrete packages, versions, and a CI run link — a bare "LGTM" is not
-a formal review.
+names concrete packages, versions, and a CI run link. A bare "LGTM" is not a
+formal review. Write in simple English, short sentences.
 
-Every approval and hold starts with a **management summary**: the
-conclusion and the evidence it rests on, in one or two lines. The reader
-can stop there. The details follow below it. For a routine approval the
-conclusion is: "Meets the conditions for a safe dependency update."
+GitHub renders the body as markdown, so every comment uses the same skeleton.
+The first line is a complete summary: the reader can stop there.
 
-Any B, C or D comment may end with an optional `Recommended next steps:`
-line. Use it when the next action is not obvious, for example "wait for
-{package} {version}", "ask `@dependabot rebase`", or "add a test for {feature}".
+Which template to use is decided by the table in SKILL.md Step 6. A is the
+only one that approves, and the only one followed by a merge. B, C and D post
+`--comment` and leave the PR for a human. E is posted after the fact, on a PR
+that was merged and then reverted (Step 9).
 
-Which template to use is decided by the table in SKILL.md Step 6. The short
-version: A is the only one that approves, and the only one followed by a
-merge; B, C, and D all post `--comment` and leave the PR for a human. E is
-posted after the fact, on a PR that was merged and then reverted (Step 9).
+## The skeleton (all templates)
+
+````markdown
+**Verdict:** Approve and merge | Hold — {one-line reason}
+
+### Explanation
+{Two or three short sentences. Why this verdict. For a routine approval:
+"Meets the conditions for a safe dependency update."}
+
+### Packages
+| Package | From | To | Level | Direct/indirect | Published | Cooldown |
+|---|---|---|---|---|---|---|
+| {pkg} | {old} | {new} | {major / minor / patch / tag} | {direct / indirect} | {date} | {met / matures {date} / exempt: advisory} |
+
+### Evidence
+| Check | Result |
+|---|---|
+| CI | {green / red / pending / none} — [run]({ci_run_url}) on `{head_sha}` |
+| Rebase | {CLEAN / BEHIND / DIRTY / UNKNOWN} |
+| R1 Branch integrity | {pass / note / hold}: {short} |
+| R2 Change reconciliation | {pass / note / hold}: {short} |
+| R3 Lockfile | {pass / note / hold}: {command} |
+| R4 Usage | {pass / note / hold}: {short} |
+| R5 Checks | {pass / note / hold}: {suite, n tests in CI} |
+| R6 Local repetition | {pass / note / hold}: {commands} or not run: {reason} |
+| R7 Base evidence | {base_branch} @ {base_sha}: [run]({base_run_url}) ({conclusion}) |
+
+<details><summary>R1 and R2 details</summary>
+
+{R1 patch-ID comparison. R2 file list and transitive list:
+`{pkg} {old} -> {new}, required by {bumped pkg}`.}
+
+</details>
+
+### Recommendation
+- {Concrete next step. When the step is "wait", give the date.}
+````
+
+Rules:
+
+- The first line (`**Verdict:**`) is the summary. A verdict that needs two
+  lines is too vague.
+- Packages: one row per package, every package in a group. The overall level
+  is the worst one: say it in the Explanation for a group.
+- `Direct/indirect` comes from `classify_bump.py --manifest`. `unknown` counts as
+  direct.
+- Evidence: one row per check, `pass`, `note` or `hold` first. Long findings
+  go under `<details>`, not in the table cell. Rows for checks that were not
+  run say `not run: {reason}`. For C, D and E, drop the rows that do not apply
+  (for example R1–R7 on a red-CI comment) and keep CI and Rebase.
+- Merge line: Template A ends its Explanation with "Merging by {squash |
+  rebase} as {you}; the Dependabot branch is deleted afterwards."
+- Check how the comment looks in the GitHub preview before the first real
+  post of a changed template (headings, both tables, the `<details>` block).
 
 ## A — Approve (gate AUTO, CI green, rebase clean)
 
 Used for `gh pr review <n> --approve --body "..."`, then `gh pr merge <n>
 <strategy from Step 0> --delete-branch`, with `--author-email <your noreply address>` for squash only.
 
-```
-Meets the conditions for a safe dependency update: {level} bump, {package list, e.g. "react-router 8.3.0 -> 8.3.1"}.
-Evidence: CI green ({ci_run_url}); rebase {CLEAN | BEHIND}; review checks R1-R6 {pass | pass with notes}.
+````markdown
+**Verdict:** Approve and merge
+
+### Explanation
+Meets the conditions for a safe dependency update: {level} bump of {package list, e.g. "react-router 8.3.0 -> 8.3.1"}.
+CI is green, the rebase is {CLEAN | BEHIND}, and review checks R1–R6 {pass | pass with notes}.
 Merging by {squash | rebase} as {you}; the Dependabot branch is deleted afterwards.
+
+{Packages table} {Evidence table} {Recommendation: "None." or notes, with issue links}
+````
+
+**Patch or tag in cooldown.** Add this line to the Explanation and set the
+`Cooldown` cell to `not met, notice`:
+
+```
+Notice: {package} {version} is {days} days old; the cooldown is {cooldown} days. A patch may pass; it matures on {date}.
 ```
 
-Append the **evidence block** to every A and B body (Step 5a). It makes the
-review usable as a change record:
+**GitHub Actions tag** (`actions/checkout@v5` → `@v7`). Level is `tag`: no
+semver applies, so green CI is the gate. Say so in the Explanation: "single-level
+tag bump (no semver); CI ran the new version."
 
-```
-Head reviewed: {head_sha} — CI run on this SHA: {ci_run_url}
-R1 Branch integrity: {pass | note: {author} commit {sha}, patch ID equals Dependabot commit}
-R2 Change reconciliation: {pass — {files}; transitive: {pkg old -> new, required by {bumped pkg}}}
-R3 Lockfile: {pass — {lock check command}}
-R4 Usage: {consumers} via {dependency path}; imported in {modules | none: run by {config/task}}}
-R5 Checks: {consumer suite ran in CI with {n} tests} {; not run in CI: {checks}}
-R6 Local repetition: {commands} — {results} | not run: {reason}
-R7 Base evidence: {base_branch} @ {base_sha} — {base_run_url} ({conclusion}{, dispatched for this review})
-Notes (not blocking): {follow-ups, with issue links}
-```
+**Group PR with mixed levels.** One row per package in the table. The Explanation
+names the overall level (the worst) and says no package changes its breaking
+component.
+
+### A, major variant — approve an authorized major
+
+Only when the user's invocation explicitly authorized majors (SKILL.md Step 0).
+Quote the authorization in the Explanation. Report the M1–M4 evidence from
+[major-bumps.md](major-bumps.md), including any condition that is not met:
+
+````markdown
+**Verdict:** Approve and merge — major update, on the user's explicit authorization
+
+### Explanation
+Merging {package} {old} -> {new} (plus {n} minor/patch updates in this group) on the
+authorization "{quoted words}". Any M1–M4 condition that is not met is listed below.
+
+{Packages table, cooldown column filled for every package}
+
+### Evidence
+{Evidence table, plus these rows:}
+| M2 Usage | {direct | indirect via {layer}}: {where}. Breaking changes: {each one, used / not used} |
+| M3 Coverage | {suite} on `{head_sha}`: {passed}/{total} tests, locally with `{ci install command}` and in [CI]({ci_run_url}). {Added or manual: ...} {Indirect: {layer} admits {new major}, its tests passed} |
+````
+
+### A, indirect-major variant — approve an indirect major
+
+Under the [indirect major rule](major-bumps.md#indirect-major-rule). No user
+authorization is needed. Name the parents, because they are the reason it passes:
+
+````markdown
+**Verdict:** Approve and merge — indirect major, parents unchanged or minor/patch
+
+### Explanation
+{package} {old} -> {new} is a major bump, but nothing in the project calls it.
+It is required by {parent list}; each parent is {unchanged | bumped by a minor or patch}
+and its declared range `{range}` admits {new}. Cooldown is met and R1–R6 pass.
+
+{Packages table} {Evidence table, R5 row names the parent's suite}
+````
+
+### Evidence in the tables
+
+R-row wording for the Evidence table, with examples:
+
+- R1: `pass` or `note: {author} commit {sha}, patch ID equals Dependabot commit`
+- R2: `pass: {files}` or `note: transitive {pkg old -> new}, required by {bumped pkg}`
+- R4: `pass: {consumers} via {dependency path}; imported in {modules | none: run by {config/task}}`
+- R5: `pass: consumer suite ran in CI, {n} tests` or `note: not run in CI: {checks}`
 
 ### Line comments and threads (optional)
 
@@ -67,173 +167,77 @@ gh api graphql -f query='{repository(owner:"<o>",name:"<r>"){pullRequest(number:
 gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'
 ```
 
-For a GitHub Actions tag bump (`actions/checkout@v5` → `@v7`), name it as such —
-the level is `tag`, and the reason is that no semver applies, so green CI is
-the gate:
+## B — Comment, held for human judgement
 
-```
-Meets the conditions for a safe dependency update: single-level tag bump (no semver), {package} {old} -> {new}.
-Evidence: CI green ({ci_run_url}) and exercises the new version; rebase {CLEAN | BEHIND}.
-Merging by {squash | rebase}.
-```
+Used for `gh pr review <n> --comment --body "..."`. Never `--approve` and
+never `--request-changes`: the point is to flag, not block. Use the skeleton.
+Pick the verdict and Explanation that match why the gate held, so the comment
+says something specific.
 
-For a group PR with mixed levels, list every package with its own level and
-state the overall as the worst one:
+| Why | `Verdict:` line | Explanation |
+|---|---|---|
+| Major, not authorized (or R1/R2 holds) | `Hold — major bump, needs a human decision` | `{package}: {old} -> {new} is a major bump. A major can break even with green CI: someone needs to read the release notes. M1–M4 evidence is in the tables. Will qualify once {the missing evidence}.` |
+| Major, cooldown not met | `Hold — {package} {new} matures on {date}` | `{package}@{new} was published {date}, {days} days ago; the cooldown is {cooldown} days. A major waits. Re-run the check on {date}.` |
+| Minor, cooldown not met | `Hold for a human look — {package} {new} is {days} days old (cooldown {cooldown})` | `A young minor may bring new behavior. Read the release notes: {link}. Nothing else holds; approve after reading, or wait until {date}.` Do not merge. |
+| Downgrade | `Hold — version decrease` | `{package}: {old} -> {new} is a decrease, not a bump. It usually means a yanked release, a pinned transitive constraint, or a misread manifest. Worth understanding before merging.` |
+| Unchanged | `Hold — no effective version change` | `The diff does not move {package} off {old}. An empty bump usually means the real change is somewhere the version parser did not look.` |
+| Conflict | `Hold — diff and PR body disagree` | `The manifest diff says {package} {diff_old} -> {diff_new}; the PR body says {body_old} -> {body_new}. Picking one would be a guess, and the severity differs depending on which is right.` |
+| Unclassifiable | `Hold — severity unknown` | `Could not pin a concrete old -> new pair for {package \| this PR}. The severity is unknown, not low.` |
+| Count mismatch | `Hold — package list incomplete` | `The PR body says {n_claimed} updates but only {n_resolved} matched a version pair ({package list}). An approval naming {n_resolved} of {n_claimed} would be incomplete.` |
+| Review check held | `Hold — review check {R#} found a problem` | `{level} bump {package}: {old} -> {new} passes the version, CI and rebase gates, but {R#} holds: {finding, e.g. "the consumer's suite did not run in CI" \| "uv lock --check fails" \| "commit {sha} by {author} changes the effective diff"}. Not approving until a human decides on {R#}.` |
 
-```
-Meets the conditions for a safe dependency update: {overall_level} bump across {n} packages in this group.
-Evidence: CI green ({ci_run_url}); rebase {CLEAN | BEHIND}; no package changes its breaking component.
-- {pkg1}: {old1} -> {new1} ({level1})
-- {pkg2}: {old2} -> {new2} ({level2})
-Merging by {squash | rebase}.
-```
-
-### A, major variant — approve an authorized major
-
-Only when the user's invocation explicitly authorized majors (SKILL.md Step 0).
-Quote the authorization, then report the M1–M4 evidence from
-[major-bumps.md](major-bumps.md), including any condition that is not met:
-
-```
-Merging a major update on the user's explicit authorization: {package} {old} -> {new}
-(plus {n} minor/patch updates in this group), under the cooldown + usage policy.
-- Cooldown ({cooldown} days required): {package}@{new} published {date} ({days} days ago);
-  every other version in the group is at least as old as the requirement.
-- Review checks R1–R6: {result each, one line}.
-- Usage: {direct | indirect via {layer}}: {where, e.g. test.environment in vite.config.ts}.
-  Breaking changes in the release notes: {each one, used / not used}.
-- Coverage: {suite} ran on the head SHA: {passed}/{total} tests, locally with `{ci install command}`
-  and in CI {ci_run_url}. {Added or manual: {test cases added in this PR | manual check done, with what and result}.}
-  {For indirect use: {layer} admits {new major} and its tests passed.}
-- Rebase state: {CLEAN | BEHIND}. Merging by {squash | rebase}.
-```
-
-## B — Comment, held for human judgement (version gate held)
-
-Used for `gh pr review <n> --comment --body "..."` — never `--approve` and
-never `--request-changes` for this case; the point is to flag, not block.
-
-Pick the sentence matching why the gate held, so the comment says something
-specific rather than a generic "needs review".
-
-**Major bump (not authorized, or authorized but R1/R2 holds; name which):**
-
-```
-Holding this one for a human decision: {package}: {old} -> {new} is a major bump.
-Evidence so far (M1 cooldown, M2 usage, M3 coverage, M4 install): {Cooldown: {package}@{version} was published {date},
-matures {date + cooldown days} | Usage: {why the use or its coverage is unknown}
-| Coverage: {which use has no passing test}}.
-CI status: {green | red | pending | no checks ran}.
-A major can break even with green CI: someone needs to read the release notes.
-Will qualify once {the missing evidence}.
-Recommended next steps: {optional, e.g. "re-run the check on {date}", "add a test for {feature}"}.
-```
-
-**Downgrade (any component going backwards overall):**
-
-```
-Holding this one for manual review: {package}: {old} -> {new} is a version
-*decrease*, not a bump.
-CI status: {green | red | pending | no checks ran}.
-Not auto-approving because a dependency going backwards is not an expected
-Dependabot update — it usually means a yanked release, a pinned transitive
-constraint, or a misread manifest. Worth understanding before merging.
-```
-
-**Unchanged — no effective version movement:**
-
-```
-Holding this one for manual review: the diff doesn't move {package} off
-{old} — there's no effective version change to approve.
-CI status: {green | red | pending | no checks ran}.
-Flagging rather than approving, since an empty bump usually means the real
-change is somewhere the version parser didn't look.
-```
-
-**Conflict — the manifest diff and the PR body disagree:**
-
-```
-Holding this one for manual review: the manifest diff says {package}
-{diff_old} -> {diff_new}, but the PR body's own update metadata says
-{body_old} -> {body_new}.
-CI status: {green | red | pending | no checks ran}.
-Not auto-approving while the two sources disagree about what is actually
-changing — picking one over the other would be a guess, and the severity
-differs depending on which is right.
-```
-
-**Unclassifiable:**
-
-```
-Holding this one for manual review: couldn't pin down a concrete old -> new
-version pair for {package | this PR}.
-CI status: {green | red | pending | no checks ran}.
-Not auto-approving because the diff didn't contain a clean version pair to
-classify {and the title's wording was ambiguous}, so the severity is unknown
-rather than low.
-```
-
-**Count mismatch — the body claims more updates than were resolved:**
-
-```
-Holding this one for manual review: the PR body says {n_claimed} updates,
-but only {n_resolved} could be matched to a version pair ({package list}).
-CI status: {green | red | pending | no checks ran}.
-Not auto-approving because an approval naming {n_resolved} of {n_claimed}
-packages would be an incomplete review.
-```
-
-**Review check held (Step 5a), version and CI gates passed:**
-
-```
-Holding this one for manual review: {level} bump {package}: {old} -> {new}
-passes the version, CI and rebase gates, but review check {R#} holds:
-{finding, e.g. "the consumer's suite did not run in CI" | "uv lock --check
-fails" | "commit {sha} by {author} changes the effective diff"}.
-Not auto-approving until a human decides on {R#}.
-```
-
-When more than one hold applies (for example red CI *and* a count
-mismatch), post one review that covers each reason, not one review per
-reason.
+Set the `Level`, `Direct/indirect` and `Cooldown` cells for every row in the
+Packages table, and mark the package that caused the hold. When more than one
+hold applies (for example red CI *and* a count mismatch), post one review that
+covers each reason, with the first reason in the `Verdict:` line, not one
+review per reason.
 
 ## C — Comment, CI investigation (red or missing CI)
 
 Used for `gh pr review <n> --comment --body "..."`. Report the finding;
 never edit source, test, or config files to chase a green run.
 
-```
-CI is currently {red | not running any workflow} on this PR.
+````markdown
+**Verdict:** Hold — CI is {red | not running any workflow} on this PR
+
+### Explanation
 Investigated: {failure also occurs on the latest {base_branch} run
-({base_run_url}), so it predates this bump | failure does not occur on
-{base_branch} — looks introduced by this bump | reran the failing job and
-it passed the second time — looks transient/flaky | no workflow is
-configured to run on this PR}.
-Not making any code changes here — flagging for a decision on whether to
-fix, rerun, or close.
-Recommended next steps: {optional}.
-```
+([run]({base_run_url})), so it predates this bump | failure does not occur on
+{base_branch}, so it looks introduced by this bump | the failing job passed on
+a rerun, so it looks flaky | no workflow is configured to run on this PR}.
+No code changes made here. A human decides: fix, rerun, or close.
+
+{Packages table} {Evidence table: CI and Rebase rows}
+
+### Recommendation
+- {Next step, optional}
+````
 
 ## D — Comment, rebase not clean
 
 Used for `gh pr review <n> --comment --body "..."`. The version and CI gates
 passed; only the rebase gate held, so this is usually a one-command fix for
-the bot rather than a human judgement call.
+the bot.
 
-```
-Version and CI gates both pass ({level} bump: {package}: {old} -> {new},
-checks green at {ci_run_url}), but this doesn't rebase cleanly right now —
-mergeable={mergeable}, mergeStateStatus={mergeStateStatus}.
-{Conflicts against {base_branch}: asking Dependabot to rebase — @dependabot rebase
- | GitHub still reports mergeability as UNKNOWN after re-polling, so holding
-   rather than guessing
- | Blocked by branch protection: {which rule}}.
-Not merging while the rebase isn't a clean replay — holding until it is.
-```
+````markdown
+**Verdict:** Hold — does not rebase cleanly (`mergeable={mergeable}`, `mergeStateStatus={mergeStateStatus}`)
 
-Only include the literal `@dependabot rebase` line when conflicts are the
-actual cause; it is a command the bot acts on, so don't post it speculatively
-for an `UNKNOWN` or `BLOCKED` state where a rebase wouldn't help.
+### Explanation
+The version and CI gates pass ({level} bump, checks green at {ci_run_url}).
+{Conflicts against {base_branch}: asking Dependabot to rebase.
+ | GitHub still reports mergeability as UNKNOWN after re-polling, so holding rather than guessing.
+ | Blocked by branch protection: {which rule}.}
+Not merging while the rebase is not a clean replay.
+
+{Packages table} {Evidence table: CI and Rebase rows}
+
+### Recommendation
+- {Conflicts only: `@dependabot rebase`}
+````
+
+Put the literal `@dependabot rebase` in the Recommendation only when conflicts
+are the actual cause. It is a command the bot acts on, so do not post it for an
+`UNKNOWN` or `BLOCKED` state where a rebase would not help.
 
 ## E — Comment, merged then reverted (base branch went red)
 
@@ -241,17 +245,24 @@ Used for `gh pr review <n> --comment --body "..."` on the original, already
 merged PR once the revert PR exists. It records the cause where the next
 reader of this bump will look.
 
-```
-Reverted in #{revert_pr}: {base_branch} went red after this merged.
-Failing run: {base_run_url} — {failing job}: {one-line cause}.
-Rerun once: still failing, so not transient. The pre-merge baseline
-({baseline_run_url}) was green.
-{Isolated to this merge by its own base run | Reverted together with
- #{other_prs} — the base runs couldn't separate them}.
-Cause: {from the failing log, with the log line}. Evidence: {run_url}.
-Recommended next steps: {from the cause table in revert-procedure.md, e.g.
-"fix-forward PR adapting {code}, then re-apply" | "ignore {version} in
-dependabot.yml until {condition}"}.
-Not attempting a fix here — Dependabot will offer this update again; it
-needs someone to look at {failing job} first.
-```
+````markdown
+**Verdict:** Reverted in #{revert_pr} — {base_branch} went red after this merged
+
+### Explanation
+Failing run: [run]({base_run_url}), {failing job}: {one-line cause}.
+A rerun still failed, so it is not transient. The pre-merge baseline ([run]({baseline_run_url})) was green.
+{Isolated to this merge by its own base run | Reverted together with #{other_prs}: the base runs could not separate them.}
+Cause: {from the failing log, with the log line}.
+
+{Packages table}
+
+### Evidence
+| Check | Result |
+|---|---|
+| Failing run | [{failing job}]({base_run_url}) |
+| Baseline | [green]({baseline_run_url}) |
+
+### Recommendation
+- {From the cause table in revert-procedure.md, e.g. "fix-forward PR adapting {code}, then re-apply" | "ignore {version} in dependabot.yml until {condition}"}
+- No fix attempted here. Dependabot will offer this update again; someone needs to look at {failing job} first.
+````

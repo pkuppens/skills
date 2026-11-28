@@ -40,11 +40,23 @@ PR after the publish date or before a newer release.
 | GitHub Action | `gh api repos/<owner>/<repo>/releases/tags/<tag> --jq .published_at`; on a 404 (tag without a Release) use the tagged commit date |
 | any other | no rule: hold |
 
-Every package in a group PR must pass, not only the major one. A group PR
-holds as a whole, because it cannot be split. The comment names the package
-and the date it matures (`published + 7 days`). A security update (the PR body
-cites an advisory) is exempt from the wait, as it is for Dependabot's own
-cooldown. M2 and M3 still apply.
+Judge each package by its **own severity**. The PR cannot be split, so the
+worst outcome in the group is the PR's outcome (`group_cooldown_outcome` in
+`classify_bump.py`; `--self-test` checks the table):
+
+| Package severity | Cooldown not met | Review outcome |
+|---|---|---|
+| major (including `0.Y` and `0.0.Z`) | negative | **Hold.** Do not merge. Name the date it matures (`published + cooldown days`). |
+| minor | review advice | **Comment, ask for a human look.** Do not merge. List what to read (release notes). |
+| patch, Actions `tag` | pass with notice | **May pass.** Approve and merge when every other gate and check passes. Print the notice in the Explanation. |
+
+Order, worst first: hold, review, notice. So a young major holds the group; a
+young minor (with a major that is old enough) gives review advice, not a hold;
+a young patch alone passes with a notice. A young patch in a group that also
+has a young minor follows the minor.
+
+A security update (the PR body cites an advisory) is exempt from the wait, as
+it is for Dependabot's own cooldown. M2 and M3 still apply.
 
 ## M2 — Usage
 
@@ -76,6 +88,29 @@ breaking change needs a test that exercises it (M3), or the PR holds.
 
 When the declared range does **not** admit the new major (a forced resolution
 or an override), the layer in between never saw this version: hold.
+
+### Indirect major rule
+
+`classify_bump.py --manifest <file>` tags every package `direct` or
+`indirect` (a lock-only package the manifest does not name is indirect) and
+prints `MAJOR-USE: indirect-only` when every major in the PR is indirect.
+
+An indirect major may be **approved without the user's authorization** (Template A,
+indirect-major variant) when all of these hold:
+
+1. Every major package in the PR is indirect (`MAJOR-USE: indirect-only`).
+2. Every direct parent (`npm explain <pkg>`, `uv tree --invert --package <pkg>`)
+   is unchanged, or bumped by a minor or patch only, in this PR.
+3. Each parent's declared range admits the new major, and the new major is the
+   single installed copy (the M3 indirect row). A forced resolution or an
+   override never qualifies: hold (M3).
+4. The cooldown for the major is met (M1), and R1–R6 pass. R5 matters most:
+   the parent's own suite ran in CI on the head SHA.
+
+Limits: a parent bumped by a **major** in the same PR sends that parent down the
+major path; the rule does not apply. A **direct** major always keeps the major
+path. Unknown use (no manifest read) is treated as direct. Residual risk: the
+parent may not be tested against the new major. R5 is the check for that.
 
 ## M4 — Install like CI
 

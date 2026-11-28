@@ -24,7 +24,7 @@ Contents: [R1](#r1--branch-integrity) · [R2](#r2--change-reconciliation) ·
 | R6 | Local repetition | a consumer test or a check from the R5 gap list fails on the PR but passes on the base | it was not run (no local clone or no sandbox); results differ from CI but both pass |
 | R7 | Base-branch evidence | no successful run exists for the current base SHA (blocks all merges, see Step 7) | — |
 
-Record every result in the evidence block ([review-templates.md](review-templates.md)).
+Record every result in the Evidence table ([review-templates.md](review-templates.md)).
 
 ## Safety
 
