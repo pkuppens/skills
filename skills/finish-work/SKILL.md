@@ -131,8 +131,9 @@ their review.
 **Answer every human thread you act on.** After a fix is pushed, reply on
 that thread with what changed and the commit SHA. When you change nothing,
 reply with the reason. End each reply with the agent marker (step 5). **Never
-resolve a thread**: the person who opened it resolves it. Commands and the pending-review exception:
-[references/merge-gate.md](references/merge-gate.md) section 4.
+resolve a thread**: the person who opened it resolves it. Commands and the
+pending-review exception: [references/merge-gate.md](references/merge-gate.md)
+section 4.
 
 ### 5. Sign-off
 
